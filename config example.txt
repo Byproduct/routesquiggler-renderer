@@ -1,0 +1,9 @@
+app_version: 0.10
+api_url: https://routesquiggler.com/jobs_api/v1/
+user: juhgu_desktop
+storage_box_address: u465900.your-storagebox.de
+storage_box_user: u465900
+storage_box_password: R0uteSquigglerBocks
+debug_logging: true
+sync_map_tile_cache: false
+gpu_rendering: true

@@ -1,0 +1,32 @@
+{
+  "user_id": 1,
+  "map_style": "osm",
+  "map_transparency": 0,
+  "line_width": 4,
+  "track_objects": [
+    {
+      "filename": "2024-05-18 kehä3.gpx",
+      "date": "2024-05-18",
+      "color": "#0000ff",
+      "name": ""
+    }
+  ],
+  "route_name": "Kehä3 testing",
+  "newest_on_top": true,
+  "legend": "off",
+  "created_at": "2025-07-15T22:11:31.834620+00:00",
+  "job_id": 1000032,
+  "folder": "KD2IzPZbLRfIngQ",
+  "job_type": "video",
+  "video_resolution_x": 1920,
+  "video_resolution_y": 1080,
+  "video_fps": "60",
+  "squiggle_speed": "relative",
+  "zoom_mode": "final",
+  "video_length": 20,
+  "tail_color": "#800040",
+  "tail_width": 5,
+  "tail_length": 3,
+  "route_accuracy": "normal",
+  "fluffy_tail":  true
+}

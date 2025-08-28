@@ -1,0 +1,893 @@
+"""
+Job request handling for the Route Squiggler render client.
+This module handles requesting and processing new jobs from the server.
+"""
+
+import json
+import traceback
+from io import BytesIO
+import zipfile
+import requests
+from PySide6.QtCore import QObject, Signal, QThread, QTimer, QMetaObject, Qt
+
+def update_job_status(api_url, user, hardware_id, app_version, job_id, status, log_callback=None):
+    """Update job status via API call.
+    
+    Args:
+        api_url (str): The API base URL
+        user (str): The API user/key
+        hardware_id (str): The hardware ID
+        app_version (str): The application version
+        job_id (str): The job ID to update status for
+        status (str): The status to set
+        log_callback (callable, optional): Function to call for logging messages
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        if not api_url:
+            if log_callback:
+                log_callback("Cannot update job status: missing api_url")
+            return False
+
+        # Construct URL from config api_url + status endpoint
+        url = f"{api_url.rstrip('/')}/status/"
+        headers = {
+            'X-API-Key': user,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        }
+        body = {
+            'hardware_id': hardware_id,
+            'app_version': app_version,
+            'job_id': str(job_id),
+            'status': status
+        }
+
+        response = requests.post(url, headers=headers, json=body, timeout=10)
+        if response.status_code != 200:
+            if log_callback:
+                log_callback(f"Failed to update job status: {response.status_code} - {response.text}")
+            return False
+        return True
+
+    except Exception as e:
+        if log_callback:
+            log_callback(f"Error updating job status: {str(e)}")
+        return False
+
+class JobRequestWorker(QObject):
+    """Worker class to handle job requests in a separate thread."""
+    finished = Signal()
+    error = Signal(str)
+    job_received = Signal(object, list)  # Emits json_data and gpx_files_info
+    log_message = Signal(str)
+
+    def __init__(self, api_url, user, hardware_id, app_version):
+        super().__init__()
+        self.api_url = api_url
+        self.user = user
+        self.hardware_id = hardware_id
+        self.app_version = app_version
+
+    def request_job(self):
+        """Request a new job from the server."""
+        try:
+            # Construct URL from config api_url + request_job endpoint
+            url = f"{self.api_url.rstrip('/')}/request_job/"
+            headers = {
+                'X-API-Key': self.user,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+            body = {
+                'hardware_id': self.hardware_id,
+                'app_version': self.app_version
+            }
+            
+            self.log_message.emit(f"Requesting job from server: {url}")
+            # self.log_message.emit(f"Request headers: {headers}")
+            
+            response = requests.post(url, headers=headers, json=body, timeout=95)  # 95 second timeout for job request
+            
+            self.log_message.emit(f"Response status: {response.status_code}")
+            # self.log_message.emit(f"Response headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                self.log_message.emit("Processing 200 response...")
+                
+                # Check if this is a "no jobs available" response vs actual job data
+                content_type = response.headers.get('Content-Type', '').lower()
+                
+                if 'application/json' in content_type:
+                    self.log_message.emit("Detected JSON response, checking for no_job status...")
+                    # This might be a status message rather than job data
+                    try:
+                        json_response = response.json()
+                        if json_response.get('status') == 'no_job':
+                            # This is a "no jobs available" response
+                            message = json_response.get('message', 'No jobs currently available.')
+                            self.log_message.emit(message)
+                            self.error.emit("No jobs available")  # Trigger retry mechanism
+                            return
+                    except Exception as e:
+                        self.log_message.emit(f"Error parsing JSON response: {str(e)}")
+                        # Fall through to treat as potential job data
+                
+                self.log_message.emit("Processing job ZIP data...")
+                # Normal job processing
+                # Process the outer ZIP file which contains data.json and gpx_files.zip
+                with zipfile.ZipFile(BytesIO(response.content), 'r') as outer_zip:
+                    self.log_message.emit("ZIP file opened successfully")
+                    
+                    # Read job parameters from data.json
+                    try:
+                        with outer_zip.open('data.json') as data_file:
+                            json_data = json.loads(data_file.read().decode('utf-8'))
+                        self.log_message.emit("data.json parsed successfully")
+                    except Exception as e:
+                        self.log_message.emit(f"Error reading data.json: {str(e)}")
+                        self.error.emit("Failed to read data.json")
+                        return
+
+                    # Read the inner gpx_files.zip
+                    try:
+                        with outer_zip.open('gpx_files.zip') as gpx_zip_file:
+                            gpx_zip_data = gpx_zip_file.read()
+                        self.log_message.emit("gpx_files.zip read successfully")
+                    except Exception as e:
+                        self.log_message.emit(f"Error reading gpx_files.zip: {str(e)}")
+                        self.error.emit("Failed to read gpx_files.zip")
+                        return
+
+                    # Process GPX files from the inner ZIP
+                    gpx_files_info = []
+                    with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
+                        self.log_message.emit("Processing GPX files...")
+                        for file_name in gpx_zip.namelist():
+                            with gpx_zip.open(file_name) as gpx_file:
+                                gpx_content = gpx_file.read()
+                                # Try different encodings
+                                for encoding in ['utf-8', 'latin1', 'cp1252']:
+                                    try:
+                                        gpx_text = gpx_content.decode(encoding)
+                                        if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
+                                            gpx_files_info.append({
+                                                'filename': file_name,
+                                                'name': file_name,
+                                                'content': gpx_text
+                                            })
+                                            break
+                                    except UnicodeDecodeError:
+                                        continue
+                                else:
+                                    # If no encoding worked, log an error
+                                    self.log_message.emit(f"Failed to decode {file_name} with any supported encoding")
+                                    continue
+                    
+                    if not gpx_files_info:
+                        self.log_message.emit("No valid GPX files found in the ZIP")
+                        self.error.emit("No valid GPX files found")
+                        return
+                    
+                    self.log_message.emit(f"Found {len(gpx_files_info)} GPX files, emitting job data...")
+                    # Emit the job data
+                    self.job_received.emit(json_data, gpx_files_info)
+            else:
+                self.log_message.emit(f"Job request failed: {response.status_code}")
+                self.error.emit(f"Job request failed: {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            self.log_message.emit("Job request timed out after 95 seconds - will retry")
+            self.error.emit("Job request timed out")
+        except requests.exceptions.ConnectionError as e:
+            self.log_message.emit(f"Job request connection error: {str(e)} - will retry")
+            self.error.emit(f"Connection error: {str(e)}")
+        except Exception as e:
+            self.log_message.emit(f"Error requesting job: {str(e)}")
+            self.log_message.emit(traceback.format_exc())
+            self.error.emit(f"Error requesting job: {str(e)}")
+        
+        self.finished.emit()
+
+class JobRequestThread(QThread):
+    """Thread class to run the job request worker."""
+    def __init__(self, worker):
+        super().__init__()
+        self.worker = worker
+        self.worker.moveToThread(self)
+        
+    def run(self):
+        """Execute the worker's request_job method."""
+        self.worker.request_job()
+
+class JobRequestManager:
+    """Manager class for handling job requests and their lifecycle."""
+    
+    def __init__(self, main_window):
+        """Initialize with reference to the main window."""
+        self.main_window = main_window
+        self.job_request_worker = None
+        self.job_request_thread = None
+        self.job_retry_timer = None
+    
+    def request_new_job(self):
+        """Request a new job from the server using simple synchronous approach (was working)."""
+        # Show the no_jobs_label when starting a job request
+        self.main_window.no_jobs_label.show()
+        
+        # Use the simple approach that was working - no JobRequestWorker to avoid painter conflicts
+        self.request_new_job_simple()
+    
+    def on_job_request_error(self, error_msg):
+        """Handle job request errors."""
+        self.main_window.log_widget.add_log(f"=== on_job_request_error called with: {error_msg} ===")
+        
+        # Check if this is specifically a "no jobs available" situation
+        if error_msg == "No jobs available":
+            # Keep no_jobs_label visible for "no jobs available"
+            self.main_window.log_widget.add_log("No jobs available - will retry in 10 seconds")
+            pass
+        else:
+            # Hide no_jobs_label for other errors
+            self.main_window.no_jobs_label.hide()
+            self.main_window.log_widget.add_log(f"Other error: {error_msg} - will retry in 10 seconds")
+        
+        # If we're still in working mode, try requesting another job after a delay
+        if self.main_window.pause_button.isEnabled():
+            self.main_window.log_widget.add_log("Pause button is enabled - creating retry timer")
+            
+            # Use QMetaObject.invokeMethod to create timer in main thread
+            QMetaObject.invokeMethod(
+                self.main_window, 
+                "create_job_retry_timer", 
+                Qt.ConnectionType.QueuedConnection
+            )
+        else:
+            self.main_window.log_widget.add_log("Pause button is NOT enabled - not creating retry timer")
+    
+    def on_job_request_finished(self):
+        """Handle job request completion (worker finished without error or job received)."""
+        self.main_window.log_widget.add_log("=== on_job_request_finished called ===")
+        
+        # Immediately clean up the worker and thread since we're done with this request
+        if self.job_request_thread:
+            try:
+                # First, disconnect all signals from the worker to prevent lingering connections
+                if self.job_request_worker:
+                    try:
+                        self.job_request_worker.finished.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                    try:
+                        self.job_request_worker.error.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                    try:
+                        self.job_request_worker.job_received.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                    try:
+                        self.job_request_worker.log_message.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                
+                # Clean up the thread and worker
+                self.job_request_thread.quit()
+                self.job_request_thread.wait(5000)  # Wait up to 5 seconds
+                self.job_request_thread.deleteLater()
+                self.job_request_thread = None
+                self.job_request_worker = None
+                self.main_window.log_widget.add_log("Cleaned up job request worker and thread after completion")
+            except Exception as e:
+                self.main_window.log_widget.add_log(f"Warning: Error cleaning up job request worker: {str(e)}")
+                self.job_request_thread = None
+                self.job_request_worker = None
+    
+    def delayed_job_retry(self):
+        """Retry requesting a new job after a delay."""
+        self.main_window.log_widget.add_log("=== delayed_job_retry called ===")
+        self.main_window.log_widget.add_log("Retrying job request...")
+        self.request_new_job_qt_network()
+    
+    def on_job_received(self, json_data, gpx_files_info):
+        """Handle received job data."""
+        self.main_window.log_widget.add_log("=== on_job_received called ===")
+        try:
+            # Hide no_jobs_label when actual job data is received
+            self.main_window.no_jobs_label.hide()
+            
+            # Get job type and job ID
+            job_type = json_data.get('job_type', 'image')  # Default to 'image' for backward compatibility
+            job_id = json_data.get('job_id', '?')
+            
+            self.main_window.log_widget.add_log(f"Processing job #{job_id} (type: {job_type})")
+            
+            # Update header label based on job type
+            if job_type == 'video':
+                self.main_window.header_label.setText(f"Creating video #{job_id}")
+                # Show video progress bars for video jobs
+                self.main_window.show_video_progress_bars()
+            else:
+                self.main_window.header_label.setText(f"Creating image #{job_id}")
+                # Hide video progress bars for image jobs (they will be hidden in clear_status_labels too)
+                self.main_window.hide_video_progress_bars()
+            
+            # Clear previous status labels
+            self.main_window.clear_status_labels()
+            
+            # Route to appropriate generator based on job type
+            if job_type == 'video':
+                self.main_window.log_widget.add_log("Creating video generator worker...")
+                # Import here to avoid circular import
+                from video_generator_main import VideoGeneratorWorker, VideoWorkerThread
+                
+                # Check if this is a test job (test_job_folders list is populated during test mode)
+                is_test_job = bool(self.main_window.test_video_manager.test_job_folders)
+                
+                # Create video worker
+                self.main_window.worker = VideoGeneratorWorker(
+                    json_data, 
+                    gpx_files_info, 
+                    self.main_window.bootup_manager.storage_box_credentials, 
+                    self.main_window.api_url, 
+                    self.main_window.user, 
+                    self.main_window.hardware_id, 
+                    self.main_window.app_version, 
+                    self.main_window.available_threads,
+                    is_test=is_test_job,
+                    gpu_rendering=self.main_window.bootup_manager.gpu_rendering
+                )
+                self.main_window.worker_thread = VideoWorkerThread(self.main_window.worker)
+            else:
+                self.main_window.log_widget.add_log("Creating image generator worker...")
+                # Import here to avoid circular import
+                from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
+                
+                # Create image worker
+                self.main_window.worker = ImageGeneratorWorker(
+                    json_data, 
+                    gpx_files_info, 
+                    self.main_window.bootup_manager.storage_box_credentials, 
+                    self.main_window.api_url, 
+                    self.main_window.user, 
+                    self.main_window.hardware_id, 
+                    self.main_window.app_version, 
+                    self.main_window.available_threads
+                )
+                self.main_window.worker_thread = ImageWorkerThread(self.main_window.worker)
+            
+            self.main_window.log_widget.add_log("Connecting worker signals...")
+            # Connect signals (same for both worker types)
+            self.main_window.worker.finished.connect(self.main_window.on_worker_finished)
+            self.main_window.worker.error.connect(self.main_window.on_worker_error)
+            self.main_window.worker.log_message.connect(self.main_window.log_widget.add_log)
+            self.main_window.worker.job_completed.connect(self.main_window.on_job_completed)
+            
+            # Connect video-specific signals only for video workers
+            if job_type == 'video':
+                self.main_window.worker.progress_update.connect(self.main_window.on_video_progress_update)
+            
+            # Connect image-specific signals only for image workers
+            if job_type != 'video':
+                self.main_window.worker.status_queue_ready.connect(self.main_window.setup_status_monitoring)
+                self.main_window.worker.zoom_levels_ready.connect(self.main_window.create_status_labels)
+            
+            self.main_window.log_widget.add_log("Starting worker thread...")
+            # Start thread
+            self.main_window.worker_thread.start()
+            self.main_window.log_widget.add_log("Worker thread started successfully")
+            
+            # Immediately clean up the job request worker and thread since we've successfully started processing
+            if self.job_request_thread:
+                try:
+                    # First, disconnect all signals from the worker to prevent lingering connections
+                    if self.job_request_worker:
+                        try:
+                            self.job_request_worker.finished.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                        try:
+                            self.job_request_worker.error.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                        try:
+                            self.job_request_worker.job_received.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                        try:
+                            self.job_request_worker.log_message.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                    
+                    # Clean up the thread and worker
+                    self.job_request_thread.quit()
+                    self.job_request_thread.wait(5000)  # Wait up to 5 seconds
+                    self.job_request_thread.deleteLater()
+                    self.job_request_thread = None
+                    self.job_request_worker = None
+                    self.main_window.log_widget.add_log("Cleaned up job request worker and thread after successful job start")
+                except Exception as e:
+                    self.main_window.log_widget.add_log(f"Warning: Error cleaning up job request worker: {str(e)}")
+                    self.job_request_thread = None
+                    self.job_request_worker = None
+            
+            self.main_window.log_widget.add_log("=== on_job_received completed successfully ===")
+            
+        except Exception as e:
+            self.main_window.log_widget.add_log(f"Error in on_job_received: {str(e)}")
+            import traceback
+            self.main_window.log_widget.add_log(traceback.format_exc())
+            
+            # Clean up the job request worker and thread on error
+            if self.job_request_thread:
+                try:
+                    # First, disconnect all signals from the worker to prevent lingering connections
+                    if self.job_request_worker:
+                        try:
+                            self.job_request_worker.finished.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                        try:
+                            self.job_request_worker.error.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                        try:
+                            self.job_request_worker.job_received.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                        try:
+                            self.job_request_worker.log_message.disconnect()
+                        except:
+                            pass  # Signal might not be connected
+                    
+                    # Clean up the thread and worker
+                    self.job_request_thread.quit()
+                    self.job_request_thread.wait(5000)  # Wait up to 5 seconds
+                    self.job_request_thread.deleteLater()
+                    self.job_request_thread = None
+                    self.job_request_worker = None
+                    self.main_window.log_widget.add_log("Cleaned up job request worker and thread after error")
+                except Exception as cleanup_error:
+                    self.main_window.log_widget.add_log(f"Warning: Error cleaning up job request worker: {str(cleanup_error)}")
+                    self.job_request_thread = None
+                    self.job_request_worker = None
+            
+            # Don't re-raise the exception - handle it gracefully
+            self.main_window.log_widget.add_log("Job processing failed - will retry later")
+            # Trigger error handling to retry the job request
+            self.main_window.on_worker_error(f"Job processing failed: {str(e)}")
+    
+    def cancel_retry_timer(self):
+        """Cancel any pending job retry timer."""
+        if self.job_retry_timer:
+            try:
+                # Stop the timer safely
+                self.job_retry_timer.stop()
+                # Use deleteLater() to ensure deletion happens in the main thread
+                self.job_retry_timer.deleteLater()
+                self.job_retry_timer = None
+            except Exception as e:
+                # If there's an error stopping the timer, just log it and continue
+                if hasattr(self, 'main_window') and self.main_window:
+                    self.main_window.log_widget.add_log(f"Warning: Error stopping retry timer: {str(e)}")
+                self.job_retry_timer = None
+    
+    def cleanup_job_request_worker(self):
+        """Clean up the job request thread (keep the worker for reuse)."""
+        if self.job_request_thread:
+            try:
+                # First, disconnect all signals from the worker to prevent lingering connections
+                if self.job_request_worker:
+                    try:
+                        self.job_request_worker.finished.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                    try:
+                        self.job_request_worker.error.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                    try:
+                        self.job_request_worker.job_received.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                    try:
+                        self.job_request_worker.log_message.disconnect()
+                    except:
+                        pass  # Signal might not be connected
+                
+                # Clean up the thread
+                self.job_request_thread.quit()
+                self.job_request_thread.wait(5000)  # Wait up to 5 seconds
+                self.job_request_thread.deleteLater()
+                self.job_request_thread = None
+                if hasattr(self, 'main_window') and self.main_window:
+                    self.main_window.log_widget.add_log("Cleaned up job request thread (worker kept for reuse)")
+            except Exception as e:
+                if hasattr(self, 'main_window') and self.main_window:
+                    self.main_window.log_widget.add_log(f"Warning: Error cleaning up job request thread: {str(e)}")
+                self.job_request_thread = None
+    
+    def reset_job_request_worker(self):
+        """Completely reset the job request worker (for persistent issues)."""
+        if hasattr(self, 'main_window') and self.main_window:
+            self.main_window.log_widget.add_log("=== Resetting job request worker completely ===")
+        
+        # Clean up thread first
+        if self.job_request_thread:
+            try:
+                # Disconnect all signals
+                if self.job_request_worker:
+                    try:
+                        self.job_request_worker.finished.disconnect()
+                    except:
+                        pass
+                    try:
+                        self.job_request_worker.error.disconnect()
+                    except:
+                        pass
+                    try:
+                        self.job_request_worker.job_received.disconnect()
+                    except:
+                        pass
+                    try:
+                        self.job_request_worker.log_message.disconnect()
+                    except:
+                        pass
+                
+                # Clean up thread
+                self.job_request_thread.quit()
+                self.job_request_thread.wait(5000)
+                self.job_request_thread.deleteLater()
+                self.job_request_thread = None
+            except Exception as e:
+                if hasattr(self, 'main_window') and self.main_window:
+                    self.main_window.log_widget.add_log(f"Warning: Error cleaning up thread during reset: {str(e)}")
+                self.job_request_thread = None
+        
+        # Clean up worker
+        if self.job_request_worker:
+            try:
+                self.job_request_worker.deleteLater()
+                self.job_request_worker = None
+            except Exception as e:
+                if hasattr(self, 'main_window') and self.main_window:
+                    self.main_window.log_widget.add_log(f"Warning: Error cleaning up worker during reset: {str(e)}")
+                self.job_request_worker = None
+        
+        if hasattr(self, 'main_window') and self.main_window:
+            self.main_window.log_widget.add_log("Job request worker completely reset") 
+
+    def request_new_job_simple(self):
+        """Request a new job from the server using a simple approach without JobRequestWorker."""
+        # Show the no_jobs_label when starting a job request
+        self.main_window.no_jobs_label.show()
+        
+        # Show a progress indicator for the long API call
+        self.main_window.log_widget.add_log("Starting long API call (may take up to 95 seconds)...")
+        
+        # Update the play label to show we're working
+        self.main_window.play_label.setText("Requesting new job from server...")
+        
+        try:
+            # Construct URL from config api_url + request_job endpoint
+            url = f"{self.main_window.api_url.rstrip('/')}/request_job/"
+            headers = {
+                'X-API-Key': self.main_window.user,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+            body = {
+                'hardware_id': self.main_window.hardware_id,
+                'app_version': self.main_window.app_version
+            }
+            
+            self.main_window.log_widget.add_log(f"Requesting job from server: {url}")
+            
+            response = requests.post(url, headers=headers, json=body, timeout=95)  # 95 second timeout for job request
+            
+            self.main_window.log_widget.add_log(f"Response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                self.main_window.log_widget.add_log("Processing 200 response...")
+                
+                # Check if this is a "no jobs available" response vs actual job data
+                content_type = response.headers.get('Content-Type', '').lower()
+                
+                if 'application/json' in content_type:
+                    self.main_window.log_widget.add_log("Detected JSON response, checking for no_job status...")
+                    # This might be a status message rather than job data
+                    try:
+                        json_response = response.json()
+                        if json_response.get('status') == 'no_job':
+                            # This is a "no jobs available" response
+                            message = json_response.get('message', 'No jobs currently available.')
+                            self.main_window.log_widget.add_log(message)
+                            # Reset the play label
+                            self.main_window.play_label.setText("Working. Press pause to stop.")
+                            self.on_job_request_error("No jobs available")
+                            return
+                    except Exception as e:
+                        self.main_window.log_widget.add_log(f"Error parsing JSON response: {str(e)}")
+                        # Fall through to treat as potential job data
+                
+                self.main_window.log_widget.add_log("Processing job ZIP data...")
+                # Normal job processing
+                # Process the outer ZIP file which contains data.json and gpx_files.zip
+                with zipfile.ZipFile(BytesIO(response.content), 'r') as outer_zip:
+                    self.main_window.log_widget.add_log("ZIP file opened successfully")
+                    
+                    # Read job parameters from data.json
+                    try:
+                        with outer_zip.open('data.json') as data_file:
+                            json_data = json.loads(data_file.read().decode('utf-8'))
+                        self.main_window.log_widget.add_log("data.json parsed successfully")
+                    except Exception as e:
+                        self.main_window.log_widget.add_log(f"Error reading data.json: {str(e)}")
+                        self.on_job_request_error("Failed to read data.json")
+                        return
+
+                    # Read the inner gpx_files.zip
+                    try:
+                        with outer_zip.open('gpx_files.zip') as gpx_zip_file:
+                            gpx_zip_data = gpx_zip_file.read()
+                        self.main_window.log_widget.add_log("gpx_files.zip read successfully")
+                    except Exception as e:
+                        self.main_window.log_widget.add_log(f"Error reading gpx_files.zip: {str(e)}")
+                        self.on_job_request_error("Failed to read gpx_files.zip")
+                        return
+
+                    # Process GPX files from the inner ZIP
+                    gpx_files_info = []
+                    with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
+                        self.main_window.log_widget.add_log("Processing GPX files...")
+                        for file_name in gpx_zip.namelist():
+                            with gpx_zip.open(file_name) as gpx_file:
+                                gpx_content = gpx_file.read()
+                                # Try different encodings
+                                for encoding in ['utf-8', 'latin1', 'cp1252']:
+                                    try:
+                                        gpx_text = gpx_content.decode(encoding)
+                                        if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
+                                            gpx_files_info.append({
+                                                'filename': file_name,
+                                                'name': file_name,
+                                                'content': gpx_text
+                                            })
+                                            break
+                                    except UnicodeDecodeError:
+                                        continue
+                                else:
+                                    # If no encoding worked, log an error
+                                    self.main_window.log_widget.add_log(f"Failed to decode {file_name} with any supported encoding")
+                                    continue
+                    
+                    if not gpx_files_info:
+                        self.main_window.log_widget.add_log("No valid GPX files found in the ZIP")
+                        self.on_job_request_error("No valid GPX files found")
+                        return
+                    
+                    self.main_window.log_widget.add_log(f"Found {len(gpx_files_info)} GPX files, processing job data...")
+                    # Process the job data directly (like test jobs do)
+                    self.on_job_received(json_data, gpx_files_info)
+            else:
+                self.main_window.log_widget.add_log(f"Job request failed: {response.status_code}")
+                self.on_job_request_error(f"Job request failed: {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            self.main_window.log_widget.add_log("Job request timed out after 95 seconds - will retry")
+            self.on_job_request_error("Job request timed out")
+        except requests.exceptions.ConnectionError as e:
+            self.main_window.log_widget.add_log(f"Job request connection error: {str(e)} - will retry")
+            self.on_job_request_error(f"Connection error: {str(e)}")
+        except Exception as e:
+            self.main_window.log_widget.add_log(f"Error requesting job: {str(e)}")
+            self.main_window.log_widget.add_log(traceback.format_exc())
+            self.on_job_request_error(f"Error requesting job: {str(e)}")
+        finally:
+            # Reset the play label
+            self.main_window.play_label.setText("Working. Press pause to stop.")
+    
+    def request_new_job_async(self):
+        """Request a new job using the existing JobRequestWorker system (non-blocking)."""
+        # Show the no_jobs_label when starting a job request
+        self.main_window.no_jobs_label.show()
+        
+        # Use the existing JobRequestWorker system that was already working
+        self.request_new_job() 
+
+    def request_new_job_qt_network(self):
+        """Request a new job using QNetworkAccessManager (Qt native networking, non-blocking)."""
+        # Show the no_jobs_label when starting a job request
+        self.main_window.no_jobs_label.show()
+        
+        # Show a progress indicator for the long API call
+        self.main_window.log_widget.add_log("Starting long API call (may take up to 95 seconds)...")
+        
+        # Update the play label to show we're working
+        self.main_window.play_label.setText("Requesting new job from server...")
+        
+        try:
+            from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
+            from PySide6.QtCore import QUrl, QByteArray
+            import json
+            
+            # Create network manager (this is safe to reuse)
+            if not hasattr(self, 'network_manager'):
+                self.network_manager = QNetworkAccessManager()
+            
+            # Construct URL and headers
+            url = f"{self.main_window.api_url.rstrip('/')}/request_job/"
+            request = QNetworkRequest(QUrl(url))
+            
+            # Set headers
+            request.setHeader(QNetworkRequest.ContentTypeHeader, "application/json")
+            request.setRawHeader(b"X-API-Key", self.main_window.user.encode())
+            request.setRawHeader(b"Cache-Control", b"no-cache")
+            request.setRawHeader(b"Pragma", b"no-cache")
+            
+            # Prepare request body
+            body = {
+                'hardware_id': self.main_window.hardware_id,
+                'app_version': self.main_window.app_version
+            }
+            body_data = QByteArray(json.dumps(body).encode())
+            
+            self.main_window.log_widget.add_log(f"Requesting job from server: {url}")
+            
+            # Make the request (non-blocking)
+            reply = self.network_manager.post(request, body_data)
+            
+            # Connect signals to handle the response
+            reply.finished.connect(lambda: self.on_qt_network_response(reply))
+            reply.errorOccurred.connect(lambda error: self.on_qt_network_error(reply, error))
+            
+            # Store the reply to prevent garbage collection
+            self.current_network_reply = reply
+            
+        except Exception as e:
+            self.main_window.log_widget.add_log(f"Error starting Qt network request: {str(e)}")
+            import traceback
+            self.main_window.log_widget.add_log(traceback.format_exc())
+            # Reset the play label
+            self.main_window.play_label.setText("Working. Press pause to stop.")
+    
+    def on_qt_network_response(self, reply):
+        """Handle the response from Qt network request."""
+        try:
+            from PySide6.QtNetwork import QNetworkReply
+            from PySide6.QtNetwork import QNetworkRequest
+            
+            if reply.error() == QNetworkReply.NetworkError.NoError:
+                status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+                self.main_window.log_widget.add_log(f"Response status: {status_code}")
+                
+                if status_code == 200:
+                    self.main_window.log_widget.add_log("Processing 200 response...")
+                    
+                    # Get response data
+                    response_data = reply.readAll()
+                    
+                    # Check content type
+                    content_type = reply.header(QNetworkRequest.ContentTypeHeader)
+                    
+                    if content_type and 'application/json' in content_type.lower():
+                        self.main_window.log_widget.add_log("Detected JSON response, checking for no_job status...")
+                        try:
+                            import json
+                            json_response = json.loads(response_data.data().decode())
+                            if json_response.get('status') == 'no_job':
+                                message = json_response.get('message', 'No jobs currently available.')
+                                self.main_window.log_widget.add_log(message)
+                                self.main_window.play_label.setText("Working. Press pause to stop.")
+                                self.on_job_request_error("No jobs available")
+                                return
+                        except Exception as e:
+                            self.main_window.log_widget.add_log(f"Error parsing JSON response: {str(e)}")
+                    
+                    # Process as ZIP data
+                    self.main_window.log_widget.add_log("Processing job ZIP data...")
+                    self.process_qt_network_zip_response(response_data.data())
+                else:
+                    self.main_window.log_widget.add_log(f"Job request failed: {status_code}")
+                    self.on_job_request_error(f"Job request failed: {status_code}")
+            else:
+                error_msg = f"Network error: {reply.errorString()}"
+                self.main_window.log_widget.add_log(error_msg)
+                self.on_job_request_error(error_msg)
+                
+        except Exception as e:
+            self.main_window.log_widget.add_log(f"Error processing Qt network response: {str(e)}")
+            import traceback
+            self.main_window.log_widget.add_log(traceback.format_exc())
+            self.on_job_request_error(f"Error processing response: {str(e)}")
+        finally:
+            # Clean up the reply
+            reply.deleteLater()
+            self.current_network_reply = None
+            # Reset the play label
+            self.main_window.play_label.setText("Working. Press pause to stop.")
+    
+    def on_qt_network_error(self, reply, error):
+        """Handle network errors from Qt network request."""
+        try:
+            error_msg = f"Network error: {reply.errorString()}"
+            self.main_window.log_widget.add_log(error_msg)
+            self.on_job_request_error(error_msg)
+        finally:
+            # Clean up the reply
+            reply.deleteLater()
+            self.current_network_reply = None
+            # Reset the play label
+            self.main_window.play_label.setText("Working. Press pause to stop.")
+    
+    def process_qt_network_zip_response(self, response_data):
+        """Process ZIP response data from Qt network request."""
+        try:
+            # Process the outer ZIP file which contains data.json and gpx_files.zip
+            with zipfile.ZipFile(BytesIO(response_data), 'r') as outer_zip:
+                self.main_window.log_widget.add_log("ZIP file opened successfully")
+                
+                # Read job parameters from data.json
+                try:
+                    with outer_zip.open('data.json') as data_file:
+                        json_data = json.loads(data_file.read().decode('utf-8'))
+                    self.main_window.log_widget.add_log("data.json parsed successfully")
+                except Exception as e:
+                    self.main_window.log_widget.add_log(f"Error reading data.json: {str(e)}")
+                    self.on_job_request_error("Failed to read data.json")
+                    return
+
+                # Read the inner gpx_files.zip
+                try:
+                    with outer_zip.open('gpx_files.zip') as gpx_zip_file:
+                        gpx_zip_data = gpx_zip_file.read()
+                    self.main_window.log_widget.add_log("gpx_files.zip read successfully")
+                except Exception as e:
+                    self.main_window.log_widget.add_log(f"Error reading gpx_files.zip: {str(e)}")
+                    self.on_job_request_error("Failed to read gpx_files.zip")
+                    return
+
+                # Process GPX files from the inner ZIP
+                gpx_files_info = []
+                with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
+                    self.main_window.log_widget.add_log("Processing GPX files...")
+                    for file_name in gpx_zip.namelist():
+                        with gpx_zip.open(file_name) as gpx_file:
+                            gpx_content = gpx_file.read()
+                            # Try different encodings
+                            for encoding in ['utf-8', 'latin1', 'cp1252']:
+                                try:
+                                    gpx_text = gpx_content.decode(encoding)
+                                    if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
+                                        gpx_files_info.append({
+                                            'filename': file_name,
+                                            'name': file_name,
+                                            'content': gpx_text
+                                        })
+                                        break
+                                except UnicodeDecodeError:
+                                    continue
+                            else:
+                                # If no encoding worked, log an error
+                                self.main_window.log_widget.add_log(f"Failed to decode {file_name} with any supported encoding")
+                                continue
+                
+                if not gpx_files_info:
+                    self.main_window.log_widget.add_log("No valid GPX files found in the ZIP")
+                    self.on_job_request_error("No valid GPX files found")
+                    return
+                
+                self.main_window.log_widget.add_log(f"Found {len(gpx_files_info)} GPX files, processing job data...")
+                # Process the job data
+                self.on_job_received(json_data, gpx_files_info)
+                
+        except Exception as e:
+            self.main_window.log_widget.add_log(f"Error processing ZIP response: {str(e)}")
+            import traceback
+            self.main_window.log_widget.add_log(traceback.format_exc())
+            self.on_job_request_error(f"Error processing ZIP response: {str(e)}") 

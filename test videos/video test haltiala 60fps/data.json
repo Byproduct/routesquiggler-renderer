@@ -1,0 +1,78 @@
+{
+  "user_id": 1,
+  "map_style": "stadia_outdoors",
+  "map_transparency": "50",
+  "line_width": "4",
+  "resolution_x": 1920,
+  "resolution_y": 1080,
+  "track_objects": [
+    {
+      "filename": "2024-09-12_edited.gpx",
+      "date": "2025-02-01",
+      "color": "#000000",
+      "name": "Euphemia Muffletop"
+    },
+    {
+      "filename": "2025-07-01(1).gpx",
+      "date": "2025-02-01",
+      "color": "#ff80ff",
+      "name": "Neville Dinglewarp"
+    },
+    {
+      "filename": "2025-07-01_edited.gpx",
+      "date": "2025-02-01",
+      "color": "#8000ff",
+      "name": "Ramona Glifflepot"
+    },
+    {
+      "filename": "2025-07-02(1).gpx",
+      "date": "2025-02-01",
+      "color": "#0000ff",
+      "name": "Henrietta Bumblesnuff"
+    },
+    {
+      "filename": "2025-07-02_edited.gpx",
+      "date": "2025-02-01",
+      "color": "#800000",
+      "name": "Tristram Snibbleblat"
+    },
+    {
+      "filename": "2025-07-04_edited.gpx",
+      "date": "2025-02-01",
+      "color": "#ffa8d3",
+      "name": "Cuthbert Flibberdoodle"
+    },
+    {
+      "filename": "2020-06-13_3_edited_edited_edited.gpx",
+      "date": "2025-02-01",
+      "color": "#ffbb78",
+      "name": "Celestine Muddlebrim"
+    },
+    {
+      "filename": "2024-04-28_edited_edited(1).gpx",
+      "date": "2025-02-01",
+      "color": "#995e0d",
+      "name": "Clementine Nibberplop"
+    }
+  ],
+  "route_name": "Keskuspuisto testing",
+  "newest_on_top": true,
+  "legend": "off",
+  "legend_theme": "light",
+  "created_at": "2025-07-18T16:39:07.330255+00:00",
+  "job_id": 1000066,
+  "folder": "8zGIWdcc11YZp",
+  "job_type": "video",
+  "video_resolution_x": 3840,
+  "video_resolution_y": 2160,
+  "video_fps": "60",
+  "squiggle_speed": "relative",
+  "zoom_mode": "final",
+  "video_length": 20,
+  "tail_color": "dark",
+  "tail_width": 3,
+  "tail_length": 3,
+  "name_tags": "light",
+  "timestamp": "dark",
+  "timestamp_position": "starting_point"
+}

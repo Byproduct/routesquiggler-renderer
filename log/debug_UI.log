@@ -1,0 +1,50 @@
+[2025-08-29 00:58:39] Debug logging started
+[2025-08-29 00:58:39] Configuration loaded
+[2025-08-29 00:58:39] Debug logging enabled
+[2025-08-29 00:58:39] GPU rendering enabled
+[2025-08-29 00:58:39] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[2025-08-29 00:58:39] App version: 0.10
+[2025-08-29 00:58:39] Setting up system tray
+[2025-08-29 00:58:39] System tray icon created
+[2025-08-29 00:58:39] Testing connection to web server
+[2025-08-29 00:58:39] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-08-28T21:58:40.058436+00:00", "accepted_version": "0.10"}
+[2025-08-29 00:58:41] Storage box connection successful.
+[2025-08-29 00:58:41] Map tile cache syncing is disabled in config. Skipping sync.
+[2025-08-29 00:58:41] Checking drive space...
+[2025-08-29 00:58:41] Storage box credentials set for background tile syncing
+[2025-08-29 00:58:41] Bootup completed successfully
+[2025-08-29 00:58:45] Starting test job 1/1: test images\1000111
+[2025-08-29 00:58:45] === on_job_received called ===
+[2025-08-29 00:58:45] Processing job #1000111 (type: image)
+[2025-08-29 00:58:45] Creating image generator worker...
+[2025-08-29 00:58:45] Connecting worker signals...
+[2025-08-29 00:58:45] Starting worker thread...
+[2025-08-29 00:58:45] Worker thread started successfully
+[2025-08-29 00:58:45] === on_job_received completed successfully ===
+[2025-08-29 00:58:45] Starting image generation.
+[2025-08-29 00:58:45] Calculating statistics from GPX files...
+[2025-08-29 00:58:45] Statistics calculated successfully
+[2025-08-29 00:58:45]   Starting time: 2024-05-18 14:20
+[2025-08-29 00:58:45]   Ending time: 2024-05-18 20:51
+[2025-08-29 00:58:45]   Elapsed time: 6h 31min 15s
+[2025-08-29 00:58:45]   Distance: 101.6 km
+[2025-08-29 00:58:45]   Average speed: 15.6 km/h
+[2025-08-29 00:58:45] Requested image_resolution: raw=(1920x1080) parsed=(1920x1080)
+[2025-08-29 00:58:45] Output image resolution: 1920x1080
+[2025-08-29 00:58:46] Zoom level 10: fig setup: target_px=1920x1080 figsize_in=19.20x10.80 dpi=100
+[2025-08-29 00:58:46] Zoom level 10: canvas size px=1920x1080
+[2025-08-29 00:58:47] Zoom level 10: saved png size px=1920x1080
+[2025-08-29 00:58:47] Zoom level 11: fig setup: target_px=1920x1080 figsize_in=19.20x10.80 dpi=100
+[2025-08-29 00:58:47] Zoom level 11: canvas size px=1920x1080
+[2025-08-29 00:58:48] Zoom level 11: saved png size px=1920x1080
+[2025-08-29 00:58:48] Zoom level 12: fig setup: target_px=1920x1080 figsize_in=19.20x10.80 dpi=100
+[2025-08-29 00:58:48] Zoom level 12: canvas size px=1920x1080
+[2025-08-29 00:58:49] Zoom level 12: saved png size px=1920x1080
+[2025-08-29 00:58:52] Failed to update job status: 404 - {"error": "Job not found", "message": "No job found with ID 1000111"}
+[2025-08-29 00:58:52] Image generation completed successfully
+[2025-08-29 00:58:52] Matplotlib and Qt resources cleaned up
+[2025-08-29 00:58:53] Force-killed any remaining FFmpeg processes
+[2025-08-29 00:58:53] MoviePy and FFmpeg processes cleaned up
+[2025-08-29 00:58:53] Matplotlib and Qt resources cleaned up
+[2025-08-29 00:58:53] Forced Qt resource cleanup completed
+[2025-08-29 00:58:53] All test jobs completed.

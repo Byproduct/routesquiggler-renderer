@@ -1,0 +1,7 @@
+.vs/
+__pycache__/
+map tile cache/
+temporary files/
+config.txt
+ffmpeg.exe
+git-commit.bat

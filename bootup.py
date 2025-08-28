@@ -1,0 +1,438 @@
+"""
+Bootup functionality for the Route Squiggler Render Client.
+This module handles initialization tasks like loading config, getting hardware ID, and setting up system tray.
+"""
+
+import os
+import random
+import requests
+import ftplib
+import hashlib
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import BytesIO
+from pathlib import Path
+from get_hardware_id import get_hardware_id
+from PySide6.QtCore import QObject, Signal, QThread
+from sync_map_tiles import sync_map_tiles
+from debug_logger import setup_debug_logging
+
+# Conditionally import SystemTray - it handles its own platform detection
+try:
+    from tray import SystemTray
+    SYSTEM_TRAY_AVAILABLE = True
+except ImportError:
+    SYSTEM_TRAY_AVAILABLE = False
+    SystemTray = None
+
+class BootupManager:
+    def __init__(self, main_window, log_callback=None, progress_callback=None):
+        self.main_window = main_window
+        self.log_callback = log_callback or (lambda msg: None)  # Default to no-op if no callback provided
+        self.progress_callback = progress_callback or (lambda msg: None)  # Default to no-op if no callback provided
+        self.collapse_log_callback = None  # Will be set by the worker
+        self.config_callback = None
+        self.hardware_id_callback = None
+        self.system_tray_callback = None
+        self.app_version = None
+        self.api_url = None
+        self.user = None
+        self.hardware_id = None
+        self.system_tray = None
+        self.storage_box_address = None
+        self.storage_box_user = None
+        self.storage_box_password = None
+        self.debug_logging = False
+        self.sync_map_tile_cache = True  # Default to True for backward compatibility
+        self.gpu_rendering = True  # Default to True for backward compatibility
+        self.drive_space_warning_callback = None # New attribute for drive space warning
+
+    @property
+    def storage_box_credentials(self):
+        """Return storage box credentials as a dictionary."""
+        return {
+            'address': self.storage_box_address,
+            'user': self.storage_box_user,
+            'password': self.storage_box_password
+        }
+
+    def load_config(self):
+        """Load configuration variables from config.txt file"""
+        try:
+            with open('config.txt', 'r', encoding='utf-8') as file:
+                for line in file:
+                    line = line.strip()
+                    if line and ':' in line:
+                        key, value = line.split(':', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        
+                        if key == 'app_version':
+                            self.app_version = value
+                        elif key == 'api_url':
+                            self.api_url = value
+                        elif key == 'user':
+                            self.user = value
+                        elif key == 'storage_box_address':
+                            self.storage_box_address = value
+                        elif key == 'storage_box_user':
+                            self.storage_box_user = value
+                        elif key == 'storage_box_password':
+                            self.storage_box_password = value
+                        elif key == 'debug_logging':
+                            self.debug_logging = value.lower() == 'true'
+                        elif key == 'sync_map_tile_cache':
+                            self.sync_map_tile_cache = value.lower() == 'true'
+                        elif key == 'gpu_rendering':
+                            self.gpu_rendering = value.lower() == 'true'
+            
+            # Setup debug logging if enabled
+            setup_debug_logging(self.debug_logging)
+            
+            self.log_callback("Configuration loaded")
+            if self.debug_logging:
+                self.log_callback("Debug logging enabled")
+            if self.gpu_rendering:
+                self.log_callback("GPU rendering enabled")
+            else:
+                self.log_callback("GPU rendering disabled")
+            if self.config_callback:
+                self.config_callback(self.app_version, self.api_url, self.user)
+            return True
+            
+        except FileNotFoundError:
+            self.log_callback("config.txt file not found")
+            return False
+        except Exception as e:
+            self.log_callback(f"Error loading config: {str(e)}")
+            return False
+    
+    def get_and_log_hardware_id(self):
+        """Get the hardware ID and store it in a variable, then log it"""
+        try:
+            self.hardware_id = get_hardware_id()
+            self.log_callback(f"Hardware ID: {self.hardware_id}")
+            if self.hardware_id_callback:
+                self.hardware_id_callback(self.hardware_id)
+            return True
+        except Exception as e:
+            self.hardware_id = None
+            self.log_callback(f"Failed to get hardware ID: {str(e)}")
+            return False
+    
+    def display_system_info(self):
+        """Display all system and configuration information"""
+        self.log_callback(f"App version: {self.app_version or 'Not set'}")
+        return True
+    
+    def setup_system_tray(self):
+        """Setup system tray functionality using separate SystemTray class"""
+        try:
+            if not SYSTEM_TRAY_AVAILABLE or SystemTray is None:
+                self.log_callback("System tray functionality not available on this platform")
+                self.system_tray = None
+                return True  # Return True to not break the bootup chain
+                
+            # Don't create SystemTray in worker thread - signal main thread to create it
+            self.log_callback("Setting up system tray")
+            if self.system_tray_callback:
+                self.system_tray_callback(True)  # Signal that system tray should be created
+            return True
+        except Exception as e:
+            self.log_callback(f"Failed to setup system tray: {str(e)}")
+            self.system_tray = None
+            return True  # Return True to not break the bootup chain
+    
+    def make_heartbeat_call(self):
+        """Make a heartbeat API call to register with the server"""
+        if not self.user or not self.hardware_id or not self.api_url:
+            self.log_callback("Cannot make heartbeat call: missing user, hardware_id, or api_url")
+            return False
+        
+        try:
+            # Construct URL from config api_url + heartbeat endpoint
+            url = f"{self.api_url.rstrip('/')}/heartbeat/"
+            headers = {
+                'X-API-Key': self.user,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+            body = {
+                'hardware_id': self.hardware_id,
+                'app_version': self.app_version
+            }
+            
+            self.log_callback("Testing connection to web server")
+            
+            response = requests.post(url, headers=headers, json=body, timeout=30)
+            
+            # Handle different response codes with appropriate logging
+            if response.status_code == 200:
+                # Success - show the response and collapse the log
+                self.log_callback(f"Web server connection successful: {response.text}")
+                # Collapse the log since everything is working properly
+                if self.collapse_log_callback:
+                    self.collapse_log_callback()
+                return True
+            elif response.status_code == 401:
+                # Unauthorized - concise error message, keep log expanded
+                self.log_callback(f"Response 401: {response.text}")
+            elif response.status_code == 404:
+                # Not found - concise error message, keep log expanded
+                self.log_callback(f"Response 404: {response.text}")
+            else:
+                # Unexpected status code - show all debug info, keep log expanded
+                self.log_callback(f"Unexpected response status: {response.status_code}")
+                self.log_callback(f"URL: {url}")
+                self.log_callback(f"Headers: {headers}")
+                self.log_callback(f"Body: {body}")
+                self.log_callback(f"Response headers: {dict(response.headers)}")
+                self.log_callback(f"Response body: {response.text}")
+            return False
+                
+        except requests.exceptions.Timeout:
+            self.log_callback("Heartbeat call timed out after 30 seconds")
+            return False
+        except requests.exceptions.ConnectionError as e:
+            self.log_callback(f"Heartbeat call failed: Connection error - {str(e)}")
+            return False
+        except Exception as e:
+            self.log_callback(f"Heartbeat call failed: {str(e)}")
+            return False
+
+    def test_storage_box(self):
+        """Test connection to storage box by creating a test folder and file"""
+        if not all([self.storage_box_address, self.storage_box_user, self.storage_box_password]):
+            self.log_callback("Cannot test storage box: missing connection details")
+            return False
+
+        ftp = None
+        test_folder = None
+        try:
+            # Connect to FTP
+            ftp = ftplib.FTP(self.storage_box_address)
+            ftp.login(self.storage_box_user, self.storage_box_password)
+
+            # Create random folder name
+            test_folder = str(random.randint(0, 99))
+            ftp.mkd(test_folder)
+            ftp.cwd(test_folder)
+
+            # Create and upload test file
+            test_content = b"This is a test upload file"
+            ftp.storbinary('STOR bootup_test.txt', BytesIO(test_content))
+
+            # Read back the file
+            received_content = BytesIO()
+            ftp.retrbinary('RETR bootup_test.txt', received_content.write)
+            
+            # Verify content
+            if received_content.getvalue() != test_content:
+                raise Exception("File content verification failed")
+
+            # Clean up: delete file first, then go back and remove folder
+            ftp.delete('bootup_test.txt')  # Delete the test file first
+            ftp.cwd('..')  # Go back to parent directory
+            ftp.rmd(test_folder)  # Now remove the empty directory
+            
+            self.log_callback("Storage box connection successful.")
+            return True
+
+        except ftplib.error_perm as e:
+            self.log_callback(f"Storage box permission error: {str(e)}")
+            return False
+        except ftplib.error_temp as e:
+            self.log_callback(f"Storage box temporary error: {str(e)}")
+            return False
+        except Exception as e:
+            self.log_callback(f"Storage box test failed: {str(e)}")
+            return False
+        finally:
+            if ftp:
+                try:
+                    # If test folder still exists, try to clean it up
+                    if test_folder:
+                        try:
+                            ftp.delete('logitestupload.txt')  # Try to delete the test file first
+                            ftp.cwd('..')  # Then go back to parent directory
+                            ftp.rmd(test_folder)  # Finally try to remove the now-empty directory
+                        except:
+                            pass  # Ignore cleanup errors
+                    ftp.quit()
+                except:
+                    pass  # Ignore disconnection errors
+
+    def do_sync_map_tile_cache(self):
+        """Sync map tile cache files between local machine and storage box using the modular syncer."""
+        # Check if map tile cache syncing is disabled in config
+        if not self.sync_map_tile_cache:
+            self.log_callback("Map tile cache syncing is disabled in config. Skipping sync.")
+            return True  # Return True to not block bootup
+        
+        if not all([self.storage_box_address, self.storage_box_user, self.storage_box_password]):
+            self.log_callback("Cannot sync map tile cache: missing storage box credentials.")
+            return False
+
+        try:
+            # Use the modular sync_map_tiles function
+            success, uploaded_count, downloaded_count = sync_map_tiles(
+                storage_box_address=self.storage_box_address,
+                storage_box_user=self.storage_box_user,
+                storage_box_password=self.storage_box_password,
+                local_cache_dir="map tile cache",
+                log_callback=self.log_callback,
+                progress_callback=self.progress_callback,
+                sync_state_callback=self.sync_state_callback,
+                max_workers=10
+            )
+            
+            return success
+
+        except Exception as e:
+            self.log_callback(f"Map tile cache sync failed: {str(e)}")
+            return False
+
+    def check_drive_space(self):
+        """Check both current and system drives for sufficient free space."""
+        try:
+            import hard_drive_space_check
+            
+            self.log_callback("Checking drive space...")
+            
+            # Check current drive
+            current_drive_ok = hard_drive_space_check.check_current_drive()
+            if not current_drive_ok:
+                self.log_callback("Warning: Current drive has less than 20GB free space. Map tile cache may grow over time and fill the drive completely.")
+            
+            # Check system drive
+            system_drive_ok = hard_drive_space_check.check_system_drive()
+            if not system_drive_ok:
+                self.log_callback("Warning: System drive has less than 20GB free space.")
+            
+            # Check if current and system drives are the same
+            drives_same = hard_drive_space_check.are_current_and_system_drives_same()
+            if drives_same:
+                current_drive = hard_drive_space_check.get_current_drive()
+                self.log_callback(f"Warning: Application is running on the system drive ({current_drive}).\nIt's recommended to move this program to a storage drive if you have one available.\nThis program doesn't require the system drive, and the map tile cache may become large.")
+            
+            # If any check fails, emit a warning signal
+            if not current_drive_ok or not system_drive_ok or drives_same:
+                warning_message = "⚠️"
+                warnings = []
+                
+                if not current_drive_ok:
+                    warnings.append("Warning: Current drive has less than 20GB free space. Map tile cache may grow over time and fill the drive completely.")
+                if not system_drive_ok:
+                    warnings.append("Warning: System drive has less than 20GB free space.")
+                if drives_same:
+                    warnings.append("Warning: Application is running on the system drive.\nIt's recommended to move this program to a storage drive if you have one available.\nThis program doesn't require the system drive, and the map tile cache may become large.")
+                
+                if len(warnings) == 1:
+                    warning_message += f"{warnings[0]}"
+                else:
+                    warning_message += f"{'  '.join(warnings)}"
+                
+                # Emit drive space warning signal
+                if self.drive_space_warning_callback:
+                    self.drive_space_warning_callback(warning_message)
+            
+            return True  # Always return True as this is a warning, not a critical failure
+            
+        except Exception as e:
+            self.log_callback(f"Error checking drive space: {str(e)}")
+            return True  # Return True to not block bootup on drive space check errors
+
+    def sync_state_callback(self, state):
+        """Handle sync state changes (start/complete)."""
+        if state == 'start':
+            # Trigger the same behavior as pause button - stop requesting jobs
+            if hasattr(self.main_window, 'pause_processing'):
+                self.main_window.pause_processing()
+            # Hide play/pause buttons during sync
+            if hasattr(self.main_window, 'play_button'):
+                self.main_window.play_button.hide()
+            if hasattr(self.main_window, 'pause_button'):
+                self.main_window.pause_button.hide()
+            if hasattr(self.main_window, 'play_label'):
+                self.main_window.play_label.setText("Syncing map tile cache...")
+                self.main_window.play_label.show()
+        elif state == 'complete':
+            # Show play/pause buttons again and restore normal state
+            if hasattr(self.main_window, 'play_button'):
+                self.main_window.play_button.show()
+            if hasattr(self.main_window, 'pause_button'):
+                self.main_window.pause_button.show()
+            if hasattr(self.main_window, 'play_label'):
+                self.main_window.play_label.setText("Processing paused. Press play to continue.")
+                self.main_window.play_label.hide()
+
+
+class BootupWorker(QObject):
+    """Worker class to handle bootup sequence in a separate thread."""
+    step_completed = Signal(str, bool)  # step_name, success
+    finished = Signal(bool)  # overall_success
+    progress = Signal(str)  # progress message
+    log_message = Signal(str)  # Thread-safe logging signal
+    collapse_log = Signal()  # Signal to collapse the log
+    config_loaded = Signal(str, str, str)  # app_version, api_url, user
+    hardware_id_ready = Signal(str)  # hardware_id
+    system_tray_ready = Signal(bool)  # Flag to create system tray in main thread
+    drive_space_warning = Signal(str)  # Drive space warning message
+    
+    def __init__(self, bootup_manager):
+        super().__init__()
+        self.bootup_manager = bootup_manager
+        # Set up thread-safe logging callback
+        self.bootup_manager.log_callback = self.log_message.emit
+        # Set up progress callback
+        self.bootup_manager.progress_callback = self.progress.emit
+        # Set up collapse log callback
+        self.bootup_manager.collapse_log_callback = self.collapse_log.emit
+        # Set up config callback
+        self.bootup_manager.config_callback = self.config_loaded.emit
+        # Set up hardware ID callback
+        self.bootup_manager.hardware_id_callback = self.hardware_id_ready.emit
+        # Set up system tray callback
+        self.bootup_manager.system_tray_callback = self.system_tray_ready.emit
+        # Set up drive space warning callback
+        self.bootup_manager.drive_space_warning_callback = self.drive_space_warning.emit
+        
+    def run_bootup(self):
+        """Run the complete bootup sequence."""
+        steps = [
+            ("Loading configuration", self.bootup_manager.load_config),
+            ("Getting hardware ID", self.bootup_manager.get_and_log_hardware_id),
+            ("Displaying system info", self.bootup_manager.display_system_info),
+            ("Setting up system tray", self.bootup_manager.setup_system_tray),
+            ("Testing web server connection", self.bootup_manager.make_heartbeat_call),
+            ("Testing storage box connection", self.bootup_manager.test_storage_box),
+            ("Syncing map tile cache", self.bootup_manager.do_sync_map_tile_cache),
+            ("Checking drive space", self.bootup_manager.check_drive_space)
+        ]
+        
+        overall_success = True
+        
+        for step_name, step_func in steps:
+            self.progress.emit(f"Running: {step_name}...")
+            success = step_func()
+            self.step_completed.emit(step_name, success)
+            
+            if not success:
+                overall_success = False
+                break
+        
+        self.finished.emit(overall_success)
+
+
+class BootupThread(QThread):
+    """Thread to run the bootup worker."""
+    
+    def __init__(self, bootup_worker):
+        super().__init__()
+        self.bootup_worker = bootup_worker
+        self.bootup_worker.moveToThread(self)
+        
+    def run(self):
+        """Start the bootup process."""
+        self.bootup_worker.run_bootup() 

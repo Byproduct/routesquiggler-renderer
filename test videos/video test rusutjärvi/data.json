@@ -1,0 +1,46 @@
+{
+  "user_id": 1,
+  "map_style": "stadia_dark",
+  "map_transparency": "0",
+  "line_width": "5",
+  "track_objects": [
+    {
+      "filename": "2025-07-28.gpx",
+      "date": "2025-07-28",
+      "color": "#ff0080",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-28-1.gpx",
+      "date": "2025-07-28",
+      "color": "#ff0000",
+      "name": ""
+    }
+  ],
+  "route_name": "A dip in rusutjärvi",
+  "created_at": "2025-07-28T20:41:03.340173+00:00",
+  "job_id": 1000141,
+  "folder": "k8GQwV7eelK",
+  "job_type": "video",
+  "newest_on_top": true,
+  "legend": "off",
+  "legend_theme": "light",
+  "statistics": "dark",
+  "statistics_current_time": true,
+  "statistics_elapsed_time": true,
+  "statistics_distance": true,
+  "statistics_average_speed": true,
+  "statistics_current_speed": true,
+  "statistics_current_elevation": true,
+  "video_resolution_x": 3840,
+  "video_resolution_y": 2160,
+  "video_fps": 20,
+  "squiggle_speed": "relative",
+  "zoom_mode": "dynamic",
+  "video_length": 5,
+  "route_accuracy": "maximum",
+  "tail_length": 4,
+  "tail_width": 3,
+  "tail_color": "#ff8080",
+  "title_text": "A dip in rusutjärvi"
+}
