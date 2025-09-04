@@ -7,7 +7,6 @@ import multiprocessing
 import math
 import pickle
 from pathlib import Path
-from video_generator_create_combined_route import load_combined_route
 from datetime import timedelta
 
 
@@ -325,29 +324,24 @@ def load_final_bounding_box(log_callback=None):
         return None
 
 
-def calculate_route_time_per_frame(json_data, log_callback=None):
+def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=None):
     """
-    Calculate the amount of route time that should progress with each video frame.
-    Supports both single route and multiple routes modes.
+    Calculate the time per frame for route progression based on video parameters and route data.
     
     Args:
-        json_data (dict): Job data containing video_length and video_fps
+        json_data (dict): Job data containing video parameters
+        combined_route_data (dict): Combined route data
         log_callback (callable, optional): Function to call for logging messages
     
     Returns:
-        float: Route time per frame in seconds, or None if error
+        float: Time per frame in seconds, or None if calculation fails
     """
     try:
-        # Get video parameters from job data and ensure they are numeric
-        video_length = json_data.get('video_length')
-        video_fps = json_data.get('video_fps')
+        # Extract video parameters
+        video_length = json_data.get('video_length', 0)
+        video_fps = json_data.get('video_fps', 30)
         
-        if video_length is None or video_fps is None:
-            if log_callback:
-                log_callback("Error: video_length or video_fps missing from job data")
-            return None
-        
-        # Convert to float/int to ensure numeric types
+        # Ensure numeric types
         try:
             video_length = float(video_length)
             video_fps = float(video_fps)
@@ -362,12 +356,9 @@ def calculate_route_time_per_frame(json_data, log_callback=None):
         if log_callback:
             log_callback(f"Video parameters: {video_length} seconds × {video_fps} fps = {total_frames} total frames")
         
-        # Load combined route data
-        combined_route_data = load_combined_route(log_callback)
-        
         if not combined_route_data:
             if log_callback:
-                log_callback("Error: Could not load combined route data")
+                log_callback("Error: combined_route_data is required")
             return None
         
         # Check if we have multiple routes
@@ -634,18 +625,10 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
         if log_callback:
             log_callback(f"Calculating unique bounding boxes for {total_frames} frames")
         
-        # Use passed combined_route_data if provided, otherwise load from disk
-        if combined_route_data is None:
-            combined_route_data = load_combined_route(log_callback)
-        
         if not combined_route_data:
             if log_callback:
-                log_callback("Error: Could not load combined route data")
+                log_callback("Error: combined_route_data parameter is required")
             return None
-        else:
-            if log_callback:
-                # log_callback("Using passed combined_route_data")
-                pass
         
         # Check zoom mode
         zoom_mode = json_data.get('zoom_mode', 'dynamic')

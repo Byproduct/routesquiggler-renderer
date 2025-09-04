@@ -11,7 +11,6 @@ import cartopy.io.img_tiles as cimgt
 import time
 import threading
 from pathlib import Path
-from video_generator_create_combined_route import load_combined_route
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 from image_generator_maptileutils import set_cache_directory, create_map_tiles, detect_zoom_level, calculate_tile_count
 from sync_map_tiles import sync_map_tiles
@@ -482,9 +481,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         if log_callback:
             log_callback(f"Tile caching complete: {total_tiles_cached} downloaded, {tiles_already_cached} already cached, {total_required_tiles} total")
         
-        # Trigger background sync if new tiles were cached
-        if total_tiles_cached > 0:
-            trigger_background_sync(log_callback)
+        # Note: Background sync removed to preserve tile quality - sync only on startup/exit
         
         return {
             'total_tiles_cached': total_tiles_cached,

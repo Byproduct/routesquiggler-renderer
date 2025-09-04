@@ -27,6 +27,7 @@ from image_generator_test import TestImageManager
 from video_generator_test import TestVideoManager
 from sync_map_tiles import sync_map_tiles
 import video_generator_cache_map_tiles
+import map_tile_cache_sweep
 
 class FileCheckWorker(QObject):
     """Worker to check for files to upload in background thread."""
@@ -73,6 +74,29 @@ class SyncWorker(QObject):
     def sync_files(self):
         """Perform the actual file sync."""
         try:
+            # Clean bad tiles from cache before syncing
+            try:
+                # Run cache sweep in production mode (actually delete files)
+                import sys
+                original_argv = sys.argv
+                sys.argv = ['map_tile_cache_sweep.py']  # Production mode (no 'test' parameter)
+                
+                # Capture the main function from our sweep script
+                import importlib.util
+                spec = importlib.util.spec_from_file_location("map_tile_cache_sweep", "map_tile_cache_sweep.py")
+                sweep_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(sweep_module)
+                
+                # Run the sweep
+                sweep_module.main()
+                
+                # Restore original argv
+                sys.argv = original_argv
+                
+            except Exception as sweep_error:
+                # Continue with sync even if sweep fails (silent for exit sync)
+                pass
+            
             # Perform the actual sync
             success, uploaded_count, downloaded_count = sync_map_tiles(
                 storage_box_address=self.storage_box_address,

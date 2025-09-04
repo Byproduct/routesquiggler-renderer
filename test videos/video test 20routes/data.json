@@ -129,7 +129,7 @@
   ],
   "route_name": "Video test with 20 files",
   "newest_on_top": true,
-  "legend": "file_name",
+  "legend": "year",
   "created_at": "2025-07-02T23:26:23.058917+00:00",
   "job_id": 1000023,
   "folder": "otq2LKnEKWSE",

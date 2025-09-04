@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from PIL import Image
 import pickle
+
+# Increase PIL image size limit to 200 megapixels to handle large renders
+Image.MAX_IMAGE_PIXELS = 200_000_000
 import math
 from pathlib import Path
 from video_generator_calculate_bounding_boxes import load_final_bounding_box

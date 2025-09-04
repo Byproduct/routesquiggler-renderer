@@ -1,0 +1,31 @@
+[2025-09-04 17:33:04] Debug logging started
+[2025-09-04 17:33:05] Map Tile Cache Sweep - Starting...
+[2025-09-04 17:33:05] Running in PRODUCTION MODE - files will be deleted
+[2025-09-04 17:33:05] ==================================================
+[2025-09-04 17:33:05] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[2025-09-04 17:33:05] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[2025-09-04 17:33:05] Found 39734 .npy files to process
+[2025-09-04 17:33:13] 
+==================================================
+[2025-09-04 17:33:13] RESULTS:
+[2025-09-04 17:33:13] Total tiles processed: 39734
+[2025-09-04 17:33:13] Good tiles (kept): 39734
+[2025-09-04 17:33:13] Blank/erroneous tiles (deleted): 0
+[2025-09-04 17:33:13] Operation completed in: 7s
+[2025-09-04 17:33:29] Loaded stamp: img/stamp_2x.npy
+[2025-09-04 17:33:29] Using 8 worker processes for frame generation
+[2025-09-04 17:33:30] Buffer size: 40 frames (total frames: 400)
+[2025-09-04 17:33:30] Pre-warming buffer with initial frames...
+[2025-09-04 17:33:30] Pre-warmed 20 frames
+[2025-09-04 17:33:33] Buffer pre-warmed: 8 frames ready
+[2025-09-04 17:33:33] 
+Requesting missing frame 1 on-demand (consecutive: 1)
+[2025-09-04 17:34:34] Buffer getting low - increasing request rate
+[2025-09-04 17:34:55] Loaded stamp: img/stamp_2x.npy
+[2025-09-04 17:34:55] Using 8 worker processes for frame generation
+[2025-09-04 17:34:56] Buffer size: 40 frames (total frames: 200)
+[2025-09-04 17:34:56] Pre-warming buffer with initial frames...
+[2025-09-04 17:34:56] Pre-warmed 20 frames
+[2025-09-04 17:34:59] Buffer pre-warmed: 8 frames ready
+[2025-09-04 17:34:59] 
+Requesting missing frame 1 on-demand (consecutive: 1)

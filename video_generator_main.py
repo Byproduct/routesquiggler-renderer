@@ -285,15 +285,6 @@ class VideoGeneratorWorker(QObject):
             # Step 2: Create combined route
             self.log_message.emit("Step 2: Creating combined route")           
             
-            # Delete old combined_route.pkl to prevent stale data issues
-            combined_route_file = os.path.join('temporary files', 'route', 'combined_route.pkl')
-            if os.path.exists(combined_route_file):
-                try:
-                    os.remove(combined_route_file)
-                    self.log_message.emit(f"Deleted old combined_route.pkl at {combined_route_file}")
-                except Exception as e:
-                    self.log_message.emit(f"Warning: Could not delete old combined_route.pkl: {e}")
-            
             self.combined_route_data = create_combined_route(
                 self.sorted_gpx_files,
                 self.json_data,

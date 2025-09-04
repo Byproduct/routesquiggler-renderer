@@ -20,10 +20,12 @@ import matplotlib.image as mpimg
 import re
 from PIL import Image
 from pathlib import Path
+
+# Increase PIL image size limit to 200 megapixels to handle large renders
+Image.MAX_IMAGE_PIXELS = 200_000_000
 from multiprocessing import Pool, Manager
 from moviepy import VideoClip
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
-from video_generator_create_combined_route import load_combined_route
 from video_generator_create_single_frame import generate_video_frame_in_memory, hex_to_rgba
 
 
@@ -1450,7 +1452,7 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
                 pass
         else:
             # Fallback to calculating route time per frame
-            route_time_per_frame = calculate_route_time_per_frame(json_data, log_callback)
+            route_time_per_frame = calculate_route_time_per_frame(json_data, combined_route_data, log_callback)
         
         if route_time_per_frame is None:
             if log_callback:
@@ -1460,18 +1462,10 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
         if log_callback:
             log_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
         
-        # Use passed combined_route_data if provided, otherwise load from disk
-        if combined_route_data is None:
-            combined_route_data = load_combined_route(log_callback)
-        
         if combined_route_data is None:
             if log_callback:
-                log_callback("Error: Could not load combined route data")
+                log_callback("Error: combined_route_data parameter is required")
             return None
-        else:
-            if log_callback:
-                # log_callback("Using passed combined_route_data")
-                pass
         
         # Create video using streaming approach
         cache_result = cache_video_frames_for_video(

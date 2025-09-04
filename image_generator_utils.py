@@ -20,6 +20,35 @@ matplotlib.use('Agg')  # Use non-interactive backend for server
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
+
+def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance between two points on Earth using the Haversine formula.
+    
+    Args:
+        lat1: Latitude of first point in decimal degrees
+        lon1: Longitude of first point in decimal degrees
+        lat2: Latitude of second point in decimal degrees
+        lon2: Longitude of second point in decimal degrees
+    
+    Returns:
+        Distance between the two points in meters
+    """
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Radius of earth in meters
+    r = 6371000
+    distance = c * r
+    
+    return distance
+
 class GPXProcessor:
     """Handles loading and processing of GPX files."""
 
@@ -204,15 +233,8 @@ class GPXProcessor:
                         prev_lat, prev_lon, _ = file_points[i-1]
                         curr_lat, curr_lon, _ = file_points[i]
                         
-                        # Haversine formula for distance calculation
-                        lat1, lon1, lat2, lon2 = map(math.radians, [prev_lat, prev_lon, curr_lat, curr_lon])
-                        dlat = lat2 - lat1
-                        dlon = lon2 - lon1
-                        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-                        c = 2 * math.asin(math.sqrt(a))
-                        # Radius of earth in meters
-                        r = 6371000
-                        distance = c * r
+                        # Calculate distance using haversine formula
+                        distance = calculate_haversine_distance(prev_lat, prev_lon, curr_lat, curr_lon)
                         file_distance += distance
                     
                     total_distance += file_distance

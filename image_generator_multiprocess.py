@@ -12,6 +12,9 @@ import ftplib
 from io import BytesIO
 from PIL import Image
 
+# Increase PIL image size limit to 200 megapixels to handle large renders
+Image.MAX_IMAGE_PIXELS = 200_000_000
+
 from image_generator_maptileutils import debug_log, create_map_tiles, set_cache_directory
 from image_generator_postprocess import add_stamp_to_plot, add_legend_to_plot, optimize_png_bytes, add_title_text_to_plot
 from image_generator_utils import ImageGenerator

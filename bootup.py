@@ -16,6 +16,7 @@ from get_hardware_id import get_hardware_id
 from PySide6.QtCore import QObject, Signal, QThread
 from sync_map_tiles import sync_map_tiles
 from debug_logger import setup_debug_logging
+import map_tile_cache_sweep
 
 # Conditionally import SystemTray - it handles its own platform detection
 try:
@@ -275,6 +276,31 @@ class BootupManager:
             return False
 
         try:
+            # Clean bad tiles from cache before syncing
+            self.log_callback("Cleaning bad tiles from cache before sync")
+            try:
+                # Run cache sweep in production mode (actually delete files)
+                import sys
+                original_argv = sys.argv
+                sys.argv = ['map_tile_cache_sweep.py']  # Production mode (no 'test' parameter)
+                
+                # Capture the main function from our sweep script
+                import importlib.util
+                spec = importlib.util.spec_from_file_location("map_tile_cache_sweep", "map_tile_cache_sweep.py")
+                sweep_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(sweep_module)
+                
+                # Run the sweep
+                sweep_module.main()
+                
+                # Restore original argv
+                sys.argv = original_argv
+                
+                self.log_callback("Cache cleaning completed")
+            except Exception as sweep_error:
+                self.log_callback(f"Warning: Cache cleaning failed: {str(sweep_error)}")
+                # Continue with sync even if sweep fails
+            
             # Use the modular sync_map_tiles function
             success, uploaded_count, downloaded_count = sync_map_tiles(
                 storage_box_address=self.storage_box_address,
