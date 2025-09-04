@@ -29,3 +29,19 @@ Requesting missing frame 1 on-demand (consecutive: 1)
 [2025-09-04 17:34:59] Buffer pre-warmed: 8 frames ready
 [2025-09-04 17:34:59] 
 Requesting missing frame 1 on-demand (consecutive: 1)
+[2025-09-04 17:36:31] Loaded stamp: img/stamp_1x.npy
+[2025-09-04 17:36:31] Using 8 worker processes for frame generation
+[2025-09-04 17:36:32] Buffer size: 40 frames (total frames: 100)
+[2025-09-04 17:36:32] Pre-warming buffer with initial frames...
+[2025-09-04 17:36:32] Pre-warmed 20 frames
+[2025-09-04 17:36:35] Buffer pre-warmed: 27 frames ready
+[2025-09-04 17:36:35] 
+Requesting missing frame 1 on-demand (consecutive: 1)
+[2025-09-04 17:37:59] Loaded stamp: img/stamp_1x.npy
+[2025-09-04 17:37:59] Using 8 worker processes for frame generation
+[2025-09-04 17:38:00] Buffer size: 40 frames (total frames: 400)
+[2025-09-04 17:38:00] Pre-warming buffer with initial frames...
+[2025-09-04 17:38:00] Pre-warmed 20 frames
+[2025-09-04 17:38:03] Buffer pre-warmed: 34 frames ready
+[2025-09-04 17:38:03] 
+Requesting missing frame 1 on-demand (consecutive: 1)
