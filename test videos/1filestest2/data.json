@@ -1,0 +1,31 @@
+{
+  "created_at": "2025-09-05T13:19:38.175519+00:00",
+  "folder": "HKYYhCTgs10c",
+  "job_id": 1000308,
+  "job_type": "video",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "osm",
+  "map_transparency": 30,
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "1filetest2",
+  "squiggle_speed": "relative",
+  "statistics": "off",
+  "tail_color": "light",
+  "user_id": 1,
+  "video_fps": 10,
+  "video_length": 10,
+  "video_resolution_x": 1280,
+  "video_resolution_y": 720,
+  "zoom_mode": "final",
+  "track_objects": [
+    {
+      "filename": "2020-06-13_2.gpx",
+      "date": "2020-06-13",
+      "color": "#0040C0",
+      "name": ""
+    }
+  ]
+}

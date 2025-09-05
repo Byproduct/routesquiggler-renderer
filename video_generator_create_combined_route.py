@@ -189,38 +189,31 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         
         # Calculate total accumulated time based on mode
         if is_single_route_mode:
-            # For single route mode, use simple sequential time accumulation (like old _create_single_route)
-            # Get the accumulated time from the last point of the single route
+            # For single route mode, use the accumulated time from the last point
             if all_routes and all_routes[0].get('combined_route'):
                 last_point = all_routes[0]['combined_route'][-1]
                 total_accumulated_time = last_point[4] if len(last_point) > 4 else 0  # accumulated_time at index 4
+                if log_callback:
+                    log_callback(f"Single route mode: Using sequential time accumulation: {total_accumulated_time:.1f}s")
             else:
                 total_accumulated_time = 0
-            if log_callback:
-                log_callback(f"Single route mode: Using sequential time accumulation: {total_accumulated_time:.1f}s")
+                if log_callback:
+                    log_callback("Warning: No route data found for time calculation")
         else:
             # For multiple routes mode, use simultaneous mode logic
             if earliest_start_time and latest_end_time:
                 total_span_seconds = (latest_end_time - earliest_start_time).total_seconds()
-                
-                if log_callback:
-                    log_callback(f"SIMULTANEOUS MODE ANALYSIS:")
-                    log_callback(f"  Earliest route starts at: {earliest_start_time.strftime('%H:%M:%S')}")
-                    log_callback(f"  Latest route ends at: {latest_end_time.strftime('%H:%M:%S')}")
-                    log_callback(f"  Total span of all routes: {total_span_seconds:.1f}s ({total_span_seconds/60:.1f} minutes)")
-                    log_callback(f"  Video duration: {video_length:.1f}s")
-                
-                # Use the total span as total_accumulated_time
-                # This allows all routes to be drawn at their proper staggered times
                 total_accumulated_time = total_span_seconds
                 
                 if log_callback:
-                    log_callback(f"SIMULTANEOUS MODE FIX: Using total span: {total_span_seconds:.1f}s")
-                    log_callback(f"  This allows all routes to be drawn at their proper staggered times")
-                    log_callback(f"  Routes that start after {video_length:.1f}s won't appear in the video")
+                    log_callback(f"Simultaneous mode: Using total span: {total_span_seconds:.1f}s")
+                    log_callback(f"  Earliest route starts at: {earliest_start_time.strftime('%H:%M:%S')}")
+                    log_callback(f"  Latest route ends at: {latest_end_time.strftime('%H:%M:%S')}")
             else:
                 # Fallback to first route's time if no timestamps found
                 total_accumulated_time = all_routes[0].get('total_accumulated_time', 0) if all_routes else 0
+                if log_callback:
+                    log_callback(f"Warning: Using fallback total_accumulated_time: {total_accumulated_time:.1f}s")
         
         # Calculate route_time_per_frame using the same method as caching phase
         # Use adjusted calculation to ensure complete route coverage

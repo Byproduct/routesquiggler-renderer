@@ -16,14 +16,8 @@ from video_generator_route_statistics import _calculate_video_statistics, _draw_
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
-from video_generator_create_single_frame_utils import (
-    hex_to_rgba, rgba_to_hex, lighten_color, darken_color, get_tail_color_for_route,
-    _draw_name_tags_for_routes, _get_resolution_scale_factor
-)
-from video_generator_cache_route_images import (
-    load_cached_route_metadata, load_cached_route_image, 
-    is_track_fully_completed, composite_cached_route_image
-)
+from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes, _get_resolution_scale_factor)
+
 
 
 def _gps_to_web_mercator(lon, lat):
@@ -659,15 +653,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
     if shared_map_cache is None:
         print(f"Error: Shared map cache is required for frame generation")
         return None
-    
-    # OPTIMIZATION: Use shared route cache for final zoom mode
-    track_to_cached_image = {}  # Default empty mapping
-    
+       
     zoom_mode = json_data.get('zoom_mode', 'dynamic')
-    if zoom_mode == 'final' and shared_route_cache is not None:
-        # OPTIMIZED: Retrieve pre-built mapping instead of rebuilding for every frame
-        # This mapping was built once during the caching phase in video_generator_cache_route_images.py
-        track_to_cached_image = shared_route_cache.get('_track_to_cached_image_mapping', {})
     
     # Get video parameters from json_data
     width = int(json_data.get('video_resolution_x', 1920))
@@ -787,7 +774,6 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         # OPTIMIZATION: Use cached route images for completed tracks in final zoom mode
         tail_length = int(json_data.get('tail_length', 0))
         
-        completed_tracks = []  # Track which tracks were drawn from cache
         active_tracks = []     # Track which tracks need active drawing
         
         # FIX: Use the exact same track splitting logic as caching phase
@@ -827,43 +813,12 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             for track_index, track in enumerate(tracks_for_route):
                 if not track:  # Skip empty tracks
                     continue
-                
-                # Check if we can use cached route optimization
-                use_cached_route = False
-                cached_image_key = None
-                
-                if (shared_route_cache is not None and 
-                    target_time is not None and 
-                    gpx_time_per_video_time is not None and
-                    (route_index, track_index) in track_to_cached_image):
-                    
-                    # Check if this track is fully completed (including tail fade-out)
-                    is_completed = is_track_fully_completed(track, target_time, tail_length, gpx_time_per_video_time, route_specific_tail_info, route_index)
-                    
-                    if is_completed:
-                        cached_image_key = track_to_cached_image[(route_index, track_index)]
-                        use_cached_route = True
-                    else:
-                        # Track not completed yet, will use matplotlib plotting
-                        active_tracks.append((route_index, track_index, track))
-                else:
-                    # Track needs active drawing
-                    active_tracks.append((route_index, track_index, track))
-                
-                if use_cached_route and cached_image_key:
-                    # PHASE 1: Draw completed route from cache (bottom layer)
-                    cached_image = shared_route_cache.get(cached_image_key)
-                    if cached_image is not None:
-                        # Composite the cached route image onto the frame
-                        # Use the same bounding box as when we cached the image
-                        composite_cached_route_image(ax, cached_image, bbox)
-                        completed_tracks.append((route_index, track_index))
-                    else:
-                        # Cache miss - fall back to active drawing
-                        active_tracks.append((route_index, track_index, track))
-        
+
+                # Just add all tracks to active tracks (used to be a failed attempt at caching full routes - plotting is still faster than overlaying image)               
+                active_tracks.append((route_index, track_index, track))
+                      
         # PHASE 2: Draw active routes and their tails (top layer)
-        # OPTIMIZATION: Group active routes by filename for better LineCollection performance
+        # Optimization: Group active routes by filename for better LineCollection performance
         # Since all active routes have the same width, we can create separate LineCollections per filename
         from matplotlib.collections import LineCollection
         
@@ -939,23 +894,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             for route_index, route_points in route_groups.items():
                 if len(route_points) < 2:  # Need at least 2 points for a tail
                     continue
-                
-                # FIX: Only draw tails for routes that are not completed (not using cached images)
-                # Check if this route is using cached images
-                route_using_cache = False
-                if shared_route_cache is not None and target_time is not None and gpx_time_per_video_time is not None:
-                    # Check if any track in this route is using cached images
-                    for track_index in range(10):  # Check first 10 track indices (should be enough)
-                        if (route_index, track_index) in track_to_cached_image:
-                            # Check if this specific track is completed
-                            if is_track_fully_completed([], target_time, tail_length, gpx_time_per_video_time, route_specific_tail_info, route_index):
-                                route_using_cache = True
-                                break
-                
-                # Skip tail drawing if route is using cached images
-                if route_using_cache:
-                    continue
-                
+                              
                 # Determine the effective leading time (virtual or actual)
                 effective_leading_time = None
                 

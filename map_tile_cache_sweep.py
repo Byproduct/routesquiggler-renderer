@@ -94,7 +94,7 @@ def find_npy_files(directory: str) -> List[str]:
     return npy_files
 
 
-def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test_mode: bool = False) -> Tuple[int, int]:
+def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test_mode: bool = False) -> Tuple[int, int, List[str]]:
     """
     Process a cache directory and count good vs blank/erroneous tiles.
     
@@ -104,7 +104,7 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
         test_mode: If True, only report without deleting files
         
     Returns:
-        Tuple of (good_tiles_count, blank_or_erroneous_tiles_count)
+        Tuple of (good_tiles_count, blank_or_erroneous_tiles_count, list_of_blank_tile_paths)
     """
     print(f"Scanning directory: {cache_dir}")
     
@@ -120,6 +120,7 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     
     good_tiles = 0
     blank_or_erroneous_tiles = 0
+    blank_tile_paths = []
     
     # Set up progress tracking
     if use_progress_bar and TQDM_AVAILABLE:
@@ -133,12 +134,13 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     for npy_file in iterator:
         if is_blank_or_erroneous_tile(npy_file):
             blank_or_erroneous_tiles += 1
+            blank_tile_paths.append(npy_file)
             if not test_mode:
                 os.remove(npy_file)
         else:
             good_tiles += 1
     
-    return good_tiles, blank_or_erroneous_tiles
+    return good_tiles, blank_or_erroneous_tiles, blank_tile_paths
 
 
 def format_duration(seconds: float) -> str:
@@ -211,7 +213,7 @@ def main():
     
     # Process the cache directory
     try:
-        good_tiles, blank_or_erroneous_tiles = process_cache_directory(cache_dir, use_progress_bar, test_mode)
+        good_tiles, blank_or_erroneous_tiles, blank_tile_paths = process_cache_directory(cache_dir, use_progress_bar, test_mode)
         
         # Calculate and display results
         end_time = time.time()
@@ -224,10 +226,14 @@ def main():
         print(f"Good tiles (kept): {good_tiles}")
         if test_mode:
             print(f"Blank/erroneous tiles (would be deleted): {blank_or_erroneous_tiles}")
+            if blank_tile_paths:
+                print("\nPaths of blank/erroneous tiles:")
+                for path in blank_tile_paths:
+                    print(f"  - {path}")
         else:
             print(f"Blank/erroneous tiles (deleted): {blank_or_erroneous_tiles}")
         
-        print(f"Operation completed in: {format_duration(duration)}")
+        print(f"\nOperation completed in: {format_duration(duration)}")
         if test_mode:
             print("\nNOTE: This was a test run - no files were actually deleted.")
             print("Run without 'test' parameter to perform actual deletion.")

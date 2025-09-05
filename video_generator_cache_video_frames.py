@@ -26,7 +26,8 @@ Image.MAX_IMAGE_PIXELS = 200_000_000
 from multiprocessing import Pool, Manager
 from moviepy import VideoClip
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
-from video_generator_create_single_frame import generate_video_frame_in_memory, hex_to_rgba
+from video_generator_create_single_frame import generate_video_frame_in_memory
+from video_generator_create_single_frame_utils import hex_to_rgba
 
 
 def _binary_search_cutoff_index(route_points, target_time):
@@ -508,18 +509,18 @@ class StreamingFrameGenerator:
         # Calculate ending parameters based on mode
         if is_simultaneous_mode:
             # SIMULTANEOUS MODE: Each route handles its own completion and tail fade-out
-            # We don't need the sequential tail-only phase, just add 5 seconds of cloned ending
-            tail_length = 0  # No sequential tail phase needed
+            # We need to extend the video to account for the tail fade-out of the last route
+            tail_length = int(json_data.get('tail_length', 0))  # Get the tail length for fade-out
+            
+            # Total video length: original video + tail fade-out of the last route + 5 seconds of cloned ending
+            extended_video_length = video_length + tail_length  # Extend by tail length for fade-out
             ending_duration_required = 5.0  # Always 5 seconds of ending total
             cloned_ending_duration = ending_duration_required  # All 5 seconds via cloned frames
-            
-            # Total video length: original video + cloned ending
-            extended_video_length = video_length  # No tail phase
             final_video_length = extended_video_length + cloned_ending_duration
             
             if progress_callback:
-                progress_callback("progress_bar_frames", 0, f"SIMULTANEOUS MODE: Creating video: {video_length}s route + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
-                progress_callback("progress_bar_frames", 0, f"Each route handles its own completion and tail fade-out individually")
+                progress_callback("progress_bar_frames", 0, f"SIMULTANEOUS MODE: Creating video: {video_length}s route + {tail_length}s tail + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
+                progress_callback("progress_bar_frames", 0, f"Each route handles its own completion and tail fade-out with {tail_length}s fade-out for the last route")
         else:
             # SEQUENTIAL MODE: Use the original tail-only phase logic
             tail_length = int(json_data.get('tail_length', 0))  # Ensure tail_length is int

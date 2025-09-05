@@ -1,0 +1,49 @@
+{
+  "created_at": "2025-09-05T13:33:42.992617+00:00",
+  "folder": "n2TCCFmHYJ",
+  "job_id": 1000309,
+  "job_type": "video",
+  "legend": "file_name",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "osm",
+  "map_transparency": 30,
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "testi3",
+  "squiggle_speed": "relative",
+  "statistics": "off",
+  "tail_color": "light",
+  "user_id": 1,
+  "video_fps": 10,
+  "video_length": 10,
+  "video_resolution_x": 1280,
+  "video_resolution_y": 720,
+  "zoom_mode": "final",
+  "track_objects": [
+    {
+      "filename": "2020-06-13_2.gpx",
+      "date": "2020-06-13",
+      "color": "#0040C0",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-13_3.gpx",
+      "date": "2020-06-13",
+      "color": "#80C000",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-26.gpx",
+      "date": "2020-06-26",
+      "color": "#00C080",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-14.gpx",
+      "date": "2021-05-14",
+      "color": "#400040",
+      "name": ""
+    }
+  ]
+}

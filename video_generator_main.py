@@ -332,16 +332,6 @@ class VideoGeneratorWorker(QObject):
                 shared_map_cache = manager.dict()
                 shared_route_cache = manager.dict()  # Add shared route cache for performance
                 
-                # Step 3.5: Cache route images for final zoom mode optimization
-                from video_generator_cache_route_images import cache_route_images
-                route_cache_metadata = cache_route_images(
-                    self.combined_route_data,
-                    self.json_data,
-                    progress_callback=self.progress_update.emit,
-                    log_callback=self.log_message.emit,
-                    shared_route_cache=shared_route_cache
-                )
-                
                 # Step 4: Cache map images for unique bounding boxes
                 self.log_message.emit("Step 4: Caching map images for unique bounding boxes")           
                 

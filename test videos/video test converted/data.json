@@ -1,0 +1,39 @@
+{
+  "created_at": "2025-09-05T12:42:48.527972+00:00",
+  "folder": "NgO5ZOy12dxhcl",
+  "job_id": 312,
+  "job_type": "video",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "osm",
+  "map_transparency": 30,
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "Trept test",
+  "squiggle_speed": "relative",
+  "statistics": "dark",
+  "statistics_average_speed": true,
+  "statistics_current_elevation": true,
+  "statistics_current_speed": true,
+  "statistics_current_time": true,
+  "statistics_distance": true,
+  "statistics_elapsed_time": true,
+  "tail_color": "light",
+  "tail_length": 2,
+  "tail_width": 3,
+  "user_id": 1,
+  "video_fps": 10,
+  "video_length": 20,
+  "video_resolution_x": 1920,
+  "video_resolution_y": 1080,
+  "zoom_mode": "dynamic",
+  "track_objects": [
+    {
+      "filename": "converted.gpx",
+      "date": null,
+      "color": "#FF80FF",
+      "name": ""
+    }
+  ]
+}
