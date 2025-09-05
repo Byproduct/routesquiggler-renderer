@@ -1,718 +1,134 @@
-[2025-09-05 21:00:43] Debug logging started
-[2025-09-05 21:00:43] Configuration loaded
-[2025-09-05 21:00:43] Debug logging enabled
-[2025-09-05 21:00:43] GPU rendering enabled
-[2025-09-05 21:00:43] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
-[2025-09-05 21:00:43] App version: 0.10
-[2025-09-05 21:00:43] Setting up system tray
-[2025-09-05 21:00:43] System tray icon created
-[2025-09-05 21:00:43] Testing connection to web server
-[2025-09-05 21:00:43] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-09-05T18:00:43.758713+00:00", "accepted_version": "0.10"}
-[2025-09-05 21:00:44] Storage box connection successful.
-[2025-09-05 21:00:44] Map tile cache syncing is disabled in config. Skipping sync.
-[2025-09-05 21:00:44] Checking drive space...
-[2025-09-05 21:00:44] Storage box credentials set for background tile syncing
-[2025-09-05 21:00:44] Bootup completed successfully
-[2025-09-05 21:00:48] Starting test video job 1/1: test videos\video test haltiala 20fps
-[2025-09-05 21:00:48] === on_job_received called ===
-[2025-09-05 21:00:48] Processing job #1000066 (type: video)
-[2025-09-05 21:00:48] Creating video generator worker...
-[2025-09-05 21:00:48] Connecting worker signals...
-[2025-09-05 21:00:48] Starting worker thread...
-[2025-09-05 21:00:48] Worker thread started successfully
-[2025-09-05 21:00:48] === on_job_received completed successfully ===
-[2025-09-05 21:00:48] Video generation triggered.
-[2025-09-05 21:00:48] Step 1: Sorting GPX files chronologically
-[2025-09-05 21:00:48] Sorting 8 GPX files chronologically...
-[2025-09-05 21:00:48] Found timestamp in 2024-09-12_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2025-07-01(1).gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2025-07-01_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2025-07-02(1).gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2025-07-02_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2025-07-04_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2020-06-13_3_edited_edited_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Found timestamp in 2024-04-28_edited_edited(1).gpx: 2025-02-01 10:00:00
-[2025-09-05 21:00:48] Chronological sorting completed:
-[2025-09-05 21:00:48] Oldest route: 2024-09-12_edited.gpx (2025-02-01 10:00:00)
-[2025-09-05 21:00:48] Newest route: 2024-04-28_edited_edited(1).gpx (2025-02-01 10:00:00)
-[2025-09-05 21:00:48] Total files sorted: 8
-[2025-09-05 21:00:48] Chronological sorting completed with 8 files
-[2025-09-05 21:00:48] Step 2: Creating combined route
-[2025-09-05 21:00:48] Creating combined routes from sorted GPX files...
-[2025-09-05 21:00:48] Multiple routes mode: Found 8 named tracks
-[2025-09-05 21:00:48] Creating multiple combined routes...
-[2025-09-05 21:00:48] Grouped files by track: 8 named tracks, 0 unnamed files
-[2025-09-05 21:00:48]   Track 'Euphemia Muffletop': 1 files
-[2025-09-05 21:00:48]   Track 'Neville Dinglewarp': 1 files
-[2025-09-05 21:00:48]   Track 'Ramona Glifflepot': 1 files
-[2025-09-05 21:00:48]   Track 'Henrietta Bumblesnuff': 1 files
-[2025-09-05 21:00:48]   Track 'Tristram Snibbleblat': 1 files
-[2025-09-05 21:00:48]   Track 'Cuthbert Flibberdoodle': 1 files
-[2025-09-05 21:00:48]   Track 'Celestine Muddlebrim': 1 files
-[2025-09-05 21:00:48]   Track 'Clementine Nibberplop': 1 files
-[2025-09-05 21:00:48] Processing track 'Euphemia Muffletop' (1/8)
-[2025-09-05 21:00:48] Creating route 0 for track 'Euphemia Muffletop' with 1 files
-[2025-09-05 21:00:48]   Processing 2024-09-12_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Euphemia Muffletop'. Total points: 397
-[2025-09-05 21:00:48]   Total distance: 3404.46 meters (3.40 km)
-[2025-09-05 21:00:48]   Total time: 696.0 seconds (11.6 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Euphemia Muffletop': ~1 point/frame → raw=2.32s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.86s, interval=2s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Euphemia Muffletop': 397 points, interval: 2 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Euphemia Muffletop' (for later use): 4.64s
-[2025-09-05 21:00:48] Pruning route by 2 second intervals...
-[2025-09-05 21:00:48] Original route has 397 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 203 → 227 points
-[2025-09-05 21:00:48] Processing track 'Neville Dinglewarp' (2/8)
-[2025-09-05 21:00:48] Creating route 1 for track 'Neville Dinglewarp' with 1 files
-[2025-09-05 21:00:48]   Processing 2025-07-01(1).gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Neville Dinglewarp'. Total points: 451
-[2025-09-05 21:00:48]   Total distance: 3629.77 meters (3.63 km)
-[2025-09-05 21:00:48]   Total time: 479.0 seconds (8.0 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Neville Dinglewarp': ~1 point/frame → raw=1.60s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.28s, interval=1s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Neville Dinglewarp': 451 points, interval: 1 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Neville Dinglewarp' (for later use): 3.19s
-[2025-09-05 21:00:48] Pruning route by 1 second intervals...
-[2025-09-05 21:00:48] Original route has 451 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 451 → 451 points
-[2025-09-05 21:00:48] Processing track 'Ramona Glifflepot' (3/8)
-[2025-09-05 21:00:48] Creating route 2 for track 'Ramona Glifflepot' with 1 files
-[2025-09-05 21:00:48]   Processing 2025-07-01_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Ramona Glifflepot'. Total points: 459
-[2025-09-05 21:00:48]   Total distance: 3751.54 meters (3.75 km)
-[2025-09-05 21:00:48]   Total time: 498.0 seconds (8.3 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Ramona Glifflepot': ~1 point/frame → raw=1.66s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.33s, interval=1s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Ramona Glifflepot': 459 points, interval: 1 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Ramona Glifflepot' (for later use): 3.32s
-[2025-09-05 21:00:48] Pruning route by 1 second intervals...
-[2025-09-05 21:00:48] Original route has 459 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 459 → 465 points
-[2025-09-05 21:00:48] Processing track 'Henrietta Bumblesnuff' (4/8)
-[2025-09-05 21:00:48] Creating route 3 for track 'Henrietta Bumblesnuff' with 1 files
-[2025-09-05 21:00:48]   Processing 2025-07-02(1).gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Henrietta Bumblesnuff'. Total points: 515
-[2025-09-05 21:00:48]   Total distance: 4331.41 meters (4.33 km)
-[2025-09-05 21:00:48]   Total time: 566.0 seconds (9.4 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Henrietta Bumblesnuff': ~1 point/frame → raw=1.89s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.51s, interval=2s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Henrietta Bumblesnuff': 515 points, interval: 2 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Henrietta Bumblesnuff' (for later use): 3.77s
-[2025-09-05 21:00:48] Pruning route by 2 second intervals...
-[2025-09-05 21:00:48] Original route has 515 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 260 → 266 points
-[2025-09-05 21:00:48] Processing track 'Tristram Snibbleblat' (5/8)
-[2025-09-05 21:00:48] Creating route 4 for track 'Tristram Snibbleblat' with 1 files
-[2025-09-05 21:00:48]   Processing 2025-07-02_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Tristram Snibbleblat'. Total points: 449
-[2025-09-05 21:00:48]   Total distance: 3552.61 meters (3.55 km)
-[2025-09-05 21:00:48]   Total time: 481.0 seconds (8.0 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Tristram Snibbleblat': ~1 point/frame → raw=1.60s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.28s, interval=1s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Tristram Snibbleblat': 449 points, interval: 1 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Tristram Snibbleblat' (for later use): 3.21s
-[2025-09-05 21:00:48] Pruning route by 1 second intervals...
-[2025-09-05 21:00:48] Original route has 449 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 449 → 451 points
-[2025-09-05 21:00:48] Processing track 'Cuthbert Flibberdoodle' (6/8)
-[2025-09-05 21:00:48] Creating route 5 for track 'Cuthbert Flibberdoodle' with 1 files
-[2025-09-05 21:00:48]   Processing 2025-07-04_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Cuthbert Flibberdoodle'. Total points: 501
-[2025-09-05 21:00:48]   Total distance: 4338.87 meters (4.34 km)
-[2025-09-05 21:00:48]   Total time: 536.0 seconds (8.9 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Cuthbert Flibberdoodle': ~1 point/frame → raw=1.79s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.43s, interval=1s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Cuthbert Flibberdoodle': 501 points, interval: 1 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Cuthbert Flibberdoodle' (for later use): 3.57s
-[2025-09-05 21:00:48] Pruning route by 1 second intervals...
-[2025-09-05 21:00:48] Original route has 501 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 501 → 503 points
-[2025-09-05 21:00:48] Processing track 'Celestine Muddlebrim' (7/8)
-[2025-09-05 21:00:48] Creating route 6 for track 'Celestine Muddlebrim' with 1 files
-[2025-09-05 21:00:48]   Processing 2020-06-13_3_edited_edited_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Celestine Muddlebrim'. Total points: 381
-[2025-09-05 21:00:48]   Total distance: 3553.20 meters (3.55 km)
-[2025-09-05 21:00:48]   Total time: 554.0 seconds (9.2 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Celestine Muddlebrim': ~1 point/frame → raw=1.85s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.48s, interval=1s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Celestine Muddlebrim': 381 points, interval: 1 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Celestine Muddlebrim' (for later use): 3.69s
-[2025-09-05 21:00:48] Pruning route by 1 second intervals...
-[2025-09-05 21:00:48] Original route has 381 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 381 → 381 points
-[2025-09-05 21:00:48] Processing track 'Clementine Nibberplop' (8/8)
-[2025-09-05 21:00:48] Creating route 7 for track 'Clementine Nibberplop' with 1 files
-[2025-09-05 21:00:48]   Processing 2024-04-28_edited_edited(1).gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:00:48]   Completed track 'Clementine Nibberplop'. Total points: 749
-[2025-09-05 21:00:48]   Total distance: 5830.57 meters (5.83 km)
-[2025-09-05 21:00:48]   Total time: 756.8 seconds (12.6 minutes)
-[2025-09-05 21:00:48]   Calculated dynamic pruning interval for track 'Clementine Nibberplop': ~1 point/frame → raw=2.52s (gpx_time_per_video_time/video_fps), reduced by 20% → 2.02s, interval=2s
-[2025-09-05 21:00:48]   Starting route pruning for track 'Clementine Nibberplop': 749 points, interval: 2 seconds
-[2025-09-05 21:00:48]   Interpolation interval for track 'Clementine Nibberplop' (for later use): 5.05s
-[2025-09-05 21:00:48] Pruning route by 2 second intervals...
-[2025-09-05 21:00:48] Original route has 749 points
-[2025-09-05 21:00:48] Pruning complete
-[2025-09-05 21:00:48] Interpolation complete: 257 → 289 points
-[2025-09-05 21:00:48] Simultaneous mode: Using total span: 756.8s
-[2025-09-05 21:00:48]   Earliest route starts at: 10:00:00
-[2025-09-05 21:00:48]   Latest route ends at: 10:12:36
-[2025-09-05 21:00:48] Created 8 routes:
-[2025-09-05 21:00:48]   Route 0: 'Euphemia Muffletop' - 227 points, 3404.46m
-[2025-09-05 21:00:48]   Route 1: 'Neville Dinglewarp' - 451 points, 3629.77m
-[2025-09-05 21:00:48]   Route 2: 'Ramona Glifflepot' - 465 points, 3751.54m
-[2025-09-05 21:00:48]   Route 3: 'Henrietta Bumblesnuff' - 266 points, 4331.41m
-[2025-09-05 21:00:48]   Route 4: 'Tristram Snibbleblat' - 451 points, 3552.61m
-[2025-09-05 21:00:48]   Route 5: 'Cuthbert Flibberdoodle' - 503 points, 4338.87m
-[2025-09-05 21:00:48]   Route 6: 'Celestine Muddlebrim' - 381 points, 3553.20m
-[2025-09-05 21:00:48]   Route 7: 'Clementine Nibberplop' - 289 points, 5794.24m
-[2025-09-05 21:00:48] Total across all routes: 3033 points, 32356.10m
-[2025-09-05 21:00:48] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
-[2025-09-05 21:00:48] Combined route created successfully:
-[2025-09-05 21:00:48]   - Total points: 227
-[2025-09-05 21:00:48]   - Total distance: 3.40 km
-[2025-09-05 21:00:48]   - Files processed: 8
-[2025-09-05 21:00:48] Step 3: Calculating unique bounding boxes and caching map tiles
-[2025-09-05 21:00:48] Starting map tile caching
-[2025-09-05 21:00:48] Calculating unique bounding boxes for 300 frames
-[2025-09-05 21:00:48] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:00:48] Final zoom mode: Collecting points from 8 routes
-[2025-09-05 21:00:48] Final zoom mode: Total points from all routes: 3033
-[2025-09-05 21:00:48] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:00:48] Final zoom mode: calculated single bounding box (24.882359, 24.972879, 60.252242, 60.277497) from 8 routes
-[2025-09-05 21:00:48] Found 1 unique bounding boxes
-[2025-09-05 21:00:48] Starting tile pre-caching for video generation
-[2025-09-05 21:00:48] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\StadiaOutdoors
-[2025-09-05 21:00:48] Processing 1 unique bounding boxes
-[2025-09-05 21:00:48] Phase 1: Gathering all required tiles...
-[2025-09-05 21:00:48] Found 50 unique tiles required across all bounding boxes
-[2025-09-05 21:00:48] Phase 2: Checking which tiles are already cached...
-[2025-09-05 21:00:48] Tile analysis complete: 50 already cached, 0 need downloading
-[2025-09-05 21:00:48] All tiles are already cached! No downloads needed.
-[2025-09-05 21:00:48] Starting render timer - beginning map image caching and video generation
-[2025-09-05 21:00:49] Step 4: Caching map images for unique bounding boxes
-[2025-09-05 21:00:49] Starting map image caching
-[2025-09-05 21:00:49] Calculating unique bounding boxes for 300 frames
-[2025-09-05 21:00:49] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:00:49] Final zoom mode: Collecting points from 8 routes
-[2025-09-05 21:00:49] Final zoom mode: Total points from all routes: 3033
-[2025-09-05 21:00:49] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:00:49] Final zoom mode: calculated single bounding box (24.882359, 24.972879, 60.252242, 60.277497) from 8 routes
-[2025-09-05 21:00:49] Found 1 unique bounding boxes
-[2025-09-05 21:00:49] Starting map image caching for video generation
-[2025-09-05 21:00:49] Processing 1 unique bounding boxes for map images
-[2025-09-05 21:00:49] Using 1 worker processes for map image generation
-[2025-09-05 21:00:50] Using single-threaded execution
-[2025-09-05 21:00:51] Map image caching complete: 1 successful, 0 failed, 1 total
-[2025-09-05 21:00:51] Map image caching completed:
-[2025-09-05 21:00:51]   - Images created: 1
-[2025-09-05 21:00:51]   - Images failed: 0
-[2025-09-05 21:00:51]   - Total bounding boxes: 1
-[2025-09-05 21:00:51] Step 5: Generating video frames
-[2025-09-05 21:00:51] Starting video generation
-[2025-09-05 21:00:51] Route time per frame: 2.5227 seconds
-[2025-09-05 21:00:51] Starting video frame generation with streaming approach...
-[2025-09-05 21:00:51] Starting streaming video creation
-[2025-09-05 21:00:51] SIMULTANEOUS MODE: Creating video: 15.0s route + 5.0s cloned = 20.0s total
-[2025-09-05 21:00:51] Each route handles its own completion and tail fade-out individually
-[2025-09-05 21:00:51] Frame breakdown: 300 route + 100 cloned = 400 total frames
-[2025-09-05 21:00:51] Output video will be saved to: temporary files\test jobs\route_video_20250905_210051.mp4
-[2025-09-05 21:00:51] Test job mode: Video will be saved in test jobs directory
-[2025-09-05 21:00:55] Starting video encoding
-[2025-09-05 21:00:55] Using GPU rendering (NVIDIA NVENC)
-[2025-09-05 21:02:02] Streaming video creation complete: temporary files\test jobs\route_video_20250905_210051.mp4
-[2025-09-05 21:02:02] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:02:02] SIMULTANEOUS MODE: Video creation completed: 300 frames generated + 100 frames cloned = 400 total frames
-[2025-09-05 21:02:02] Video frame generation completed:
-[2025-09-05 21:02:02]   - Frames created: 300
-[2025-09-05 21:02:02]   - Frames failed: 0
-[2025-09-05 21:02:02]   - Total frames: 400
-[2025-09-05 21:02:02]   - Video file: temporary files\test jobs\route_video_20250905_210051.mp4
-[2025-09-05 21:02:02] 🎬 Total rendering time: 1 minute 13.80 seconds
-[2025-09-05 21:02:02] Test job completed - skipping upload
-[2025-09-05 21:02:02] Video generation completed successfully
-[2025-09-05 21:02:02] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:02:02] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:02:02] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:02:02] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:02:02] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:02:02] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:02:02] Forced Qt resource cleanup completed
-[2025-09-05 21:02:02] All test video jobs completed.
-[2025-09-05 21:02:53] Starting test video job 1/1: test videos\video test haltiala 20fps notail
-[2025-09-05 21:02:53] === on_job_received called ===
-[2025-09-05 21:02:53] Processing job #1000066 (type: video)
-[2025-09-05 21:02:53] Creating video generator worker...
-[2025-09-05 21:02:53] Connecting worker signals...
-[2025-09-05 21:02:53] Starting worker thread...
-[2025-09-05 21:02:53] Worker thread started successfully
-[2025-09-05 21:02:53] === on_job_received completed successfully ===
-[2025-09-05 21:02:53] Video generation triggered.
-[2025-09-05 21:02:53] Step 1: Sorting GPX files chronologically
-[2025-09-05 21:02:53] Sorting 8 GPX files chronologically...
-[2025-09-05 21:02:53] Found timestamp in 2024-09-12_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2025-07-01(1).gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2025-07-01_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2025-07-02(1).gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2025-07-02_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2025-07-04_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2020-06-13_3_edited_edited_edited.gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Found timestamp in 2024-04-28_edited_edited(1).gpx: 2025-02-01 10:00:00
-[2025-09-05 21:02:53] Chronological sorting completed:
-[2025-09-05 21:02:53] Oldest route: 2024-09-12_edited.gpx (2025-02-01 10:00:00)
-[2025-09-05 21:02:53] Newest route: 2024-04-28_edited_edited(1).gpx (2025-02-01 10:00:00)
-[2025-09-05 21:02:53] Total files sorted: 8
-[2025-09-05 21:02:53] Chronological sorting completed with 8 files
-[2025-09-05 21:02:53] Step 2: Creating combined route
-[2025-09-05 21:02:53] Creating combined routes from sorted GPX files...
-[2025-09-05 21:02:53] Multiple routes mode: Found 8 named tracks
-[2025-09-05 21:02:53] Creating multiple combined routes...
-[2025-09-05 21:02:53] Grouped files by track: 8 named tracks, 0 unnamed files
-[2025-09-05 21:02:53]   Track 'Euphemia Muffletop': 1 files
-[2025-09-05 21:02:53]   Track 'Neville Dinglewarp': 1 files
-[2025-09-05 21:02:53]   Track 'Ramona Glifflepot': 1 files
-[2025-09-05 21:02:53]   Track 'Henrietta Bumblesnuff': 1 files
-[2025-09-05 21:02:53]   Track 'Tristram Snibbleblat': 1 files
-[2025-09-05 21:02:53]   Track 'Cuthbert Flibberdoodle': 1 files
-[2025-09-05 21:02:53]   Track 'Celestine Muddlebrim': 1 files
-[2025-09-05 21:02:53]   Track 'Clementine Nibberplop': 1 files
-[2025-09-05 21:02:53] Processing track 'Euphemia Muffletop' (1/8)
-[2025-09-05 21:02:53] Creating route 0 for track 'Euphemia Muffletop' with 1 files
-[2025-09-05 21:02:53]   Processing 2024-09-12_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:53]   Completed track 'Euphemia Muffletop'. Total points: 397
-[2025-09-05 21:02:53]   Total distance: 3404.46 meters (3.40 km)
-[2025-09-05 21:02:53]   Total time: 696.0 seconds (11.6 minutes)
-[2025-09-05 21:02:53]   Calculated dynamic pruning interval for track 'Euphemia Muffletop': ~1 point/frame → raw=2.32s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.86s, interval=2s
-[2025-09-05 21:02:53]   Starting route pruning for track 'Euphemia Muffletop': 397 points, interval: 2 seconds
-[2025-09-05 21:02:53]   Interpolation interval for track 'Euphemia Muffletop' (for later use): 4.64s
-[2025-09-05 21:02:53] Pruning route by 2 second intervals...
-[2025-09-05 21:02:53] Original route has 397 points
-[2025-09-05 21:02:53] Pruning complete
-[2025-09-05 21:02:53] Interpolation complete: 203 → 227 points
-[2025-09-05 21:02:53] Processing track 'Neville Dinglewarp' (2/8)
-[2025-09-05 21:02:53] Creating route 1 for track 'Neville Dinglewarp' with 1 files
-[2025-09-05 21:02:53]   Processing 2025-07-01(1).gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:53]   Completed track 'Neville Dinglewarp'. Total points: 451
-[2025-09-05 21:02:53]   Total distance: 3629.77 meters (3.63 km)
-[2025-09-05 21:02:53]   Total time: 479.0 seconds (8.0 minutes)
-[2025-09-05 21:02:53]   Calculated dynamic pruning interval for track 'Neville Dinglewarp': ~1 point/frame → raw=1.60s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.28s, interval=1s
-[2025-09-05 21:02:53]   Starting route pruning for track 'Neville Dinglewarp': 451 points, interval: 1 seconds
-[2025-09-05 21:02:53]   Interpolation interval for track 'Neville Dinglewarp' (for later use): 3.19s
-[2025-09-05 21:02:53] Pruning route by 1 second intervals...
-[2025-09-05 21:02:53] Original route has 451 points
-[2025-09-05 21:02:53] Pruning complete
-[2025-09-05 21:02:53] Interpolation complete: 451 → 451 points
-[2025-09-05 21:02:53] Processing track 'Ramona Glifflepot' (3/8)
-[2025-09-05 21:02:53] Creating route 2 for track 'Ramona Glifflepot' with 1 files
-[2025-09-05 21:02:54]   Processing 2025-07-01_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:54]   Completed track 'Ramona Glifflepot'. Total points: 459
-[2025-09-05 21:02:54]   Total distance: 3751.54 meters (3.75 km)
-[2025-09-05 21:02:54]   Total time: 498.0 seconds (8.3 minutes)
-[2025-09-05 21:02:54]   Calculated dynamic pruning interval for track 'Ramona Glifflepot': ~1 point/frame → raw=1.66s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.33s, interval=1s
-[2025-09-05 21:02:54]   Starting route pruning for track 'Ramona Glifflepot': 459 points, interval: 1 seconds
-[2025-09-05 21:02:54]   Interpolation interval for track 'Ramona Glifflepot' (for later use): 3.32s
-[2025-09-05 21:02:54] Pruning route by 1 second intervals...
-[2025-09-05 21:02:54] Original route has 459 points
-[2025-09-05 21:02:54] Pruning complete
-[2025-09-05 21:02:54] Interpolation complete: 459 → 465 points
-[2025-09-05 21:02:54] Processing track 'Henrietta Bumblesnuff' (4/8)
-[2025-09-05 21:02:54] Creating route 3 for track 'Henrietta Bumblesnuff' with 1 files
-[2025-09-05 21:02:54]   Processing 2025-07-02(1).gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:54]   Completed track 'Henrietta Bumblesnuff'. Total points: 515
-[2025-09-05 21:02:54]   Total distance: 4331.41 meters (4.33 km)
-[2025-09-05 21:02:54]   Total time: 566.0 seconds (9.4 minutes)
-[2025-09-05 21:02:54]   Calculated dynamic pruning interval for track 'Henrietta Bumblesnuff': ~1 point/frame → raw=1.89s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.51s, interval=2s
-[2025-09-05 21:02:54]   Starting route pruning for track 'Henrietta Bumblesnuff': 515 points, interval: 2 seconds
-[2025-09-05 21:02:54]   Interpolation interval for track 'Henrietta Bumblesnuff' (for later use): 3.77s
-[2025-09-05 21:02:54] Pruning route by 2 second intervals...
-[2025-09-05 21:02:54] Original route has 515 points
-[2025-09-05 21:02:54] Pruning complete
-[2025-09-05 21:02:54] Interpolation complete: 260 → 266 points
-[2025-09-05 21:02:54] Processing track 'Tristram Snibbleblat' (5/8)
-[2025-09-05 21:02:54] Creating route 4 for track 'Tristram Snibbleblat' with 1 files
-[2025-09-05 21:02:54]   Processing 2025-07-02_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:54]   Completed track 'Tristram Snibbleblat'. Total points: 449
-[2025-09-05 21:02:54]   Total distance: 3552.61 meters (3.55 km)
-[2025-09-05 21:02:54]   Total time: 481.0 seconds (8.0 minutes)
-[2025-09-05 21:02:54]   Calculated dynamic pruning interval for track 'Tristram Snibbleblat': ~1 point/frame → raw=1.60s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.28s, interval=1s
-[2025-09-05 21:02:54]   Starting route pruning for track 'Tristram Snibbleblat': 449 points, interval: 1 seconds
-[2025-09-05 21:02:54]   Interpolation interval for track 'Tristram Snibbleblat' (for later use): 3.21s
-[2025-09-05 21:02:54] Pruning route by 1 second intervals...
-[2025-09-05 21:02:54] Original route has 449 points
-[2025-09-05 21:02:54] Pruning complete
-[2025-09-05 21:02:54] Interpolation complete: 449 → 451 points
-[2025-09-05 21:02:54] Processing track 'Cuthbert Flibberdoodle' (6/8)
-[2025-09-05 21:02:54] Creating route 5 for track 'Cuthbert Flibberdoodle' with 1 files
-[2025-09-05 21:02:54]   Processing 2025-07-04_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:54]   Completed track 'Cuthbert Flibberdoodle'. Total points: 501
-[2025-09-05 21:02:54]   Total distance: 4338.87 meters (4.34 km)
-[2025-09-05 21:02:54]   Total time: 536.0 seconds (8.9 minutes)
-[2025-09-05 21:02:54]   Calculated dynamic pruning interval for track 'Cuthbert Flibberdoodle': ~1 point/frame → raw=1.79s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.43s, interval=1s
-[2025-09-05 21:02:54]   Starting route pruning for track 'Cuthbert Flibberdoodle': 501 points, interval: 1 seconds
-[2025-09-05 21:02:54]   Interpolation interval for track 'Cuthbert Flibberdoodle' (for later use): 3.57s
-[2025-09-05 21:02:54] Pruning route by 1 second intervals...
-[2025-09-05 21:02:54] Original route has 501 points
-[2025-09-05 21:02:54] Pruning complete
-[2025-09-05 21:02:54] Interpolation complete: 501 → 503 points
-[2025-09-05 21:02:54] Processing track 'Celestine Muddlebrim' (7/8)
-[2025-09-05 21:02:54] Creating route 6 for track 'Celestine Muddlebrim' with 1 files
-[2025-09-05 21:02:54]   Processing 2020-06-13_3_edited_edited_edited.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:54]   Completed track 'Celestine Muddlebrim'. Total points: 381
-[2025-09-05 21:02:54]   Total distance: 3553.20 meters (3.55 km)
-[2025-09-05 21:02:54]   Total time: 554.0 seconds (9.2 minutes)
-[2025-09-05 21:02:54]   Calculated dynamic pruning interval for track 'Celestine Muddlebrim': ~1 point/frame → raw=1.85s (gpx_time_per_video_time/video_fps), reduced by 20% → 1.48s, interval=1s
-[2025-09-05 21:02:54]   Starting route pruning for track 'Celestine Muddlebrim': 381 points, interval: 1 seconds
-[2025-09-05 21:02:54]   Interpolation interval for track 'Celestine Muddlebrim' (for later use): 3.69s
-[2025-09-05 21:02:54] Pruning route by 1 second intervals...
-[2025-09-05 21:02:54] Original route has 381 points
-[2025-09-05 21:02:54] Pruning complete
-[2025-09-05 21:02:54] Interpolation complete: 381 → 381 points
-[2025-09-05 21:02:54] Processing track 'Clementine Nibberplop' (8/8)
-[2025-09-05 21:02:54] Creating route 7 for track 'Clementine Nibberplop' with 1 files
-[2025-09-05 21:02:54]   Processing 2024-04-28_edited_edited(1).gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:02:54]   Completed track 'Clementine Nibberplop'. Total points: 749
-[2025-09-05 21:02:54]   Total distance: 5830.57 meters (5.83 km)
-[2025-09-05 21:02:54]   Total time: 756.8 seconds (12.6 minutes)
-[2025-09-05 21:02:54]   Calculated dynamic pruning interval for track 'Clementine Nibberplop': ~1 point/frame → raw=2.52s (gpx_time_per_video_time/video_fps), reduced by 20% → 2.02s, interval=2s
-[2025-09-05 21:02:54]   Starting route pruning for track 'Clementine Nibberplop': 749 points, interval: 2 seconds
-[2025-09-05 21:02:54]   Interpolation interval for track 'Clementine Nibberplop' (for later use): 5.05s
-[2025-09-05 21:02:54] Pruning route by 2 second intervals...
-[2025-09-05 21:02:54] Original route has 749 points
-[2025-09-05 21:02:54] Pruning complete
-[2025-09-05 21:02:54] Interpolation complete: 257 → 289 points
-[2025-09-05 21:02:54] Simultaneous mode: Using total span: 756.8s
-[2025-09-05 21:02:54]   Earliest route starts at: 10:00:00
-[2025-09-05 21:02:54]   Latest route ends at: 10:12:36
-[2025-09-05 21:02:54] Created 8 routes:
-[2025-09-05 21:02:54]   Route 0: 'Euphemia Muffletop' - 227 points, 3404.46m
-[2025-09-05 21:02:54]   Route 1: 'Neville Dinglewarp' - 451 points, 3629.77m
-[2025-09-05 21:02:54]   Route 2: 'Ramona Glifflepot' - 465 points, 3751.54m
-[2025-09-05 21:02:54]   Route 3: 'Henrietta Bumblesnuff' - 266 points, 4331.41m
-[2025-09-05 21:02:54]   Route 4: 'Tristram Snibbleblat' - 451 points, 3552.61m
-[2025-09-05 21:02:54]   Route 5: 'Cuthbert Flibberdoodle' - 503 points, 4338.87m
-[2025-09-05 21:02:54]   Route 6: 'Celestine Muddlebrim' - 381 points, 3553.20m
-[2025-09-05 21:02:54]   Route 7: 'Clementine Nibberplop' - 289 points, 5794.24m
-[2025-09-05 21:02:54] Total across all routes: 3033 points, 32356.10m
-[2025-09-05 21:02:54] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
-[2025-09-05 21:02:54] Combined route created successfully:
-[2025-09-05 21:02:54]   - Total points: 227
-[2025-09-05 21:02:54]   - Total distance: 3.40 km
-[2025-09-05 21:02:54]   - Files processed: 8
-[2025-09-05 21:02:54] Step 3: Calculating unique bounding boxes and caching map tiles
-[2025-09-05 21:02:54] Starting map tile caching
-[2025-09-05 21:02:54] Calculating unique bounding boxes for 300 frames
-[2025-09-05 21:02:54] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:02:54] Final zoom mode: Collecting points from 8 routes
-[2025-09-05 21:02:54] Final zoom mode: Total points from all routes: 3033
-[2025-09-05 21:02:54] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:02:54] Final zoom mode: calculated single bounding box (24.882359, 24.972879, 60.252242, 60.277497) from 8 routes
-[2025-09-05 21:02:54] Found 1 unique bounding boxes
-[2025-09-05 21:02:54] Starting tile pre-caching for video generation
-[2025-09-05 21:02:54] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\StadiaOutdoors
-[2025-09-05 21:02:54] Processing 1 unique bounding boxes
-[2025-09-05 21:02:54] Phase 1: Gathering all required tiles...
-[2025-09-05 21:02:54] Found 50 unique tiles required across all bounding boxes
-[2025-09-05 21:02:54] Phase 2: Checking which tiles are already cached...
-[2025-09-05 21:02:54] Tile analysis complete: 50 already cached, 0 need downloading
-[2025-09-05 21:02:54] All tiles are already cached! No downloads needed.
-[2025-09-05 21:02:54] Starting render timer - beginning map image caching and video generation
-[2025-09-05 21:02:55] Step 4: Caching map images for unique bounding boxes
-[2025-09-05 21:02:55] Starting map image caching
-[2025-09-05 21:02:55] Calculating unique bounding boxes for 300 frames
-[2025-09-05 21:02:55] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:02:55] Final zoom mode: Collecting points from 8 routes
-[2025-09-05 21:02:55] Final zoom mode: Total points from all routes: 3033
-[2025-09-05 21:02:55] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:02:55] Final zoom mode: calculated single bounding box (24.882359, 24.972879, 60.252242, 60.277497) from 8 routes
-[2025-09-05 21:02:55] Found 1 unique bounding boxes
-[2025-09-05 21:02:55] Starting map image caching for video generation
-[2025-09-05 21:02:55] Processing 1 unique bounding boxes for map images
-[2025-09-05 21:02:55] Using 1 worker processes for map image generation
-[2025-09-05 21:02:56] Using single-threaded execution
-[2025-09-05 21:02:57] Map image caching complete: 1 successful, 0 failed, 1 total
-[2025-09-05 21:02:57] Map image caching completed:
-[2025-09-05 21:02:57]   - Images created: 1
-[2025-09-05 21:02:57]   - Images failed: 0
-[2025-09-05 21:02:57]   - Total bounding boxes: 1
-[2025-09-05 21:02:57] Step 5: Generating video frames
-[2025-09-05 21:02:57] Starting video generation
-[2025-09-05 21:02:57] Route time per frame: 2.5227 seconds
-[2025-09-05 21:02:57] Starting video frame generation with streaming approach...
-[2025-09-05 21:02:57] Starting streaming video creation
-[2025-09-05 21:02:57] SIMULTANEOUS MODE: Creating video: 15.0s route + 5.0s cloned = 20.0s total
-[2025-09-05 21:02:57] Each route handles its own completion and tail fade-out individually
-[2025-09-05 21:02:57] Frame breakdown: 300 route + 100 cloned = 400 total frames
-[2025-09-05 21:02:57] Output video will be saved to: temporary files\test jobs\route_video_20250905_210257.mp4
-[2025-09-05 21:02:57] Test job mode: Video will be saved in test jobs directory
-[2025-09-05 21:03:01] Starting video encoding
-[2025-09-05 21:03:01] Using GPU rendering (NVIDIA NVENC)
-[2025-09-05 21:03:53] Streaming video creation complete: temporary files\test jobs\route_video_20250905_210257.mp4
-[2025-09-05 21:03:53] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:03:53] SIMULTANEOUS MODE: Video creation completed: 300 frames generated + 100 frames cloned = 400 total frames
-[2025-09-05 21:03:53] Video frame generation completed:
-[2025-09-05 21:03:53]   - Frames created: 300
-[2025-09-05 21:03:53]   - Frames failed: 0
-[2025-09-05 21:03:53]   - Total frames: 400
-[2025-09-05 21:03:53]   - Video file: temporary files\test jobs\route_video_20250905_210257.mp4
-[2025-09-05 21:03:53] 🎬 Total rendering time: 59.18 seconds
-[2025-09-05 21:03:53] Test job completed - skipping upload
-[2025-09-05 21:03:53] Video generation completed successfully
-[2025-09-05 21:03:53] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:03:53] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:03:53] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:03:53] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:03:53] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:03:53] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:03:53] Forced Qt resource cleanup completed
-[2025-09-05 21:03:53] All test video jobs completed.
-[2025-09-05 21:06:26] Starting test video job 1/1: test videos\video test kehä3 20fps
-[2025-09-05 21:06:26] === on_job_received called ===
-[2025-09-05 21:06:26] Processing job #1000032 (type: video)
-[2025-09-05 21:06:26] Creating video generator worker...
-[2025-09-05 21:06:26] Connecting worker signals...
-[2025-09-05 21:06:26] Starting worker thread...
-[2025-09-05 21:06:26] Worker thread started successfully
-[2025-09-05 21:06:26] === on_job_received completed successfully ===
-[2025-09-05 21:06:26] Video generation triggered.
-[2025-09-05 21:06:26] Step 1: Sorting GPX files chronologically
-[2025-09-05 21:06:26] Sorting 1 GPX files chronologically...
-[2025-09-05 21:06:26] Found timestamp in 2024-05-18 kehä3.gpx: 2024-05-18 14:20:24
-[2025-09-05 21:06:26] Chronological sorting completed:
-[2025-09-05 21:06:26] Oldest route: 2024-05-18 kehä3.gpx (2024-05-18 14:20:24)
-[2025-09-05 21:06:26] Newest route: 2024-05-18 kehä3.gpx (2024-05-18 14:20:24)
-[2025-09-05 21:06:26] Total files sorted: 1
-[2025-09-05 21:06:26] Chronological sorting completed with 1 files
-[2025-09-05 21:06:26] Step 2: Creating combined route
-[2025-09-05 21:06:26] Creating combined routes from sorted GPX files...
-[2025-09-05 21:06:26] Single route mode: All track names are empty
-[2025-09-05 21:06:26] Creating single combined route...
-[2025-09-05 21:06:26] Grouped files by track: 0 named tracks, 1 unnamed files
-[2025-09-05 21:06:26] Processing 1 unnamed files
-[2025-09-05 21:06:26] Creating route 0 for track 'Unnamed' with 1 files
-[2025-09-05 21:06:26]   Processing 2024-05-18 kehä3.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:06:27]   Completed track 'Unnamed'. Total points: 9301
-[2025-09-05 21:06:27]   Total distance: 101582.90 meters (101.58 km)
-[2025-09-05 21:06:27]   Total time: 23475.0 seconds (391.2 minutes)
-[2025-09-05 21:06:27]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=117.38s (gpx_time_per_video_time/video_fps), reduced by 20% → 93.90s, interval=94s
-[2025-09-05 21:06:27]   Starting route pruning for track 'Unnamed': 9,301 points, interval: 94 seconds
-[2025-09-05 21:06:27]   Interpolation interval for track 'Unnamed' (for later use): 234.75s
-[2025-09-05 21:06:27] Pruning route by 94 second intervals...
-[2025-09-05 21:06:27] Original route has 9301 points
-[2025-09-05 21:06:27] Pruning complete
-[2025-09-05 21:06:27] Interpolation complete: 190 → 213 points
-[2025-09-05 21:06:27] Single route mode: Using sequential time accumulation: 23475.0s
-[2025-09-05 21:06:27] Created 1 routes:
-[2025-09-05 21:06:27]   Route 0: 'Unnamed' - 213 points, 90136.45m
-[2025-09-05 21:06:27] Total across all routes: 213 points, 90136.45m
-[2025-09-05 21:06:27] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
-[2025-09-05 21:06:27] Combined route created successfully:
-[2025-09-05 21:06:27]   - Total points: 213
-[2025-09-05 21:06:27]   - Total distance: 90.14 km
-[2025-09-05 21:06:27]   - Files processed: 1
-[2025-09-05 21:06:27] Step 3: Calculating unique bounding boxes and caching map tiles
-[2025-09-05 21:06:27] Starting map tile caching
-[2025-09-05 21:06:27] Calculating unique bounding boxes for 200 frames
-[2025-09-05 21:06:27] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:06:27] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:06:27] Final zoom mode: calculated single bounding box (24.505146, 25.218714, 60.107866, 60.307296) from 1 route
-[2025-09-05 21:06:27] Found 1 unique bounding boxes
-[2025-09-05 21:06:27] Starting tile pre-caching for video generation
-[2025-09-05 21:06:27] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
-[2025-09-05 21:06:27] Processing 1 unique bounding boxes
-[2025-09-05 21:06:27] Phase 1: Gathering all required tiles...
-[2025-09-05 21:06:27] Found 54 unique tiles required across all bounding boxes
-[2025-09-05 21:06:27] Phase 2: Checking which tiles are already cached...
-[2025-09-05 21:06:27] Tile analysis complete: 54 already cached, 0 need downloading
-[2025-09-05 21:06:27] All tiles are already cached! No downloads needed.
-[2025-09-05 21:06:27] Starting render timer - beginning map image caching and video generation
-[2025-09-05 21:06:28] Step 4: Caching map images for unique bounding boxes
-[2025-09-05 21:06:28] Starting map image caching
-[2025-09-05 21:06:28] Calculating unique bounding boxes for 200 frames
-[2025-09-05 21:06:28] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:06:28] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:06:28] Final zoom mode: calculated single bounding box (24.505146, 25.218714, 60.107866, 60.307296) from 1 route
-[2025-09-05 21:06:28] Found 1 unique bounding boxes
-[2025-09-05 21:06:28] Starting map image caching for video generation
-[2025-09-05 21:06:28] Processing 1 unique bounding boxes for map images
-[2025-09-05 21:06:28] Using 1 worker processes for map image generation
-[2025-09-05 21:06:29] Using single-threaded execution
-[2025-09-05 21:06:29] Map image caching complete: 1 successful, 0 failed, 1 total
-[2025-09-05 21:06:29] Map image caching completed:
-[2025-09-05 21:06:29]   - Images created: 1
-[2025-09-05 21:06:29]   - Images failed: 0
-[2025-09-05 21:06:29]   - Total bounding boxes: 1
-[2025-09-05 21:06:29] Step 5: Generating video frames
-[2025-09-05 21:06:29] Starting video generation
-[2025-09-05 21:06:29] Route time per frame: 117.3750 seconds
-[2025-09-05 21:06:29] Starting video frame generation with streaming approach...
-[2025-09-05 21:06:29] Starting streaming video creation
-[2025-09-05 21:06:29] SEQUENTIAL MODE: Creating video: 10.0s route + 3s tail + 2.0s cloned = 15.0s total
-[2025-09-05 21:06:29] Frame breakdown: 200 route + 60 tail + 40 cloned = 300 total frames
-[2025-09-05 21:06:29] Output video will be saved to: temporary files\test jobs\route_video_20250905_210629.mp4
-[2025-09-05 21:06:29] Test job mode: Video will be saved in test jobs directory
-[2025-09-05 21:06:33] Starting video encoding
-[2025-09-05 21:06:33] Using GPU rendering (NVIDIA NVENC)
-[2025-09-05 21:06:42] Streaming video creation complete: temporary files\test jobs\route_video_20250905_210629.mp4
-[2025-09-05 21:06:42] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:06:42] SEQUENTIAL MODE: Video creation completed: 260 frames generated + 40 frames cloned = 300 total frames
-[2025-09-05 21:06:42] Video frame generation completed:
-[2025-09-05 21:06:42]   - Frames created: 260
-[2025-09-05 21:06:42]   - Frames failed: 0
-[2025-09-05 21:06:42]   - Total frames: 300
-[2025-09-05 21:06:42]   - Video file: temporary files\test jobs\route_video_20250905_210629.mp4
-[2025-09-05 21:06:42] 🎬 Total rendering time: 15.37 seconds
-[2025-09-05 21:06:42] Test job completed - skipping upload
-[2025-09-05 21:06:42] Video generation completed successfully
-[2025-09-05 21:06:43] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:06:43] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:06:43] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:06:43] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:06:43] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:06:43] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:06:43] Forced Qt resource cleanup completed
-[2025-09-05 21:06:43] All test video jobs completed.
-[2025-09-05 21:06:52] Starting test video job 1/1: test videos\video test 20routes
-[2025-09-05 21:06:52] === on_job_received called ===
-[2025-09-05 21:06:52] Processing job #1000023 (type: video)
-[2025-09-05 21:06:52] Creating video generator worker...
-[2025-09-05 21:06:52] Connecting worker signals...
-[2025-09-05 21:06:52] Starting worker thread...
-[2025-09-05 21:06:52] Worker thread started successfully
-[2025-09-05 21:06:52] === on_job_received completed successfully ===
-[2025-09-05 21:06:52] Video generation triggered.
-[2025-09-05 21:06:52] Step 1: Sorting GPX files chronologically
-[2025-09-05 21:06:52] Sorting 20 GPX files chronologically...
-[2025-09-05 21:06:52] Found timestamp in 2024-05-18 kehä3.gpx: 2024-05-18 14:20:24
-[2025-09-05 21:06:52] Found timestamp in 2022-06-26.gpx: 2022-06-26 17:24:08
-[2025-09-05 21:06:52] Found timestamp in 2023-06-02.gpx: 2023-06-02 19:40:06
-[2025-09-05 21:06:52] Found timestamp in 2023-06-13.gpx: 2023-06-13 17:25:05
-[2025-09-05 21:06:52] Found timestamp in 2023-06-14.gpx: 2023-06-14 18:17:49
-[2025-09-05 21:06:52] Found timestamp in 2024-05-19.gpx: 2024-05-19 16:17:36
-[2025-09-05 21:06:52] Found timestamp in 2024-06-27.gpx: 2024-06-27 18:09:54
-[2025-09-05 21:06:52] Found timestamp in 2024-07-09.gpx: 2024-07-09 13:46:48
-[2025-09-05 21:06:52] Found timestamp in 2018-05-23.gpx: 2018-05-23 14:01:17
-[2025-09-05 21:06:52] Found timestamp in 2018-06-10.gpx: 2018-06-10 12:56:58
-[2025-09-05 21:06:52] Found timestamp in 2018-07-15.gpx: 2018-07-15 15:43:29
-[2025-09-05 21:06:52] Found timestamp in 2018-07-17.gpx: 2018-07-17 19:05:37
-[2025-09-05 21:06:52] Found timestamp in 2019-12-04_4.gpx: 2019-12-04 17:44:43
-[2025-09-05 21:06:52] Found timestamp in 2019-12-14.gpx: 2019-12-14 20:24:01
-[2025-09-05 21:06:52] Found timestamp in 2020-06-13_2.gpx: 2020-06-13 08:44:35
-[2025-09-05 21:06:52] Found timestamp in 2020-06-13_3.gpx: 2020-06-13 14:30:06
-[2025-09-05 21:06:52] Found timestamp in 2020-06-26.gpx: 2020-06-26 14:11:32
-[2025-09-05 21:06:52] Found timestamp in 2021-05-14.gpx: 2021-05-14 09:00:48
-[2025-09-05 21:06:52] Found timestamp in 2021-05-16.gpx: 2021-05-16 10:28:27
-[2025-09-05 21:06:52] Found timestamp in 2021-06-10.gpx: 2021-06-10 13:25:14
-[2025-09-05 21:06:52] Chronological sorting completed:
-[2025-09-05 21:06:52] Oldest route: 2018-05-23.gpx (2018-05-23 14:01:17)
-[2025-09-05 21:06:52] Newest route: 2024-07-09.gpx (2024-07-09 13:46:48)
-[2025-09-05 21:06:52] Total files sorted: 20
-[2025-09-05 21:06:52] Chronological sorting completed with 20 files
-[2025-09-05 21:06:52] Step 2: Creating combined route
-[2025-09-05 21:06:52] Creating combined routes from sorted GPX files...
-[2025-09-05 21:06:52] Single route mode: All track names are empty
-[2025-09-05 21:06:52] Creating single combined route...
-[2025-09-05 21:06:52] Grouped files by track: 0 named tracks, 20 unnamed files
-[2025-09-05 21:06:52] Processing 20 unnamed files
-[2025-09-05 21:06:52] Creating route 0 for track 'Unnamed' with 20 files
-[2025-09-05 21:06:52]   Processing 2018-05-23.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 21:06:52]   Processing 2018-06-10.gpx, accumulated distance: 31766.06 meters, accumulated time: 8347.0 seconds
-[2025-09-05 21:06:52]   Processing 2018-07-15.gpx, accumulated distance: 79270.87 meters, accumulated time: 22165.0 seconds
-[2025-09-05 21:06:53]   Processing 2018-07-17.gpx, accumulated distance: 123163.43 meters, accumulated time: 34298.0 seconds
-[2025-09-05 21:06:53]   Processing 2019-12-04_4.gpx, accumulated distance: 150638.62 meters, accumulated time: 43773.0 seconds
-[2025-09-05 21:06:53]   Processing 2019-12-14.gpx, accumulated distance: 154212.81 meters, accumulated time: 44680.0 seconds
-[2025-09-05 21:06:53]   Processing 2020-06-13_2.gpx, accumulated distance: 168516.68 meters, accumulated time: 48134.0 seconds
-[2025-09-05 21:06:53]   Processing 2020-06-13_3.gpx, accumulated distance: 185668.60 meters, accumulated time: 53974.0 seconds
-[2025-09-05 21:06:53]   Processing 2020-06-26.gpx, accumulated distance: 224062.39 meters, accumulated time: 65738.0 seconds
-[2025-09-05 21:06:53]   Processing 2021-05-14.gpx, accumulated distance: 236125.01 meters, accumulated time: 68845.0 seconds
-[2025-09-05 21:06:54]   Processing 2021-05-16.gpx, accumulated distance: 278494.00 meters, accumulated time: 87434.0 seconds
-[2025-09-05 21:06:54]   Processing 2021-06-10.gpx, accumulated distance: 335424.71 meters, accumulated time: 106374.0 seconds
-[2025-09-05 21:06:55]   Processing 2022-06-26.gpx, accumulated distance: 386143.25 meters, accumulated time: 121939.0 seconds
-[2025-09-05 21:06:55]   Processing 2023-06-02.gpx, accumulated distance: 392320.90 meters, accumulated time: 123449.0 seconds
-[2025-09-05 21:06:55]   Processing 2023-06-13.gpx, accumulated distance: 412048.24 meters, accumulated time: 131290.0 seconds
-[2025-09-05 21:06:55]   Processing 2023-06-14.gpx, accumulated distance: 419424.06 meters, accumulated time: 132944.0 seconds
-[2025-09-05 21:06:55]   Processing 2024-05-18 kehä3.gpx, accumulated distance: 433614.80 meters, accumulated time: 136591.0 seconds
-[2025-09-05 21:06:55]   Processing 2024-05-19.gpx, accumulated distance: 535197.70 meters, accumulated time: 160066.0 seconds
-[2025-09-05 21:06:55]   Processing 2024-06-27.gpx, accumulated distance: 547227.03 meters, accumulated time: 161873.0 seconds
-[2025-09-05 21:06:55]   Processing 2024-07-09.gpx, accumulated distance: 563755.60 meters, accumulated time: 165157.0 seconds
-[2025-09-05 21:06:56]   Completed track 'Unnamed'. Total points: 59197
-[2025-09-05 21:06:56]   Total distance: 600084.41 meters (600.08 km)
-[2025-09-05 21:06:56]   Total time: 171594.0 seconds (2859.9 minutes)
-[2025-09-05 21:06:56]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=571.98s (gpx_time_per_video_time/video_fps), reduced by 20% → 457.58s, interval=458s
-[2025-09-05 21:06:56]   Starting route pruning for track 'Unnamed': 59,197 points, interval: 458 seconds
-[2025-09-05 21:06:56]   Interpolation interval for track 'Unnamed' (for later use): 1143.96s
-[2025-09-05 21:06:56] Pruning route by 458 second intervals...
-[2025-09-05 21:06:56] Original route has 59197 points
-[2025-09-05 21:06:56] Pruning complete
-[2025-09-05 21:06:56] Interpolation complete: 340 → 351 points
-[2025-09-05 21:06:56] Single route mode: Using sequential time accumulation: 167005.0s
-[2025-09-05 21:06:56] Created 1 routes:
-[2025-09-05 21:06:56]   Route 0: 'Unnamed' - 351 points, 431854.25m
-[2025-09-05 21:06:56] Total across all routes: 351 points, 431854.25m
-[2025-09-05 21:06:56] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
-[2025-09-05 21:06:56] Combined route created successfully:
-[2025-09-05 21:06:56]   - Total points: 351
-[2025-09-05 21:06:56]   - Total distance: 431.85 km
-[2025-09-05 21:06:56]   - Files processed: 20
-[2025-09-05 21:06:56] Step 3: Calculating unique bounding boxes and caching map tiles
-[2025-09-05 21:06:56] Starting map tile caching
-[2025-09-05 21:06:56] Calculating unique bounding boxes for 300 frames
-[2025-09-05 21:06:56] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:06:56] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:06:56] Final zoom mode: calculated single bounding box (24.269105, 25.47454, 60.097258, 60.433562) from 1 route
-[2025-09-05 21:06:56] Found 1 unique bounding boxes
-[2025-09-05 21:06:56] Starting tile pre-caching for video generation
-[2025-09-05 21:06:56] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
-[2025-09-05 21:06:56] Processing 1 unique bounding boxes
-[2025-09-05 21:06:56] Phase 1: Gathering all required tiles...
-[2025-09-05 21:06:56] Found 35 unique tiles required across all bounding boxes
-[2025-09-05 21:06:56] Phase 2: Checking which tiles are already cached...
-[2025-09-05 21:06:56] Tile analysis complete: 35 already cached, 0 need downloading
-[2025-09-05 21:06:56] All tiles are already cached! No downloads needed.
-[2025-09-05 21:06:56] Starting render timer - beginning map image caching and video generation
-[2025-09-05 21:06:57] Step 4: Caching map images for unique bounding boxes
-[2025-09-05 21:06:57] Starting map image caching
-[2025-09-05 21:06:57] Calculating unique bounding boxes for 300 frames
-[2025-09-05 21:06:57] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 21:06:57] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 21:06:57] Final zoom mode: calculated single bounding box (24.269105, 25.47454, 60.097258, 60.433562) from 1 route
-[2025-09-05 21:06:57] Found 1 unique bounding boxes
-[2025-09-05 21:06:57] Starting map image caching for video generation
-[2025-09-05 21:06:57] Processing 1 unique bounding boxes for map images
-[2025-09-05 21:06:57] Using 1 worker processes for map image generation
-[2025-09-05 21:06:58] Using single-threaded execution
-[2025-09-05 21:06:58] Map image caching complete: 1 successful, 0 failed, 1 total
-[2025-09-05 21:06:58] Map image caching completed:
-[2025-09-05 21:06:58]   - Images created: 1
-[2025-09-05 21:06:58]   - Images failed: 0
-[2025-09-05 21:06:58]   - Total bounding boxes: 1
-[2025-09-05 21:06:58] Step 5: Generating video frames
-[2025-09-05 21:06:58] Starting video generation
-[2025-09-05 21:06:58] Route time per frame: 556.6833 seconds
-[2025-09-05 21:06:58] Starting video frame generation with streaming approach...
-[2025-09-05 21:06:58] Starting streaming video creation
-[2025-09-05 21:06:58] SEQUENTIAL MODE: Creating video: 15.0s route + 3s tail + 2.0s cloned = 20.0s total
-[2025-09-05 21:06:58] Frame breakdown: 300 route + 60 tail + 40 cloned = 400 total frames
-[2025-09-05 21:06:58] Output video will be saved to: temporary files\test jobs\route_video_20250905_210658.mp4
-[2025-09-05 21:06:58] Test job mode: Video will be saved in test jobs directory
-[2025-09-05 21:07:02] Starting video encoding
-[2025-09-05 21:07:02] Using GPU rendering (NVIDIA NVENC)
-[2025-09-05 21:07:16] Streaming video creation complete: temporary files\test jobs\route_video_20250905_210658.mp4
-[2025-09-05 21:07:16] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:07:16] SEQUENTIAL MODE: Video creation completed: 360 frames generated + 40 frames cloned = 400 total frames
-[2025-09-05 21:07:16] Video frame generation completed:
-[2025-09-05 21:07:16]   - Frames created: 360
-[2025-09-05 21:07:16]   - Frames failed: 0
-[2025-09-05 21:07:16]   - Total frames: 400
-[2025-09-05 21:07:16]   - Video file: temporary files\test jobs\route_video_20250905_210658.mp4
-[2025-09-05 21:07:16] 🎬 Total rendering time: 20.53 seconds
-[2025-09-05 21:07:16] Test job completed - skipping upload
-[2025-09-05 21:07:16] Video generation completed successfully
-[2025-09-05 21:07:17] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:07:17] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:07:17] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:07:17] Matplotlib and Qt resources cleaned up
-[2025-09-05 21:07:17] Force-killed any remaining FFmpeg processes
-[2025-09-05 21:07:17] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 21:07:17] Forced Qt resource cleanup completed
-[2025-09-05 21:07:17] All test video jobs completed.
-[2025-09-05 21:09:11] Application closing...
+[2025-09-05 22:55:37] Debug logging started
+[2025-09-05 22:55:37] Configuration loaded
+[2025-09-05 22:55:37] Debug logging enabled
+[2025-09-05 22:55:37] GPU rendering enabled
+[2025-09-05 22:55:37] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[2025-09-05 22:55:37] App version: 0.10
+[2025-09-05 22:55:37] Setting up system tray
+[2025-09-05 22:55:37] System tray icon created
+[2025-09-05 22:55:37] Testing connection to web server
+[2025-09-05 22:55:37] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-09-05T19:55:37.956766+00:00", "accepted_version": "0.10"}
+[2025-09-05 22:55:38] Storage box connection successful.
+[2025-09-05 22:55:38] Map tile cache syncing is disabled in config. Skipping sync.
+[2025-09-05 22:55:38] Checking drive space...
+[2025-09-05 22:55:38] Storage box credentials set for background tile syncing
+[2025-09-05 22:55:38] Bootup completed successfully
+[2025-09-05 22:55:39] CPU threads set to: 8
+[2025-09-05 22:55:43] Starting test video job 1/1: test videos\WhyIsItRedtest
+[2025-09-05 22:55:43] === on_job_received called ===
+[2025-09-05 22:55:43] Processing job #320 (type: video)
+[2025-09-05 22:55:43] Creating video generator worker...
+[2025-09-05 22:55:43] Connecting worker signals...
+[2025-09-05 22:55:43] Starting worker thread...
+[2025-09-05 22:55:43] Worker thread started successfully
+[2025-09-05 22:55:43] === on_job_received completed successfully ===
+[2025-09-05 22:55:43] Video generation triggered.
+[2025-09-05 22:55:43] Step 1: Sorting GPX files chronologically
+[2025-09-05 22:55:43] Sorting 7 GPX files chronologically...
+[2025-09-05 22:55:43] Found timestamp in 2021-05-16.gpx: 2021-05-16 10:28:27
+[2025-09-05 22:55:43] Found timestamp in 2021-06-10.gpx: 2021-06-10 13:25:14
+[2025-09-05 22:55:43] Found timestamp in 2022-06-26.gpx: 2022-06-26 17:24:08
+[2025-09-05 22:55:43] Found timestamp in 2023-06-02.gpx: 2023-06-02 19:40:06
+[2025-09-05 22:55:43] Found timestamp in 2020-06-13_3.gpx: 2020-06-13 14:30:06
+[2025-09-05 22:55:43] Found timestamp in 2020-06-26.gpx: 2020-06-26 14:11:32
+[2025-09-05 22:55:43] Found timestamp in 2021-05-14.gpx: 2021-05-14 09:00:48
+[2025-09-05 22:55:43] Chronological sorting completed:
+[2025-09-05 22:55:43] Oldest route: 2020-06-13_3.gpx (2020-06-13 14:30:06)
+[2025-09-05 22:55:43] Newest route: 2023-06-02.gpx (2023-06-02 19:40:06)
+[2025-09-05 22:55:43] Total files sorted: 7
+[2025-09-05 22:55:43] Chronological sorting completed with 7 files
+[2025-09-05 22:55:43] Step 2: Creating combined route
+[2025-09-05 22:55:43] Creating combined routes from sorted GPX files...
+[2025-09-05 22:55:43] Single route mode: All track names are empty
+[2025-09-05 22:55:43] Creating single combined route...
+[2025-09-05 22:55:43] Grouped files by track: 0 named tracks, 7 unnamed files
+[2025-09-05 22:55:43] Processing 7 unnamed files
+[2025-09-05 22:55:43] Creating route 0 for track 'Unnamed' with 7 files
+[2025-09-05 22:55:43]   Processing 2020-06-13_3.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
+[2025-09-05 22:55:43]   Processing 2020-06-26.gpx, accumulated distance: 38393.79 meters, accumulated time: 11764.0 seconds
+[2025-09-05 22:55:43]   Processing 2021-05-14.gpx, accumulated distance: 50456.41 meters, accumulated time: 14871.0 seconds
+[2025-09-05 22:55:43]   Processing 2021-05-16.gpx, accumulated distance: 92825.40 meters, accumulated time: 33460.0 seconds
+[2025-09-05 22:55:44]   Processing 2021-06-10.gpx, accumulated distance: 149756.11 meters, accumulated time: 52400.0 seconds
+[2025-09-05 22:55:44]   Processing 2022-06-26.gpx, accumulated distance: 200474.65 meters, accumulated time: 67965.0 seconds
+[2025-09-05 22:55:44]   Processing 2023-06-02.gpx, accumulated distance: 206652.30 meters, accumulated time: 69475.0 seconds
+[2025-09-05 22:55:44]   Completed track 'Unnamed'. Total points: 24242
+[2025-09-05 22:55:44]   Total distance: 226379.64 meters (226.38 km)
+[2025-09-05 22:55:44]   Total time: 77316.0 seconds (1288.6 minutes)
+[2025-09-05 22:55:44]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=128.86s (gpx_time_per_video_time/video_fps), reduced by 20% → 103.09s, interval=103s
+[2025-09-05 22:55:44]   Starting route pruning for track 'Unnamed': 24,242 points, interval: 103 seconds
+[2025-09-05 22:55:44]   Interpolation interval for track 'Unnamed' (for later use): 257.72s
+[2025-09-05 22:55:44] Pruning route by 103 second intervals...
+[2025-09-05 22:55:44] Original route has 24242 points
+[2025-09-05 22:55:44] Pruning complete
+[2025-09-05 22:55:44] Interpolation complete: 553 → 617 points
+[2025-09-05 22:55:44] Single route mode: Using sequential time accumulation: 77073.0s
+[2025-09-05 22:55:44] Created 1 routes:
+[2025-09-05 22:55:44]   Route 0: 'Unnamed' - 617 points, 199366.84m
+[2025-09-05 22:55:44] Total across all routes: 617 points, 199366.84m
+[2025-09-05 22:55:44] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
+[2025-09-05 22:55:44] Combined route created successfully:
+[2025-09-05 22:55:44]   - Total points: 617
+[2025-09-05 22:55:44]   - Total distance: 199.37 km
+[2025-09-05 22:55:44]   - Files processed: 7
+[2025-09-05 22:55:44] Step 3: Calculating unique bounding boxes and caching map tiles
+[2025-09-05 22:55:44] Starting map tile caching
+[2025-09-05 22:55:44] Calculating unique bounding boxes for 600 frames
+[2025-09-05 22:55:44] Using 'final' zoom mode - calculating single bounding box for entire route
+[2025-09-05 22:55:44] Saved final bounding box to temporary files\route\final_bounding_box.pkl
+[2025-09-05 22:55:44] Final zoom mode: calculated single bounding box (24.311544, 25.474153, 60.108508, 60.432812) from 1 route
+[2025-09-05 22:55:44] Found 1 unique bounding boxes
+[2025-09-05 22:55:44] Starting tile pre-caching for video generation
+[2025-09-05 22:55:44] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
+[2025-09-05 22:55:44] Processing 1 unique bounding boxes
+[2025-09-05 22:55:44] Phase 1: Gathering all required tiles...
+[2025-09-05 22:55:44] Found 35 unique tiles required across all bounding boxes
+[2025-09-05 22:55:44] Phase 2: Checking which tiles are already cached...
+[2025-09-05 22:55:44] Tile analysis complete: 35 already cached, 0 need downloading
+[2025-09-05 22:55:44] All tiles are already cached! No downloads needed.
+[2025-09-05 22:55:44] Starting render timer - beginning map image caching and video generation
+[2025-09-05 22:55:45] Step 4: Caching map images for unique bounding boxes
+[2025-09-05 22:55:45] Starting map image caching
+[2025-09-05 22:55:45] Calculating unique bounding boxes for 600 frames
+[2025-09-05 22:55:46] Using 'final' zoom mode - calculating single bounding box for entire route
+[2025-09-05 22:55:46] Saved final bounding box to temporary files\route\final_bounding_box.pkl
+[2025-09-05 22:55:46] Final zoom mode: calculated single bounding box (24.311544, 25.474153, 60.108508, 60.432812) from 1 route
+[2025-09-05 22:55:46] Found 1 unique bounding boxes
+[2025-09-05 22:55:46] Starting map image caching for video generation
+[2025-09-05 22:55:46] Processing 1 unique bounding boxes for map images
+[2025-09-05 22:55:46] Using 1 worker processes for map image generation
+[2025-09-05 22:55:47] Using single-threaded execution
+[2025-09-05 22:55:47] Map image caching complete: 1 successful, 0 failed, 1 total
+[2025-09-05 22:55:47] Map image caching completed:
+[2025-09-05 22:55:47]   - Images created: 1
+[2025-09-05 22:55:47]   - Images failed: 0
+[2025-09-05 22:55:47]   - Total bounding boxes: 1
+[2025-09-05 22:55:47] Step 5: Generating video frames
+[2025-09-05 22:55:47] Starting video generation
+[2025-09-05 22:55:47] Route time per frame: 128.4550 seconds
+[2025-09-05 22:55:47] Starting video frame generation with streaming approach...
+[2025-09-05 22:55:47] Starting streaming video creation
+[2025-09-05 22:55:47] SEQUENTIAL MODE: Creating video: 20.0s route + 2s tail + 3.0s cloned = 25.0s total
+[2025-09-05 22:55:47] Frame breakdown: 600 route + 60 tail + 90 cloned = 750 total frames
+[2025-09-05 22:55:47] Output video will be saved to: temporary files\test jobs\route_video_20250905_225547.mp4
+[2025-09-05 22:55:47] Test job mode: Video will be saved in test jobs directory
+[2025-09-05 22:55:51] Starting video encoding
+[2025-09-05 22:55:51] Using GPU rendering (NVIDIA NVENC)
+[2025-09-05 22:56:22] Streaming video creation complete: temporary files\test jobs\route_video_20250905_225547.mp4
+[2025-09-05 22:56:22] MoviePy and FFmpeg processes cleaned up
+[2025-09-05 22:56:22] SEQUENTIAL MODE: Video creation completed: 660 frames generated + 90 frames cloned = 750 total frames
+[2025-09-05 22:56:22] Video frame generation completed:
+[2025-09-05 22:56:22]   - Frames created: 660
+[2025-09-05 22:56:22]   - Frames failed: 0
+[2025-09-05 22:56:22]   - Total frames: 750
+[2025-09-05 22:56:22]   - Video file: temporary files\test jobs\route_video_20250905_225547.mp4
+[2025-09-05 22:56:22] 🎬 Total rendering time: 37.52 seconds
+[2025-09-05 22:56:22] Test job completed - skipping upload
+[2025-09-05 22:56:22] Video generation completed successfully
+[2025-09-05 22:56:22] Matplotlib and Qt resources cleaned up
+[2025-09-05 22:56:22] Force-killed any remaining FFmpeg processes
+[2025-09-05 22:56:22] MoviePy and FFmpeg processes cleaned up
+[2025-09-05 22:56:22] Matplotlib and Qt resources cleaned up
+[2025-09-05 22:56:22] Force-killed any remaining FFmpeg processes
+[2025-09-05 22:56:22] MoviePy and FFmpeg processes cleaned up
+[2025-09-05 22:56:22] Forced Qt resource cleanup completed
+[2025-09-05 22:56:22] All test video jobs completed.

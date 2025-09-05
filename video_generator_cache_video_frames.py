@@ -454,9 +454,10 @@ class StreamingFrameGenerator:
         if 'track_objects' in json_data:
             for track_obj in json_data['track_objects']:
                 filename = track_obj['filename']
-                # Remove .gpx extension if present to match the filename format in points
+                # Remove path and extension to match the format in points_for_frame
+                filename = os.path.basename(filename)  # Remove path
                 if filename.endswith('.gpx'):
-                    filename = filename[:-4]
+                    filename = filename[:-4]  # Remove .gpx extension
                 
                 # Convert hex color to RGBA once
                 try:
@@ -465,6 +466,15 @@ class StreamingFrameGenerator:
                     rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red
                 
                 self.filename_to_rgba[filename] = rgba_color
+                
+                # Debug logging
+                print(f"Mapped filename: '{filename}' to color: {rgba_color}")
+            
+            # Log all mapped filenames for verification
+            print("\nAll filename to RGBA mappings:")
+            for filename, rgba in self.filename_to_rgba.items():
+                print(f"  {filename}: {rgba}")
+            print()
         
         # Pre-load stamp array once for all frames
         self.stamp_array = None

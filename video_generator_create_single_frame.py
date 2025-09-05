@@ -245,6 +245,27 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
     current_segment = []
     current_filename = None
     
+    # Debug: Track unique filenames in this tail
+    unique_filenames = set()
+    
+    for point in tail_points:
+        point_filename = point[7] if len(point) > 7 else None
+        if point_filename:
+            unique_filenames.add(point_filename)
+    
+    # Debug: Log all unique filenames found in tail points
+    if unique_filenames:
+        print("\nDebug - Filenames in tail points:")
+        for fn in sorted(unique_filenames):
+            color = filename_to_rgba.get(fn, "NOT FOUND")
+            print(f"  {fn}: {color}")
+    else:
+        print("\nDebug: No filenames found in tail points")
+    
+    # Reset for processing
+    current_segment = []
+    current_filename = None
+    
     for point in tail_points:
         point_filename = point[7] if len(point) > 7 else None
         
@@ -835,10 +856,27 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             # Get filename from first point of the track (index 7)
             filename = track[0][7] if len(track[0]) > 7 else None
             
+            # Debug: Log the filename we're processing
+            print(f"\nProcessing track with filename: {filename}")
+            print(f"Available color mappings: {list(filename_to_rgba.keys())}" if filename_to_rgba else "No filename_to_rgba mapping available")
+            
             # Look up pre-computed RGBA color for this filename
-            if filename and filename_to_rgba and filename in filename_to_rgba:
-                rgba_color = filename_to_rgba[filename]
+            if filename and filename_to_rgba:
+                if filename in filename_to_rgba:
+                    rgba_color = filename_to_rgba[filename]
+                    print(f"Found color for '{filename}': {rgba_color}")
+                else:
+                    # Try to find a matching filename with different case or whitespace
+                    matching_key = next((k for k in filename_to_rgba.keys() 
+                                      if k and filename and k.lower() == filename.lower()), None)
+                    if matching_key:
+                        print(f"Found case-insensitive match: '{filename}' -> '{matching_key}'")
+                        rgba_color = filename_to_rgba[matching_key]
+                    else:
+                        print(f"WARNING: No color mapping found for filename: '{filename}'. Using default red.")
+                        rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
             else:
+                print(f"WARNING: No filename or no filename_to_rgba mapping. Using default red for track.")
                 rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
             
             # Convert GPS coordinates to Web Mercator for plotting (same coordinate system as cached images)

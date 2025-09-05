@@ -312,11 +312,9 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
             if log_callback:
                 log_callback(f"  Processing {filename}, accumulated distance: {accumulated_distance:.2f} meters, accumulated time: {accumulated_time:.1f} seconds")
             
-            # Extract filename without extension for the legend or name tags if the user has either enabled
-            if (json_data.get('name_tags', False)) or (json_data.get('legend', 'off') != 'off'):
-                filename_without_ext = Path(filename).stem
-            else:
-                filename_without_ext = None
+            # Always extract filename without extension for color mapping
+            # This is needed for route colors even if name_tags and legend are disabled
+            filename_without_ext = Path(filename).stem
             
             try:
                 # Parse the GPX content

@@ -1,33 +1,42 @@
-[2025-09-05 21:00:43] Debug logging started
-[2025-09-05 21:00:51] Loaded stamp: img/stamp_2x.npy
-[2025-09-05 21:00:51] Using 6 worker processes for frame generation
-[2025-09-05 21:00:52] Buffer size: 30 frames (total frames: 460)
-[2025-09-05 21:00:52] Pre-warming buffer with initial frames...
-[2025-09-05 21:00:52] Pre-warmed 15 frames
-[2025-09-05 21:00:55] Buffer pre-warmed: 6 frames ready
-[2025-09-05 21:00:55] 
+[2025-09-05 22:55:37] Debug logging started
+[2025-09-05 22:55:47] Mapped filename: '2020-06-13_3' to color: (0.5019607843137255, 0.7529411764705882, 0.0, 1.0)
+[2025-09-05 22:55:47] Mapped filename: '2020-06-26' to color: (0.25098039215686274, 0.0, 0.5019607843137255, 1.0)
+[2025-09-05 22:55:47] Mapped filename: '2021-05-14' to color: (0.0, 0.25098039215686274, 0.5019607843137255, 1.0)
+[2025-09-05 22:55:47] Mapped filename: '2021-05-16' to color: (0.7529411764705882, 0.5019607843137255, 0.0, 1.0)
+[2025-09-05 22:55:47] Mapped filename: '2021-06-10' to color: (0.25098039215686274, 0.25098039215686274, 0.984313725490196, 1.0)
+[2025-09-05 22:55:47] Mapped filename: '2022-06-26' to color: (0.5019607843137255, 0.0, 0.0, 1.0)
+[2025-09-05 22:55:47] Mapped filename: '2023-06-02' to color: (0.7529411764705882, 0.25098039215686274, 0.0, 1.0)
+[2025-09-05 22:55:47] 
+All filename to RGBA mappings:
+[2025-09-05 22:55:47]   2020-06-13_3: (0.5019607843137255, 0.7529411764705882, 0.0, 1.0)
+[2025-09-05 22:55:47]   2020-06-26: (0.25098039215686274, 0.0, 0.5019607843137255, 1.0)
+[2025-09-05 22:55:47]   2021-05-14: (0.0, 0.25098039215686274, 0.5019607843137255, 1.0)
+[2025-09-05 22:55:47]   2021-05-16: (0.7529411764705882, 0.5019607843137255, 0.0, 1.0)
+[2025-09-05 22:55:47]   2021-06-10: (0.25098039215686274, 0.25098039215686274, 0.984313725490196, 1.0)
+[2025-09-05 22:55:47]   2022-06-26: (0.5019607843137255, 0.0, 0.0, 1.0)
+[2025-09-05 22:55:47]   2023-06-02: (0.7529411764705882, 0.25098039215686274, 0.0, 1.0)
+[2025-09-05 22:55:47] 
+[2025-09-05 22:55:47] Loaded stamp: img/stamp_1x.npy
+[2025-09-05 22:55:47] Using 8 worker processes for frame generation
+[2025-09-05 22:55:48] Buffer size: 40 frames (total frames: 750)
+[2025-09-05 22:55:48] Pre-warming buffer with initial frames...
+[2025-09-05 22:55:48] Pre-warmed 20 frames
+[2025-09-05 22:55:51] Buffer pre-warmed: 25 frames ready
+[2025-09-05 22:55:51] 
 Requesting missing frame 1 on-demand (consecutive: 1)
-[2025-09-05 21:02:57] Loaded stamp: img/stamp_2x.npy
-[2025-09-05 21:02:57] Using 6 worker processes for frame generation
-[2025-09-05 21:02:58] Buffer size: 30 frames (total frames: 400)
-[2025-09-05 21:02:58] Pre-warming buffer with initial frames...
-[2025-09-05 21:02:58] Pre-warmed 15 frames
-[2025-09-05 21:03:01] Buffer pre-warmed: 6 frames ready
-[2025-09-05 21:03:01] 
-Requesting missing frame 1 on-demand (consecutive: 1)
-[2025-09-05 21:06:29] Loaded stamp: img/stamp_1x.npy
-[2025-09-05 21:06:29] Using 6 worker processes for frame generation
-[2025-09-05 21:06:31] Buffer size: 30 frames (total frames: 300)
-[2025-09-05 21:06:31] Pre-warming buffer with initial frames...
-[2025-09-05 21:06:31] Pre-warmed 15 frames
-[2025-09-05 21:06:33] Buffer pre-warmed: 14 frames ready
-[2025-09-05 21:06:33] 
-Requesting missing frame 1 on-demand (consecutive: 1)
-[2025-09-05 21:06:58] Loaded stamp: img/stamp_1x.npy
-[2025-09-05 21:06:58] Using 6 worker processes for frame generation
-[2025-09-05 21:06:59] Buffer size: 30 frames (total frames: 400)
-[2025-09-05 21:06:59] Pre-warming buffer with initial frames...
-[2025-09-05 21:06:59] Pre-warmed 15 frames
-[2025-09-05 21:07:02] Buffer pre-warmed: 14 frames ready
-[2025-09-05 21:07:02] 
-Requesting missing frame 1 on-demand (consecutive: 1)
+[2025-09-05 22:55:56] 
+Requesting missing frame 123 on-demand (consecutive: 1)
+[2025-09-05 22:56:02] 
+Requesting missing frame 245 on-demand (consecutive: 1)
+[2025-09-05 22:56:12] 
+Requesting missing frame 490 on-demand (consecutive: 1)
+[2025-09-05 22:56:14] 
+Requesting missing frame 492 on-demand (consecutive: 1)
+[2025-09-05 22:56:14] 
+Requesting missing frame 494 on-demand (consecutive: 1)
+[2025-09-05 22:56:14] 
+Requesting missing frame 505 on-demand (consecutive: 1)
+[2025-09-05 22:56:15] 
+Requesting missing frame 507 on-demand (consecutive: 1)
+[2025-09-05 22:56:15] 
+Requesting missing frame 509 on-demand (consecutive: 1)
