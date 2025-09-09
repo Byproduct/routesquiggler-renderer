@@ -1,134 +1,492 @@
-[2025-09-05 22:55:37] Debug logging started
-[2025-09-05 22:55:37] Configuration loaded
-[2025-09-05 22:55:37] Debug logging enabled
-[2025-09-05 22:55:37] GPU rendering enabled
-[2025-09-05 22:55:37] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
-[2025-09-05 22:55:37] App version: 0.10
-[2025-09-05 22:55:37] Setting up system tray
-[2025-09-05 22:55:37] System tray icon created
-[2025-09-05 22:55:37] Testing connection to web server
-[2025-09-05 22:55:37] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-09-05T19:55:37.956766+00:00", "accepted_version": "0.10"}
-[2025-09-05 22:55:38] Storage box connection successful.
-[2025-09-05 22:55:38] Map tile cache syncing is disabled in config. Skipping sync.
-[2025-09-05 22:55:38] Checking drive space...
-[2025-09-05 22:55:38] Storage box credentials set for background tile syncing
-[2025-09-05 22:55:38] Bootup completed successfully
-[2025-09-05 22:55:39] CPU threads set to: 8
-[2025-09-05 22:55:43] Starting test video job 1/1: test videos\WhyIsItRedtest
-[2025-09-05 22:55:43] === on_job_received called ===
-[2025-09-05 22:55:43] Processing job #320 (type: video)
-[2025-09-05 22:55:43] Creating video generator worker...
-[2025-09-05 22:55:43] Connecting worker signals...
-[2025-09-05 22:55:43] Starting worker thread...
-[2025-09-05 22:55:43] Worker thread started successfully
-[2025-09-05 22:55:43] === on_job_received completed successfully ===
-[2025-09-05 22:55:43] Video generation triggered.
-[2025-09-05 22:55:43] Step 1: Sorting GPX files chronologically
-[2025-09-05 22:55:43] Sorting 7 GPX files chronologically...
-[2025-09-05 22:55:43] Found timestamp in 2021-05-16.gpx: 2021-05-16 10:28:27
-[2025-09-05 22:55:43] Found timestamp in 2021-06-10.gpx: 2021-06-10 13:25:14
-[2025-09-05 22:55:43] Found timestamp in 2022-06-26.gpx: 2022-06-26 17:24:08
-[2025-09-05 22:55:43] Found timestamp in 2023-06-02.gpx: 2023-06-02 19:40:06
-[2025-09-05 22:55:43] Found timestamp in 2020-06-13_3.gpx: 2020-06-13 14:30:06
-[2025-09-05 22:55:43] Found timestamp in 2020-06-26.gpx: 2020-06-26 14:11:32
-[2025-09-05 22:55:43] Found timestamp in 2021-05-14.gpx: 2021-05-14 09:00:48
-[2025-09-05 22:55:43] Chronological sorting completed:
-[2025-09-05 22:55:43] Oldest route: 2020-06-13_3.gpx (2020-06-13 14:30:06)
-[2025-09-05 22:55:43] Newest route: 2023-06-02.gpx (2023-06-02 19:40:06)
-[2025-09-05 22:55:43] Total files sorted: 7
-[2025-09-05 22:55:43] Chronological sorting completed with 7 files
-[2025-09-05 22:55:43] Step 2: Creating combined route
-[2025-09-05 22:55:43] Creating combined routes from sorted GPX files...
-[2025-09-05 22:55:43] Single route mode: All track names are empty
-[2025-09-05 22:55:43] Creating single combined route...
-[2025-09-05 22:55:43] Grouped files by track: 0 named tracks, 7 unnamed files
-[2025-09-05 22:55:43] Processing 7 unnamed files
-[2025-09-05 22:55:43] Creating route 0 for track 'Unnamed' with 7 files
-[2025-09-05 22:55:43]   Processing 2020-06-13_3.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
-[2025-09-05 22:55:43]   Processing 2020-06-26.gpx, accumulated distance: 38393.79 meters, accumulated time: 11764.0 seconds
-[2025-09-05 22:55:43]   Processing 2021-05-14.gpx, accumulated distance: 50456.41 meters, accumulated time: 14871.0 seconds
-[2025-09-05 22:55:43]   Processing 2021-05-16.gpx, accumulated distance: 92825.40 meters, accumulated time: 33460.0 seconds
-[2025-09-05 22:55:44]   Processing 2021-06-10.gpx, accumulated distance: 149756.11 meters, accumulated time: 52400.0 seconds
-[2025-09-05 22:55:44]   Processing 2022-06-26.gpx, accumulated distance: 200474.65 meters, accumulated time: 67965.0 seconds
-[2025-09-05 22:55:44]   Processing 2023-06-02.gpx, accumulated distance: 206652.30 meters, accumulated time: 69475.0 seconds
-[2025-09-05 22:55:44]   Completed track 'Unnamed'. Total points: 24242
-[2025-09-05 22:55:44]   Total distance: 226379.64 meters (226.38 km)
-[2025-09-05 22:55:44]   Total time: 77316.0 seconds (1288.6 minutes)
-[2025-09-05 22:55:44]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=128.86s (gpx_time_per_video_time/video_fps), reduced by 20% → 103.09s, interval=103s
-[2025-09-05 22:55:44]   Starting route pruning for track 'Unnamed': 24,242 points, interval: 103 seconds
-[2025-09-05 22:55:44]   Interpolation interval for track 'Unnamed' (for later use): 257.72s
-[2025-09-05 22:55:44] Pruning route by 103 second intervals...
-[2025-09-05 22:55:44] Original route has 24242 points
-[2025-09-05 22:55:44] Pruning complete
-[2025-09-05 22:55:44] Interpolation complete: 553 → 617 points
-[2025-09-05 22:55:44] Single route mode: Using sequential time accumulation: 77073.0s
-[2025-09-05 22:55:44] Created 1 routes:
-[2025-09-05 22:55:44]   Route 0: 'Unnamed' - 617 points, 199366.84m
-[2025-09-05 22:55:44] Total across all routes: 617 points, 199366.84m
-[2025-09-05 22:55:44] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
-[2025-09-05 22:55:44] Combined route created successfully:
-[2025-09-05 22:55:44]   - Total points: 617
-[2025-09-05 22:55:44]   - Total distance: 199.37 km
-[2025-09-05 22:55:44]   - Files processed: 7
-[2025-09-05 22:55:44] Step 3: Calculating unique bounding boxes and caching map tiles
-[2025-09-05 22:55:44] Starting map tile caching
-[2025-09-05 22:55:44] Calculating unique bounding boxes for 600 frames
-[2025-09-05 22:55:44] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 22:55:44] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 22:55:44] Final zoom mode: calculated single bounding box (24.311544, 25.474153, 60.108508, 60.432812) from 1 route
-[2025-09-05 22:55:44] Found 1 unique bounding boxes
-[2025-09-05 22:55:44] Starting tile pre-caching for video generation
-[2025-09-05 22:55:44] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
-[2025-09-05 22:55:44] Processing 1 unique bounding boxes
-[2025-09-05 22:55:44] Phase 1: Gathering all required tiles...
-[2025-09-05 22:55:44] Found 35 unique tiles required across all bounding boxes
-[2025-09-05 22:55:44] Phase 2: Checking which tiles are already cached...
-[2025-09-05 22:55:44] Tile analysis complete: 35 already cached, 0 need downloading
-[2025-09-05 22:55:44] All tiles are already cached! No downloads needed.
-[2025-09-05 22:55:44] Starting render timer - beginning map image caching and video generation
-[2025-09-05 22:55:45] Step 4: Caching map images for unique bounding boxes
-[2025-09-05 22:55:45] Starting map image caching
-[2025-09-05 22:55:45] Calculating unique bounding boxes for 600 frames
-[2025-09-05 22:55:46] Using 'final' zoom mode - calculating single bounding box for entire route
-[2025-09-05 22:55:46] Saved final bounding box to temporary files\route\final_bounding_box.pkl
-[2025-09-05 22:55:46] Final zoom mode: calculated single bounding box (24.311544, 25.474153, 60.108508, 60.432812) from 1 route
-[2025-09-05 22:55:46] Found 1 unique bounding boxes
-[2025-09-05 22:55:46] Starting map image caching for video generation
-[2025-09-05 22:55:46] Processing 1 unique bounding boxes for map images
-[2025-09-05 22:55:46] Using 1 worker processes for map image generation
-[2025-09-05 22:55:47] Using single-threaded execution
-[2025-09-05 22:55:47] Map image caching complete: 1 successful, 0 failed, 1 total
-[2025-09-05 22:55:47] Map image caching completed:
-[2025-09-05 22:55:47]   - Images created: 1
-[2025-09-05 22:55:47]   - Images failed: 0
-[2025-09-05 22:55:47]   - Total bounding boxes: 1
-[2025-09-05 22:55:47] Step 5: Generating video frames
-[2025-09-05 22:55:47] Starting video generation
-[2025-09-05 22:55:47] Route time per frame: 128.4550 seconds
-[2025-09-05 22:55:47] Starting video frame generation with streaming approach...
-[2025-09-05 22:55:47] Starting streaming video creation
-[2025-09-05 22:55:47] SEQUENTIAL MODE: Creating video: 20.0s route + 2s tail + 3.0s cloned = 25.0s total
-[2025-09-05 22:55:47] Frame breakdown: 600 route + 60 tail + 90 cloned = 750 total frames
-[2025-09-05 22:55:47] Output video will be saved to: temporary files\test jobs\route_video_20250905_225547.mp4
-[2025-09-05 22:55:47] Test job mode: Video will be saved in test jobs directory
-[2025-09-05 22:55:51] Starting video encoding
-[2025-09-05 22:55:51] Using GPU rendering (NVIDIA NVENC)
-[2025-09-05 22:56:22] Streaming video creation complete: temporary files\test jobs\route_video_20250905_225547.mp4
-[2025-09-05 22:56:22] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 22:56:22] SEQUENTIAL MODE: Video creation completed: 660 frames generated + 90 frames cloned = 750 total frames
-[2025-09-05 22:56:22] Video frame generation completed:
-[2025-09-05 22:56:22]   - Frames created: 660
-[2025-09-05 22:56:22]   - Frames failed: 0
-[2025-09-05 22:56:22]   - Total frames: 750
-[2025-09-05 22:56:22]   - Video file: temporary files\test jobs\route_video_20250905_225547.mp4
-[2025-09-05 22:56:22] 🎬 Total rendering time: 37.52 seconds
-[2025-09-05 22:56:22] Test job completed - skipping upload
-[2025-09-05 22:56:22] Video generation completed successfully
-[2025-09-05 22:56:22] Matplotlib and Qt resources cleaned up
-[2025-09-05 22:56:22] Force-killed any remaining FFmpeg processes
-[2025-09-05 22:56:22] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 22:56:22] Matplotlib and Qt resources cleaned up
-[2025-09-05 22:56:22] Force-killed any remaining FFmpeg processes
-[2025-09-05 22:56:22] MoviePy and FFmpeg processes cleaned up
-[2025-09-05 22:56:22] Forced Qt resource cleanup completed
-[2025-09-05 22:56:22] All test video jobs completed.
+[2025-09-09 02:46:28] Debug logging started
+[2025-09-09 02:46:28] Configuration loaded
+[2025-09-09 02:46:28] Debug logging enabled
+[2025-09-09 02:46:28] GPU rendering enabled
+[2025-09-09 02:46:28] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[2025-09-09 02:46:28] App version: 0.10
+[2025-09-09 02:46:28] Setting up system tray
+[2025-09-09 02:46:28] System tray icon created
+[2025-09-09 02:46:28] Testing connection to web server
+[2025-09-09 02:46:29] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-09-08T23:46:29.560377+00:00", "accepted_version": "0.10"}
+[2025-09-09 02:46:29] Storage box connection successful.
+[2025-09-09 02:46:30] Map tile cache syncing is disabled in config. Skipping sync.
+[2025-09-09 02:46:30] Checking drive space...
+[2025-09-09 02:46:30] Storage box credentials set for background tile syncing
+[2025-09-09 02:46:30] Bootup completed successfully
+[2025-09-09 02:50:25] Starting test video job 1/1: test videos\triathlon test
+[2025-09-09 02:50:25] === on_job_received called ===
+[2025-09-09 02:50:25] Processing job #330 (type: video)
+[2025-09-09 02:50:25] Creating video generator worker...
+[2025-09-09 02:50:25] Connecting worker signals...
+[2025-09-09 02:50:25] Starting worker thread...
+[2025-09-09 02:50:25] Worker thread started successfully
+[2025-09-09 02:50:25] === on_job_received completed successfully ===
+[2025-09-09 02:50:25] Video generation triggered.
+[2025-09-09 02:50:25] Step 1: Sorting GPX files chronologically
+[2025-09-09 02:50:25] Sorting 4 GPX files chronologically...
+[2025-09-09 02:50:25] Found timestamp in antti.gpx: 2025-09-08 23:48:14
+[2025-09-09 02:50:25] Found timestamp in antti2025_merged.gpx: 2025-09-08 23:45:10
+[2025-09-09 02:50:25] Found timestamp in kim.gpx: 2025-09-08 23:48:37
+[2025-09-09 02:50:25] Found timestamp in tapio.gpx: 2025-09-08 23:49:44
+[2025-09-09 02:50:25] Chronological sorting completed:
+[2025-09-09 02:50:25] Oldest route: antti2025_merged.gpx (2025-09-08 23:45:10)
+[2025-09-09 02:50:25] Newest route: tapio.gpx (2025-09-08 23:49:44)
+[2025-09-09 02:50:25] Total files sorted: 4
+[2025-09-09 02:50:25] Chronological sorting completed with 4 files
+[2025-09-09 02:50:25] Step 2: Creating combined route
+[2025-09-09 02:50:25] Creating combined routes from sorted GPX files...
+[2025-09-09 02:50:25] Multiple routes mode: Found 12 named tracks
+[2025-09-09 02:50:25] Creating multiple combined routes...
+[2025-09-09 02:50:25] Grouped files by track: 0 named tracks, 4 unnamed files
+[2025-09-09 02:50:25] Processing 4 unnamed files
+[2025-09-09 02:50:25] Creating route 0 for track 'Unnamed' with 4 files
+[2025-09-09 02:50:25]   Processing antti2025_merged.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
+[2025-09-09 02:50:25]   Processing antti.gpx, accumulated distance: 27027.11 meters, accumulated time: 5253.0 seconds
+[2025-09-09 02:50:25]   Processing kim.gpx, accumulated distance: 54107.12 meters, accumulated time: 10661.0 seconds
+[2025-09-09 02:50:25]   Processing tapio.gpx, accumulated distance: 81109.34 meters, accumulated time: 15696.0 seconds
+[2025-09-09 02:50:26]   Completed track 'Unnamed'. Total points: 10100
+[2025-09-09 02:50:26]   Total distance: 108175.44 meters (108.18 km)
+[2025-09-09 02:50:26]   Total time: 20954.0 seconds (349.2 minutes)
+[2025-09-09 02:50:26]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=11.64s (gpx_time_per_video_time/video_fps), reduced by 20% → 9.31s, interval=9s
+[2025-09-09 02:50:26]   Starting route pruning for track 'Unnamed': 10,100 points, interval: 9 seconds
+[2025-09-09 02:50:26]   Interpolation interval for track 'Unnamed' (for later use): 23.28s
+[2025-09-09 02:50:26] Pruning route by 9 second intervals...
+[2025-09-09 02:50:26] Original route has 10100 points
+[2025-09-09 02:50:26] Pruning complete
+[2025-09-09 02:50:26] Interpolation complete: 2024 → 2055 points
+[2025-09-09 02:50:26] Simultaneous mode: Using total span: 20940.0s
+[2025-09-09 02:50:26]   Earliest route starts at: 09:34:35
+[2025-09-09 02:50:26]   Latest route ends at: 15:23:35
+[2025-09-09 02:50:26] Created 1 routes:
+[2025-09-09 02:50:26]   Route 0: 'Unnamed' - 2055 points, 107122.43m
+[2025-09-09 02:50:26] Total across all routes: 2055 points, 107122.43m
+[2025-09-09 02:50:26] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
+[2025-09-09 02:50:26] Combined route created successfully:
+[2025-09-09 02:50:26]   - Total points: 2,055
+[2025-09-09 02:50:26]   - Total distance: 107.12 km
+[2025-09-09 02:50:26]   - Files processed: 4
+[2025-09-09 02:50:26] Step 3: Calculating unique bounding boxes and caching map tiles
+[2025-09-09 02:50:26] Starting map tile caching
+[2025-09-09 02:50:26] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 02:50:26] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 02:50:26] Created 4 chunks of up to 500 frames each
+[2025-09-09 02:50:26] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 6)
+[2025-09-09 02:50:26] Starting parallel processing of frame chunks
+[2025-09-09 02:50:27] Collected 1800 total bounding boxes
+[2025-09-09 02:50:27] Found 180 unique bounding boxes
+[2025-09-09 02:50:27] Starting tile pre-caching for video generation
+[2025-09-09 02:50:27] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
+[2025-09-09 02:50:27] Processing 180 unique bounding boxes
+[2025-09-09 02:50:27] Phase 1: Gathering all required tiles...
+[2025-09-09 02:50:27] Zoom level 18 too high for video mode, capping to 17
+[2025-09-09 02:50:27] Found 367 unique tiles required across all bounding boxes
+[2025-09-09 02:50:27] Phase 2: Checking which tiles are already cached...
+[2025-09-09 02:50:27] Tile analysis complete: 367 already cached, 0 need downloading
+[2025-09-09 02:50:27] All tiles are already cached! No downloads needed.
+[2025-09-09 02:50:27] Starting render timer - beginning map image caching and video generation
+[2025-09-09 02:50:28] Step 4: Caching map images for unique bounding boxes
+[2025-09-09 02:50:28] Starting map image caching
+[2025-09-09 02:50:28] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 02:50:28] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 02:50:28] Created 4 chunks of up to 500 frames each
+[2025-09-09 02:50:28] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 6)
+[2025-09-09 02:50:28] Starting parallel processing of frame chunks
+[2025-09-09 02:50:30] Collected 1800 total bounding boxes
+[2025-09-09 02:50:30] Found 180 unique bounding boxes
+[2025-09-09 02:50:30] Starting map image caching for video generation
+[2025-09-09 02:50:30] Processing 180 unique bounding boxes for map images
+[2025-09-09 02:50:30] Using 6 worker processes for map image generation
+[2025-09-09 02:50:31] Using multi-threaded execution with 6 workers
+[2025-09-09 02:50:40] Map image caching complete: 180 successful, 0 failed, 180 total
+[2025-09-09 02:50:40] Map image caching completed:
+[2025-09-09 02:50:40]   - Images created: 180
+[2025-09-09 02:50:40]   - Images failed: 0
+[2025-09-09 02:50:40]   - Total bounding boxes: 180
+[2025-09-09 02:50:40] Step 5: Generating video frames
+[2025-09-09 02:50:40] Starting video generation
+[2025-09-09 02:50:41] Route time per frame: 11.6333 seconds
+[2025-09-09 02:50:41] Starting video frame generation with streaming approach...
+[2025-09-09 02:50:41] Starting streaming video creation
+[2025-09-09 02:50:41] SEQUENTIAL MODE: Creating video: 60.0s route + 5.0s cloned = 65.0s total
+[2025-09-09 02:50:41] Frame breakdown: 1800 route + 150 cloned = 1950 total frames
+[2025-09-09 02:50:41] Output video will be saved to: temporary files\test jobs\route_video_20250909_025040.mp4
+[2025-09-09 02:50:41] Test job mode: Video will be saved in test jobs directory
+[2025-09-09 02:50:44] Starting video encoding
+[2025-09-09 02:50:44] Using GPU rendering (NVIDIA NVENC)
+[2025-09-09 02:51:29] Streaming video creation complete: temporary files\test jobs\route_video_20250909_025040.mp4
+[2025-09-09 02:51:29] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:51:29] SEQUENTIAL MODE: Video creation completed: 1800 frames generated + 150 frames cloned = 1950 total frames
+[2025-09-09 02:51:29] Video frame generation completed:
+[2025-09-09 02:51:29]   - Frames created: 1800
+[2025-09-09 02:51:29]   - Frames failed: 0
+[2025-09-09 02:51:29]   - Total frames: 1950
+[2025-09-09 02:51:29]   - Video file: temporary files\test jobs\route_video_20250909_025040.mp4
+[2025-09-09 02:51:29] 🎬 Total rendering time: 1 minute 1.68 seconds
+[2025-09-09 02:51:29] Test job completed - skipping upload
+[2025-09-09 02:51:29] Video generation completed successfully
+[2025-09-09 02:51:29] Matplotlib and Qt resources cleaned up
+[2025-09-09 02:51:29] Force-killed any remaining FFmpeg processes
+[2025-09-09 02:51:29] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:51:29] Matplotlib and Qt resources cleaned up
+[2025-09-09 02:51:29] Force-killed any remaining FFmpeg processes
+[2025-09-09 02:51:29] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:51:29] Forced Qt resource cleanup completed
+[2025-09-09 02:51:29] All test video jobs completed.
+[2025-09-09 02:54:35] Starting test video job 1/1: test videos\triathlon test
+[2025-09-09 02:54:35] === on_job_received called ===
+[2025-09-09 02:54:35] Processing job #330 (type: video)
+[2025-09-09 02:54:35] Creating video generator worker...
+[2025-09-09 02:54:35] Connecting worker signals...
+[2025-09-09 02:54:35] Starting worker thread...
+[2025-09-09 02:54:35] Worker thread started successfully
+[2025-09-09 02:54:35] === on_job_received completed successfully ===
+[2025-09-09 02:54:35] Video generation triggered.
+[2025-09-09 02:54:35] Step 1: Sorting GPX files chronologically
+[2025-09-09 02:54:35] Sorting 4 GPX files chronologically...
+[2025-09-09 02:54:35] Found timestamp in antti.gpx: 2025-09-08 23:48:14
+[2025-09-09 02:54:35] Found timestamp in antti2025_merged.gpx: 2025-09-08 23:45:10
+[2025-09-09 02:54:35] Found timestamp in kim.gpx: 2025-09-08 23:48:37
+[2025-09-09 02:54:35] Found timestamp in tapio.gpx: 2025-09-08 23:49:44
+[2025-09-09 02:54:35] Chronological sorting completed:
+[2025-09-09 02:54:35] Oldest route: antti2025_merged.gpx (2025-09-08 23:45:10)
+[2025-09-09 02:54:35] Newest route: tapio.gpx (2025-09-08 23:49:44)
+[2025-09-09 02:54:35] Total files sorted: 4
+[2025-09-09 02:54:35] Chronological sorting completed with 4 files
+[2025-09-09 02:54:35] Step 2: Creating combined route
+[2025-09-09 02:54:35] Creating combined routes from sorted GPX files...
+[2025-09-09 02:54:35] Multiple routes mode: Found 12 named tracks
+[2025-09-09 02:54:35] Creating multiple combined routes...
+[2025-09-09 02:54:35] Grouped files by track: 0 named tracks, 4 unnamed files
+[2025-09-09 02:54:35] Processing 4 unnamed files
+[2025-09-09 02:54:35] Creating route 0 for track 'Unnamed' with 4 files
+[2025-09-09 02:54:35]   Processing antti2025_merged.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
+[2025-09-09 02:54:35]   Processing antti.gpx, accumulated distance: 27027.11 meters, accumulated time: 5253.0 seconds
+[2025-09-09 02:54:35]   Processing kim.gpx, accumulated distance: 54107.12 meters, accumulated time: 10661.0 seconds
+[2025-09-09 02:54:35]   Processing tapio.gpx, accumulated distance: 81109.34 meters, accumulated time: 15696.0 seconds
+[2025-09-09 02:54:35]   Completed track 'Unnamed'. Total points: 10100
+[2025-09-09 02:54:35]   Total distance: 108175.44 meters (108.18 km)
+[2025-09-09 02:54:35]   Total time: 20954.0 seconds (349.2 minutes)
+[2025-09-09 02:54:35]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=11.64s (gpx_time_per_video_time/video_fps), reduced by 20% → 9.31s, interval=9s
+[2025-09-09 02:54:35]   Starting route pruning for track 'Unnamed': 10,100 points, interval: 9 seconds
+[2025-09-09 02:54:35]   Interpolation interval for track 'Unnamed' (for later use): 23.28s
+[2025-09-09 02:54:35] Pruning route by 9 second intervals...
+[2025-09-09 02:54:35] Original route has 10100 points
+[2025-09-09 02:54:35] Pruning complete
+[2025-09-09 02:54:35] Interpolation complete: 2024 → 2055 points
+[2025-09-09 02:54:35] Simultaneous mode: Using total span: 20940.0s
+[2025-09-09 02:54:35]   Earliest route starts at: 09:34:35
+[2025-09-09 02:54:35]   Latest route ends at: 15:23:35
+[2025-09-09 02:54:35] Created 1 routes:
+[2025-09-09 02:54:35]   Route 0: 'Unnamed' - 2055 points, 107122.43m
+[2025-09-09 02:54:35] Total across all routes: 2055 points, 107122.43m
+[2025-09-09 02:54:35] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
+[2025-09-09 02:54:35] Combined route created successfully:
+[2025-09-09 02:54:35]   - Total points: 2,055
+[2025-09-09 02:54:35]   - Total distance: 107.12 km
+[2025-09-09 02:54:35]   - Files processed: 4
+[2025-09-09 02:54:35] Step 3: Calculating unique bounding boxes and caching map tiles
+[2025-09-09 02:54:35] Starting map tile caching
+[2025-09-09 02:54:35] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 02:54:35] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 02:54:35] Created 4 chunks of up to 500 frames each
+[2025-09-09 02:54:35] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 6)
+[2025-09-09 02:54:35] Starting parallel processing of frame chunks
+[2025-09-09 02:54:37] Collected 1800 total bounding boxes
+[2025-09-09 02:54:37] Found 180 unique bounding boxes
+[2025-09-09 02:54:37] Starting tile pre-caching for video generation
+[2025-09-09 02:54:37] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
+[2025-09-09 02:54:37] Processing 180 unique bounding boxes
+[2025-09-09 02:54:37] Phase 1: Gathering all required tiles...
+[2025-09-09 02:54:37] Zoom level 18 too high for video mode, capping to 17
+[2025-09-09 02:54:37] Found 367 unique tiles required across all bounding boxes
+[2025-09-09 02:54:37] Phase 2: Checking which tiles are already cached...
+[2025-09-09 02:54:37] Tile analysis complete: 367 already cached, 0 need downloading
+[2025-09-09 02:54:37] All tiles are already cached! No downloads needed.
+[2025-09-09 02:54:37] Starting render timer - beginning map image caching and video generation
+[2025-09-09 02:54:38] Step 4: Caching map images for unique bounding boxes
+[2025-09-09 02:54:38] Starting map image caching
+[2025-09-09 02:54:38] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 02:54:38] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 02:54:38] Created 4 chunks of up to 500 frames each
+[2025-09-09 02:54:38] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 6)
+[2025-09-09 02:54:38] Starting parallel processing of frame chunks
+[2025-09-09 02:54:39] Collected 1800 total bounding boxes
+[2025-09-09 02:54:39] Found 180 unique bounding boxes
+[2025-09-09 02:54:39] Starting map image caching for video generation
+[2025-09-09 02:54:39] Processing 180 unique bounding boxes for map images
+[2025-09-09 02:54:39] Using 6 worker processes for map image generation
+[2025-09-09 02:54:40] Using multi-threaded execution with 6 workers
+[2025-09-09 02:54:50] Map image caching complete: 180 successful, 0 failed, 180 total
+[2025-09-09 02:54:50] Map image caching completed:
+[2025-09-09 02:54:50]   - Images created: 180
+[2025-09-09 02:54:50]   - Images failed: 0
+[2025-09-09 02:54:50]   - Total bounding boxes: 180
+[2025-09-09 02:54:50] Step 5: Generating video frames
+[2025-09-09 02:54:50] Starting video generation
+[2025-09-09 02:54:50] Route time per frame: 11.6333 seconds
+[2025-09-09 02:54:50] Starting video frame generation with streaming approach...
+[2025-09-09 02:54:50] Starting streaming video creation
+[2025-09-09 02:54:50] SEQUENTIAL MODE: Creating video: 60.0s route + 5.0s cloned = 65.0s total
+[2025-09-09 02:54:50] Frame breakdown: 1800 route + 150 cloned = 1950 total frames
+[2025-09-09 02:54:50] Output video will be saved to: temporary files\test jobs\route_video_20250909_025450.mp4
+[2025-09-09 02:54:50] Test job mode: Video will be saved in test jobs directory
+[2025-09-09 02:54:54] Starting video encoding
+[2025-09-09 02:54:54] Using GPU rendering (NVIDIA NVENC)
+[2025-09-09 02:55:40] Streaming video creation complete: temporary files\test jobs\route_video_20250909_025450.mp4
+[2025-09-09 02:55:40] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:55:40] SEQUENTIAL MODE: Video creation completed: 1800 frames generated + 150 frames cloned = 1950 total frames
+[2025-09-09 02:55:40] Video frame generation completed:
+[2025-09-09 02:55:40]   - Frames created: 1800
+[2025-09-09 02:55:40]   - Frames failed: 0
+[2025-09-09 02:55:40]   - Total frames: 1950
+[2025-09-09 02:55:40]   - Video file: temporary files\test jobs\route_video_20250909_025450.mp4
+[2025-09-09 02:55:40] 🎬 Total rendering time: 1 minute 3.14 seconds
+[2025-09-09 02:55:40] Test job completed - skipping upload
+[2025-09-09 02:55:40] Video generation completed successfully
+[2025-09-09 02:55:40] Matplotlib and Qt resources cleaned up
+[2025-09-09 02:55:40] Force-killed any remaining FFmpeg processes
+[2025-09-09 02:55:40] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:55:40] Matplotlib and Qt resources cleaned up
+[2025-09-09 02:55:40] Force-killed any remaining FFmpeg processes
+[2025-09-09 02:55:40] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:55:40] Forced Qt resource cleanup completed
+[2025-09-09 02:55:40] All test video jobs completed.
+[2025-09-09 02:57:13] Starting test video job 1/1: test videos\triathlon test
+[2025-09-09 02:57:13] === on_job_received called ===
+[2025-09-09 02:57:13] Processing job #330 (type: video)
+[2025-09-09 02:57:13] Creating video generator worker...
+[2025-09-09 02:57:13] Connecting worker signals...
+[2025-09-09 02:57:13] Starting worker thread...
+[2025-09-09 02:57:13] Worker thread started successfully
+[2025-09-09 02:57:13] === on_job_received completed successfully ===
+[2025-09-09 02:57:13] Video generation triggered.
+[2025-09-09 02:57:13] Step 1: Sorting GPX files chronologically
+[2025-09-09 02:57:13] Sorting 4 GPX files chronologically...
+[2025-09-09 02:57:13] Found timestamp in antti.gpx: 2025-09-08 23:48:14
+[2025-09-09 02:57:13] Found timestamp in antti2025_merged.gpx: 2025-09-08 23:45:10
+[2025-09-09 02:57:13] Found timestamp in kim.gpx: 2025-09-08 23:48:37
+[2025-09-09 02:57:13] Found timestamp in tapio.gpx: 2025-09-08 23:49:44
+[2025-09-09 02:57:13] Chronological sorting completed:
+[2025-09-09 02:57:13] Oldest route: antti2025_merged.gpx (2025-09-08 23:45:10)
+[2025-09-09 02:57:13] Newest route: tapio.gpx (2025-09-08 23:49:44)
+[2025-09-09 02:57:13] Total files sorted: 4
+[2025-09-09 02:57:13] Chronological sorting completed with 4 files
+[2025-09-09 02:57:13] Step 2: Creating combined route
+[2025-09-09 02:57:13] Creating combined routes from sorted GPX files...
+[2025-09-09 02:57:13] Multiple routes mode: Found 12 named tracks
+[2025-09-09 02:57:13] Creating multiple combined routes...
+[2025-09-09 02:57:13] Grouped files by track: 0 named tracks, 4 unnamed files
+[2025-09-09 02:57:13] Processing 4 unnamed files
+[2025-09-09 02:57:13] Creating route 0 for track 'Unnamed' with 4 files
+[2025-09-09 02:57:13]   Processing antti2025_merged.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
+[2025-09-09 02:57:13]   Processing antti.gpx, accumulated distance: 27027.11 meters, accumulated time: 5253.0 seconds
+[2025-09-09 02:57:13]   Processing kim.gpx, accumulated distance: 54107.12 meters, accumulated time: 10661.0 seconds
+[2025-09-09 02:57:14]   Processing tapio.gpx, accumulated distance: 81109.34 meters, accumulated time: 15696.0 seconds
+[2025-09-09 02:57:14]   Completed track 'Unnamed'. Total points: 10100
+[2025-09-09 02:57:14]   Total distance: 108175.44 meters (108.18 km)
+[2025-09-09 02:57:14]   Total time: 20954.0 seconds (349.2 minutes)
+[2025-09-09 02:57:14]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=11.64s (gpx_time_per_video_time/video_fps), reduced by 20% → 9.31s, interval=9s
+[2025-09-09 02:57:14]   Starting route pruning for track 'Unnamed': 10,100 points, interval: 9 seconds
+[2025-09-09 02:57:14]   Interpolation interval for track 'Unnamed' (for later use): 23.28s
+[2025-09-09 02:57:14] Pruning route by 9 second intervals...
+[2025-09-09 02:57:14] Original route has 10100 points
+[2025-09-09 02:57:14] Pruning complete
+[2025-09-09 02:57:14] Interpolation complete: 2024 → 2055 points
+[2025-09-09 02:57:14] Simultaneous mode: Using total span: 20940.0s
+[2025-09-09 02:57:14]   Earliest route starts at: 09:34:35
+[2025-09-09 02:57:14]   Latest route ends at: 15:23:35
+[2025-09-09 02:57:14] Created 1 routes:
+[2025-09-09 02:57:14]   Route 0: 'Unnamed' - 2055 points, 107122.43m
+[2025-09-09 02:57:14] Total across all routes: 2055 points, 107122.43m
+[2025-09-09 02:57:14] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
+[2025-09-09 02:57:14] Combined route created successfully:
+[2025-09-09 02:57:14]   - Total points: 2,055
+[2025-09-09 02:57:14]   - Total distance: 107.12 km
+[2025-09-09 02:57:14]   - Files processed: 4
+[2025-09-09 02:57:14] Step 3: Calculating unique bounding boxes and caching map tiles
+[2025-09-09 02:57:14] Starting map tile caching
+[2025-09-09 02:57:14] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 02:57:14] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 02:57:14] Created 4 chunks of up to 500 frames each
+[2025-09-09 02:57:14] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 6)
+[2025-09-09 02:57:14] Starting parallel processing of frame chunks
+[2025-09-09 02:57:15] Collected 1800 total bounding boxes
+[2025-09-09 02:57:15] Found 180 unique bounding boxes
+[2025-09-09 02:57:15] Starting tile pre-caching for video generation
+[2025-09-09 02:57:15] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
+[2025-09-09 02:57:15] Processing 180 unique bounding boxes
+[2025-09-09 02:57:15] Phase 1: Gathering all required tiles...
+[2025-09-09 02:57:15] Zoom level 18 too high for video mode, capping to 17
+[2025-09-09 02:57:15] Found 367 unique tiles required across all bounding boxes
+[2025-09-09 02:57:15] Phase 2: Checking which tiles are already cached...
+[2025-09-09 02:57:15] Tile analysis complete: 367 already cached, 0 need downloading
+[2025-09-09 02:57:15] All tiles are already cached! No downloads needed.
+[2025-09-09 02:57:15] Starting render timer - beginning map image caching and video generation
+[2025-09-09 02:57:17] Step 4: Caching map images for unique bounding boxes
+[2025-09-09 02:57:17] Starting map image caching
+[2025-09-09 02:57:17] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 02:57:17] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 02:57:17] Created 4 chunks of up to 500 frames each
+[2025-09-09 02:57:17] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 6)
+[2025-09-09 02:57:17] Starting parallel processing of frame chunks
+[2025-09-09 02:57:18] Collected 1800 total bounding boxes
+[2025-09-09 02:57:18] Found 180 unique bounding boxes
+[2025-09-09 02:57:18] Starting map image caching for video generation
+[2025-09-09 02:57:18] Processing 180 unique bounding boxes for map images
+[2025-09-09 02:57:18] Using 6 worker processes for map image generation
+[2025-09-09 02:57:19] Using multi-threaded execution with 6 workers
+[2025-09-09 02:57:31] Map image caching complete: 180 successful, 0 failed, 180 total
+[2025-09-09 02:57:31] Map image caching completed:
+[2025-09-09 02:57:31]   - Images created: 180
+[2025-09-09 02:57:31]   - Images failed: 0
+[2025-09-09 02:57:31]   - Total bounding boxes: 180
+[2025-09-09 02:57:31] Step 5: Generating video frames
+[2025-09-09 02:57:31] Starting video generation
+[2025-09-09 02:57:31] Route time per frame: 11.6333 seconds
+[2025-09-09 02:57:31] Starting video frame generation with streaming approach...
+[2025-09-09 02:57:31] Starting streaming video creation
+[2025-09-09 02:57:31] SEQUENTIAL MODE: Creating video: 60.0s route + 5.0s cloned = 65.0s total
+[2025-09-09 02:57:31] Frame breakdown: 1800 route + 150 cloned = 1950 total frames
+[2025-09-09 02:57:31] Output video will be saved to: temporary files\test jobs\route_video_20250909_025731.mp4
+[2025-09-09 02:57:31] Test job mode: Video will be saved in test jobs directory
+[2025-09-09 02:57:34] Starting video encoding
+[2025-09-09 02:57:34] Using GPU rendering (NVIDIA NVENC)
+[2025-09-09 02:58:27] Streaming video creation complete: temporary files\test jobs\route_video_20250909_025731.mp4
+[2025-09-09 02:58:27] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:58:27] SEQUENTIAL MODE: Video creation completed: 1800 frames generated + 150 frames cloned = 1950 total frames
+[2025-09-09 02:58:27] Video frame generation completed:
+[2025-09-09 02:58:27]   - Frames created: 1800
+[2025-09-09 02:58:27]   - Frames failed: 0
+[2025-09-09 02:58:27]   - Total frames: 1950
+[2025-09-09 02:58:27]   - Video file: temporary files\test jobs\route_video_20250909_025731.mp4
+[2025-09-09 02:58:27] 🎬 Total rendering time: 1 minute 11.92 seconds
+[2025-09-09 02:58:27] Test job completed - skipping upload
+[2025-09-09 02:58:27] Video generation completed successfully
+[2025-09-09 02:58:28] Matplotlib and Qt resources cleaned up
+[2025-09-09 02:58:28] Force-killed any remaining FFmpeg processes
+[2025-09-09 02:58:28] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:58:28] Matplotlib and Qt resources cleaned up
+[2025-09-09 02:58:28] Force-killed any remaining FFmpeg processes
+[2025-09-09 02:58:28] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 02:58:28] Forced Qt resource cleanup completed
+[2025-09-09 02:58:28] All test video jobs completed.
+[2025-09-09 03:02:08] CPU threads set to: 8
+[2025-09-09 03:02:11] Starting test video job 1/1: test videos\triathlon test
+[2025-09-09 03:02:11] === on_job_received called ===
+[2025-09-09 03:02:11] Processing job #330 (type: video)
+[2025-09-09 03:02:11] Creating video generator worker...
+[2025-09-09 03:02:11] Connecting worker signals...
+[2025-09-09 03:02:11] Starting worker thread...
+[2025-09-09 03:02:11] Worker thread started successfully
+[2025-09-09 03:02:11] === on_job_received completed successfully ===
+[2025-09-09 03:02:11] Video generation triggered.
+[2025-09-09 03:02:11] Step 1: Sorting GPX files chronologically
+[2025-09-09 03:02:11] Sorting 4 GPX files chronologically...
+[2025-09-09 03:02:11] Found timestamp in tapio.gpx: 2024-07-13 09:34:35
+[2025-09-09 03:02:11] Found timestamp in antti.gpx: 2024-07-13 09:34:35
+[2025-09-09 03:02:11] Found timestamp in antti2025_merged.gpx: 2024-07-13 09:34:35
+[2025-09-09 03:02:11] Found timestamp in kim.gpx: 2024-07-13 09:34:35
+[2025-09-09 03:02:11] Chronological sorting completed:
+[2025-09-09 03:02:11] Oldest route: tapio.gpx (2024-07-13 09:34:35)
+[2025-09-09 03:02:11] Newest route: kim.gpx (2024-07-13 09:34:35)
+[2025-09-09 03:02:11] Total files sorted: 4
+[2025-09-09 03:02:11] Chronological sorting completed with 4 files
+[2025-09-09 03:02:11] Step 2: Creating combined route
+[2025-09-09 03:02:11] Creating combined routes from sorted GPX files...
+[2025-09-09 03:02:11] Multiple routes mode: Found 12 named tracks
+[2025-09-09 03:02:11] Creating multiple combined routes...
+[2025-09-09 03:02:11] Grouped files by track: 0 named tracks, 4 unnamed files
+[2025-09-09 03:02:11] Processing 4 unnamed files
+[2025-09-09 03:02:11] Creating route 0 for track 'Unnamed' with 4 files
+[2025-09-09 03:02:11]   Processing tapio.gpx, accumulated distance: 0.00 meters, accumulated time: 0.0 seconds
+[2025-09-09 03:02:12]   Processing antti.gpx, accumulated distance: 27066.10 meters, accumulated time: 5258.0 seconds
+[2025-09-09 03:02:12]   Processing antti2025_merged.gpx, accumulated distance: 54146.11 meters, accumulated time: 10666.0 seconds
+[2025-09-09 03:02:12]   Processing kim.gpx, accumulated distance: 81173.22 meters, accumulated time: 15919.0 seconds
+[2025-09-09 03:02:12]   Completed track 'Unnamed'. Total points: 10100
+[2025-09-09 03:02:12]   Total distance: 108175.44 meters (108.18 km)
+[2025-09-09 03:02:12]   Total time: 20954.0 seconds (349.2 minutes)
+[2025-09-09 03:02:12]   Calculated dynamic pruning interval for track 'Unnamed': ~1 point/frame → raw=11.64s (gpx_time_per_video_time/video_fps), reduced by 20% → 9.31s, interval=9s
+[2025-09-09 03:02:12]   Starting route pruning for track 'Unnamed': 10,100 points, interval: 9 seconds
+[2025-09-09 03:02:12]   Interpolation interval for track 'Unnamed' (for later use): 23.28s
+[2025-09-09 03:02:12] Pruning route by 9 second intervals...
+[2025-09-09 03:02:12] Original route has 10100 points
+[2025-09-09 03:02:12] Pruning complete
+[2025-09-09 03:02:12] Interpolation complete: 2025 → 2056 points
+[2025-09-09 03:02:12] Simultaneous mode: Using total span: 20943.0s
+[2025-09-09 03:02:12]   Earliest route starts at: 09:34:35
+[2025-09-09 03:02:12]   Latest route ends at: 15:23:38
+[2025-09-09 03:02:12] Created 1 routes:
+[2025-09-09 03:02:12]   Route 0: 'Unnamed' - 2056 points, 107133.31m
+[2025-09-09 03:02:12] Total across all routes: 2056 points, 107133.31m
+[2025-09-09 03:02:12] Wrote debug_tuple.txt successfully to temporary files\route\debug_tuple.txt
+[2025-09-09 03:02:12] Combined route created successfully:
+[2025-09-09 03:02:12]   - Total points: 2,056
+[2025-09-09 03:02:12]   - Total distance: 107.13 km
+[2025-09-09 03:02:12]   - Files processed: 4
+[2025-09-09 03:02:12] Step 3: Calculating unique bounding boxes and caching map tiles
+[2025-09-09 03:02:12] Starting map tile caching
+[2025-09-09 03:02:12] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 03:02:12] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 03:02:12] Created 4 chunks of up to 500 frames each
+[2025-09-09 03:02:12] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 8)
+[2025-09-09 03:02:12] Starting parallel processing of frame chunks
+[2025-09-09 03:02:14] Collected 1800 total bounding boxes
+[2025-09-09 03:02:14] Found 200 unique bounding boxes
+[2025-09-09 03:02:14] Starting tile pre-caching for video generation
+[2025-09-09 03:02:14] Using cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
+[2025-09-09 03:02:14] Processing 200 unique bounding boxes
+[2025-09-09 03:02:14] Phase 1: Gathering all required tiles...
+[2025-09-09 03:02:14] Zoom level 18 too high for video mode, capping to 17
+[2025-09-09 03:02:14] Found 368 unique tiles required across all bounding boxes
+[2025-09-09 03:02:14] Phase 2: Checking which tiles are already cached...
+[2025-09-09 03:02:14] Tile analysis complete: 368 already cached, 0 need downloading
+[2025-09-09 03:02:14] All tiles are already cached! No downloads needed.
+[2025-09-09 03:02:14] Starting render timer - beginning map image caching and video generation
+[2025-09-09 03:02:15] Step 4: Caching map images for unique bounding boxes
+[2025-09-09 03:02:15] Starting map image caching
+[2025-09-09 03:02:15] Calculating unique bounding boxes for 1800 frames
+[2025-09-09 03:02:15] Using 'dynamic' zoom mode - calculating bounding boxes for each frame
+[2025-09-09 03:02:15] Created 4 chunks of up to 500 frames each
+[2025-09-09 03:02:15] Using 4 worker processes (limited by CPU cores: 8, chunks: 4, user setting: 8)
+[2025-09-09 03:02:15] Starting parallel processing of frame chunks
+[2025-09-09 03:02:16] Collected 1800 total bounding boxes
+[2025-09-09 03:02:16] Found 200 unique bounding boxes
+[2025-09-09 03:02:16] Starting map image caching for video generation
+[2025-09-09 03:02:16] Processing 200 unique bounding boxes for map images
+[2025-09-09 03:02:16] Using 8 worker processes for map image generation
+[2025-09-09 03:02:17] Using multi-threaded execution with 8 workers
+[2025-09-09 03:02:28] Map image caching complete: 200 successful, 0 failed, 200 total
+[2025-09-09 03:02:28] Map image caching completed:
+[2025-09-09 03:02:28]   - Images created: 200
+[2025-09-09 03:02:28]   - Images failed: 0
+[2025-09-09 03:02:28]   - Total bounding boxes: 200
+[2025-09-09 03:02:28] Step 5: Generating video frames
+[2025-09-09 03:02:28] Starting video generation
+[2025-09-09 03:02:28] Route time per frame: 11.6350 seconds
+[2025-09-09 03:02:28] Starting video frame generation with streaming approach...
+[2025-09-09 03:02:28] Starting streaming video creation
+[2025-09-09 03:02:28] SEQUENTIAL MODE: Creating video: 60.0s route + 5.0s cloned = 65.0s total
+[2025-09-09 03:02:28] Frame breakdown: 1800 route + 150 cloned = 1950 total frames
+[2025-09-09 03:02:28] Output video will be saved to: temporary files\test jobs\route_video_20250909_030228.mp4
+[2025-09-09 03:02:28] Test job mode: Video will be saved in test jobs directory
+[2025-09-09 03:02:32] Starting video encoding
+[2025-09-09 03:02:32] Using GPU rendering (NVIDIA NVENC)
+[2025-09-09 03:03:16] Streaming video creation complete: temporary files\test jobs\route_video_20250909_030228.mp4
+[2025-09-09 03:03:16] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 03:03:16] SEQUENTIAL MODE: Video creation completed: 1800 frames generated + 150 frames cloned = 1950 total frames
+[2025-09-09 03:03:16] Video frame generation completed:
+[2025-09-09 03:03:16]   - Frames created: 1800
+[2025-09-09 03:03:16]   - Frames failed: 0
+[2025-09-09 03:03:16]   - Total frames: 1950
+[2025-09-09 03:03:16]   - Video file: temporary files\test jobs\route_video_20250909_030228.mp4
+[2025-09-09 03:03:16] 🎬 Total rendering time: 1 minute 2.60 seconds
+[2025-09-09 03:03:16] Test job completed - skipping upload
+[2025-09-09 03:03:16] Video generation completed successfully
+[2025-09-09 03:03:17] Matplotlib and Qt resources cleaned up
+[2025-09-09 03:03:17] Force-killed any remaining FFmpeg processes
+[2025-09-09 03:03:17] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 03:03:17] Matplotlib and Qt resources cleaned up
+[2025-09-09 03:03:17] Force-killed any remaining FFmpeg processes
+[2025-09-09 03:03:17] MoviePy and FFmpeg processes cleaned up
+[2025-09-09 03:03:17] Forced Qt resource cleanup completed
+[2025-09-09 03:03:17] All test video jobs completed.

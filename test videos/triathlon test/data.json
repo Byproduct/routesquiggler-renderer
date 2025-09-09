@@ -1,0 +1,99 @@
+{
+  "created_at": "2025-09-06T03:07:01.771698+00:00",
+  "folder": "YgTINLY274yWl3L",
+  "job_id": 330,
+  "job_type": "video",
+  "legend": "people",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "osm",
+  "map_transparency": 30,
+  "name_tags": "light",
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "Jaunty procession 2024-07-13",
+  "squiggle_speed": "relative",
+  "statistics": "light",
+  "statistics_elapsed_time": true,
+  "tail_color": "light",
+  "user_id": 40,
+  "video_fps": 30,
+  "video_length": 60,
+  "video_resolution_x": 1280,
+  "video_resolution_y": 720,
+  "zoom_mode": "dynamic",
+  "track_objects": [
+    {
+      "filename": "antti_ast_2_2024.gpx",
+      "date": "2024-07-13",
+      "color": "#2dd2d2",
+      "name": "Antti"
+    },
+    {
+      "filename": "kim_ast_2_2024.gpx",
+      "date": "2024-07-13",
+      "color": "#b832a0",
+      "name": "Kim"
+    },
+    {
+      "filename": "tapio_ast_2_2024.gpx",
+      "date": "2024-07-13",
+      "color": "#6bc016",
+      "name": "Tapio"
+    },
+    {
+      "filename": "antti_ast_1_2024.gpx",
+      "date": "2024-07-13",
+      "color": "#2dd2d2",
+      "name": "Antti"
+    },
+    {
+      "filename": "kim_ast_1_2024.gpx",
+      "date": "2024-07-13",
+      "color": "#b832a0",
+      "name": "Kim"
+    },
+    {
+      "filename": "tapio_ast_1_2024.gpx",
+      "date": "2024-07-13",
+      "color": "#6bc016",
+      "name": "Tapio"
+    },
+    {
+      "filename": "tapio3.gpx",
+      "date": "2024-07-13",
+      "color": "#6bc016",
+      "name": "Tapio"
+    },
+    {
+      "filename": "kim3.gpx",
+      "date": "2024-07-13",
+      "color": "#b832a0",
+      "name": "Kim"
+    },
+    {
+      "filename": "antti3.gpx",
+      "date": "2024-07-13",
+      "color": "#2dd2d2",
+      "name": "Antti"
+    },
+    {
+      "filename": "2025_1_timeadj.gpx",
+      "date": "2024-07-13",
+      "color": "#CCD140",
+      "name": "Antti2025"
+    },
+    {
+      "filename": "2025_2_timeadj.gpx",
+      "date": "2024-07-13",
+      "color": "#CCD140",
+      "name": "Antti2025"
+    },
+    {
+      "filename": "2025_3_timeadj.gpx",
+      "date": "2024-07-13",
+      "color": "#CCD140",
+      "name": "Antti2025"
+    }
+  ]
+}

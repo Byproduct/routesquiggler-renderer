@@ -6,9 +6,31 @@ This module handles requesting and processing new jobs from the server.
 import json
 import traceback
 from io import BytesIO
+import re
 import zipfile
 import requests
 from PySide6.QtCore import QObject, Signal, QThread, QTimer, QMetaObject, Qt
+
+
+# --- GPX time harmonization, removing milliseconds ---
+TIME_NO_MS_RE = re.compile(r'<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</time>')
+TIME_MS_RE    = re.compile(r'(<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d{3}(Z</time>)')
+def harmonize_gpx_times(gpx_text: str) -> str:
+    """
+    If any <time> tag without milliseconds exists, return as-is (fast path).
+    Otherwise, if <time> tags with milliseconds exist, strip the .ddd part everywhere.
+    """
+    # Fast path: if the non-ms format exists, keep file untouched
+    if TIME_NO_MS_RE.search(gpx_text):
+        return gpx_text
+
+    # Otherwise, if ms tags exist, drop the .ddd across the file
+    if TIME_MS_RE.search(gpx_text):
+        return TIME_MS_RE.sub(r'\1\2', gpx_text)
+
+    # Neither format found: return unchanged
+    return gpx_text
+
 
 def update_job_status(api_url, user, hardware_id, app_version, job_id, status, log_callback=None):
     """Update job status via API call.
@@ -71,127 +93,6 @@ class JobRequestWorker(QObject):
         self.user = user
         self.hardware_id = hardware_id
         self.app_version = app_version
-
-    def request_job(self):
-        """Request a new job from the server."""
-        try:
-            # Construct URL from config api_url + request_job endpoint
-            url = f"{self.api_url.rstrip('/')}/request_job/"
-            headers = {
-                'X-API-Key': self.user,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
-            body = {
-                'hardware_id': self.hardware_id,
-                'app_version': self.app_version
-            }
-            
-            self.log_message.emit(f"Requesting job from server: {url}")
-            # self.log_message.emit(f"Request headers: {headers}")
-            
-            response = requests.post(url, headers=headers, json=body, timeout=95)  # 95 second timeout for job request
-            
-            self.log_message.emit(f"Response status: {response.status_code}")
-            # self.log_message.emit(f"Response headers: {dict(response.headers)}")
-            
-            if response.status_code == 200:
-                self.log_message.emit("Processing 200 response...")
-                
-                # Check if this is a "no jobs available" response vs actual job data
-                content_type = response.headers.get('Content-Type', '').lower()
-                
-                if 'application/json' in content_type:
-                    self.log_message.emit("Detected JSON response, checking for no_job status...")
-                    # This might be a status message rather than job data
-                    try:
-                        json_response = response.json()
-                        if json_response.get('status') == 'no_job':
-                            # This is a "no jobs available" response
-                            message = json_response.get('message', 'No jobs currently available.')
-                            self.log_message.emit(message)
-                            self.error.emit("No jobs available")  # Trigger retry mechanism
-                            return
-                    except Exception as e:
-                        self.log_message.emit(f"Error parsing JSON response: {str(e)}")
-                        # Fall through to treat as potential job data
-                
-                self.log_message.emit("Processing job ZIP data...")
-                # Normal job processing
-                # Process the outer ZIP file which contains data.json and gpx_files.zip
-                with zipfile.ZipFile(BytesIO(response.content), 'r') as outer_zip:
-                    self.log_message.emit("ZIP file opened successfully")
-                    
-                    # Read job parameters from data.json
-                    try:
-                        with outer_zip.open('data.json') as data_file:
-                            json_data = json.loads(data_file.read().decode('utf-8'))
-                        self.log_message.emit("data.json parsed successfully")
-                    except Exception as e:
-                        self.log_message.emit(f"Error reading data.json: {str(e)}")
-                        self.error.emit("Failed to read data.json")
-                        return
-
-                    # Read the inner gpx_files.zip
-                    try:
-                        with outer_zip.open('gpx_files.zip') as gpx_zip_file:
-                            gpx_zip_data = gpx_zip_file.read()
-                        self.log_message.emit("gpx_files.zip read successfully")
-                    except Exception as e:
-                        self.log_message.emit(f"Error reading gpx_files.zip: {str(e)}")
-                        self.error.emit("Failed to read gpx_files.zip")
-                        return
-
-                    # Process GPX files from the inner ZIP
-                    gpx_files_info = []
-                    with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
-                        self.log_message.emit("Processing GPX files...")
-                        for file_name in gpx_zip.namelist():
-                            with gpx_zip.open(file_name) as gpx_file:
-                                gpx_content = gpx_file.read()
-                                # Try different encodings
-                                for encoding in ['utf-8', 'latin1', 'cp1252']:
-                                    try:
-                                        gpx_text = gpx_content.decode(encoding)
-                                        if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
-                                            gpx_files_info.append({
-                                                'filename': file_name,
-                                                'name': file_name,
-                                                'content': gpx_text
-                                            })
-                                            break
-                                    except UnicodeDecodeError:
-                                        continue
-                                else:
-                                    # If no encoding worked, log an error
-                                    self.log_message.emit(f"Failed to decode {file_name} with any supported encoding")
-                                    continue
-                    
-                    if not gpx_files_info:
-                        self.log_message.emit("No valid GPX files found in the ZIP")
-                        self.error.emit("No valid GPX files found")
-                        return
-                    
-                    self.log_message.emit(f"Found {len(gpx_files_info)} GPX files, emitting job data...")
-                    # Emit the job data
-                    self.job_received.emit(json_data, gpx_files_info)
-            else:
-                self.log_message.emit(f"Job request failed: {response.status_code}")
-                self.error.emit(f"Job request failed: {response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            self.log_message.emit("Job request timed out after 95 seconds - will retry")
-            self.error.emit("Job request timed out")
-        except requests.exceptions.ConnectionError as e:
-            self.log_message.emit(f"Job request connection error: {str(e)} - will retry")
-            self.error.emit(f"Connection error: {str(e)}")
-        except Exception as e:
-            self.log_message.emit(f"Error requesting job: {str(e)}")
-            self.log_message.emit(traceback.format_exc())
-            self.error.emit(f"Error requesting job: {str(e)}")
-        
-        self.finished.emit()
 
 class JobRequestThread(QThread):
     """Thread class to run the job request worker."""
@@ -561,145 +462,6 @@ class JobRequestManager:
         if hasattr(self, 'main_window') and self.main_window:
             self.main_window.log_widget.add_log("Job request worker completely reset") 
 
-    def request_new_job_simple(self):
-        """Request a new job from the server using a simple approach without JobRequestWorker."""
-        # Show the no_jobs_label when starting a job request
-        self.main_window.no_jobs_label.show()
-        
-        # Show a progress indicator for the long API call
-        self.main_window.log_widget.add_log("Starting long API call (may take up to 95 seconds)...")
-        
-        # Update the play label to show we're working
-        self.main_window.play_label.setText("Requesting new job from server...")
-        
-        try:
-            # Construct URL from config api_url + request_job endpoint
-            url = f"{self.main_window.api_url.rstrip('/')}/request_job/"
-            headers = {
-                'X-API-Key': self.main_window.user,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
-            body = {
-                'hardware_id': self.main_window.hardware_id,
-                'app_version': self.main_window.app_version
-            }
-            
-            self.main_window.log_widget.add_log(f"Requesting job from server: {url}")
-            
-            response = requests.post(url, headers=headers, json=body, timeout=95)  # 95 second timeout for job request
-            
-            self.main_window.log_widget.add_log(f"Response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                self.main_window.log_widget.add_log("Processing 200 response...")
-                
-                # Check if this is a "no jobs available" response vs actual job data
-                content_type = response.headers.get('Content-Type', '').lower()
-                
-                if 'application/json' in content_type:
-                    self.main_window.log_widget.add_log("Detected JSON response, checking for no_job status...")
-                    # This might be a status message rather than job data
-                    try:
-                        json_response = response.json()
-                        if json_response.get('status') == 'no_job':
-                            # This is a "no jobs available" response
-                            message = json_response.get('message', 'No jobs currently available.')
-                            self.main_window.log_widget.add_log(message)
-                            # Reset the play label
-                            self.main_window.play_label.setText("Working. Press pause to stop.")
-                            self.on_job_request_error("No jobs available")
-                            return
-                    except Exception as e:
-                        self.main_window.log_widget.add_log(f"Error parsing JSON response: {str(e)}")
-                        # Fall through to treat as potential job data
-                
-                self.main_window.log_widget.add_log("Processing job ZIP data...")
-                # Normal job processing
-                # Process the outer ZIP file which contains data.json and gpx_files.zip
-                with zipfile.ZipFile(BytesIO(response.content), 'r') as outer_zip:
-                    self.main_window.log_widget.add_log("ZIP file opened successfully")
-                    
-                    # Read job parameters from data.json
-                    try:
-                        with outer_zip.open('data.json') as data_file:
-                            json_data = json.loads(data_file.read().decode('utf-8'))
-                        self.main_window.log_widget.add_log("data.json parsed successfully")
-                    except Exception as e:
-                        self.main_window.log_widget.add_log(f"Error reading data.json: {str(e)}")
-                        self.on_job_request_error("Failed to read data.json")
-                        return
-
-                    # Read the inner gpx_files.zip
-                    try:
-                        with outer_zip.open('gpx_files.zip') as gpx_zip_file:
-                            gpx_zip_data = gpx_zip_file.read()
-                        self.main_window.log_widget.add_log("gpx_files.zip read successfully")
-                    except Exception as e:
-                        self.main_window.log_widget.add_log(f"Error reading gpx_files.zip: {str(e)}")
-                        self.on_job_request_error("Failed to read gpx_files.zip")
-                        return
-
-                    # Process GPX files from the inner ZIP
-                    gpx_files_info = []
-                    with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
-                        self.main_window.log_widget.add_log("Processing GPX files...")
-                        for file_name in gpx_zip.namelist():
-                            with gpx_zip.open(file_name) as gpx_file:
-                                gpx_content = gpx_file.read()
-                                # Try different encodings
-                                for encoding in ['utf-8', 'latin1', 'cp1252']:
-                                    try:
-                                        gpx_text = gpx_content.decode(encoding)
-                                        if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
-                                            gpx_files_info.append({
-                                                'filename': file_name,
-                                                'name': file_name,
-                                                'content': gpx_text
-                                            })
-                                            break
-                                    except UnicodeDecodeError:
-                                        continue
-                                else:
-                                    # If no encoding worked, log an error
-                                    self.main_window.log_widget.add_log(f"Failed to decode {file_name} with any supported encoding")
-                                    continue
-                    
-                    if not gpx_files_info:
-                        self.main_window.log_widget.add_log("No valid GPX files found in the ZIP")
-                        self.on_job_request_error("No valid GPX files found")
-                        return
-                    
-                    self.main_window.log_widget.add_log(f"Found {len(gpx_files_info)} GPX files, processing job data...")
-                    # Process the job data directly (like test jobs do)
-                    self.on_job_received(json_data, gpx_files_info)
-            else:
-                self.main_window.log_widget.add_log(f"Job request failed: {response.status_code}")
-                self.on_job_request_error(f"Job request failed: {response.status_code}")
-                
-        except requests.exceptions.Timeout:
-            self.main_window.log_widget.add_log("Job request timed out after 95 seconds - will retry")
-            self.on_job_request_error("Job request timed out")
-        except requests.exceptions.ConnectionError as e:
-            self.main_window.log_widget.add_log(f"Job request connection error: {str(e)} - will retry")
-            self.on_job_request_error(f"Connection error: {str(e)}")
-        except Exception as e:
-            self.main_window.log_widget.add_log(f"Error requesting job: {str(e)}")
-            self.main_window.log_widget.add_log(traceback.format_exc())
-            self.on_job_request_error(f"Error requesting job: {str(e)}")
-        finally:
-            # Reset the play label
-            self.main_window.play_label.setText("Working. Press pause to stop.")
-    
-    def request_new_job_async(self):
-        """Request a new job using the existing JobRequestWorker system (non-blocking)."""
-        # Show the no_jobs_label when starting a job request
-        self.main_window.no_jobs_label.show()
-        
-        # Use the existing JobRequestWorker system that was already working
-        self.request_new_job() 
-
     def request_new_job_qt_network(self):
         """Request a new job using QNetworkAccessManager (Qt native networking, non-blocking)."""
         # Show the no_jobs_label when starting a job request
@@ -864,6 +626,9 @@ class JobRequestManager:
                                 try:
                                     gpx_text = gpx_content.decode(encoding)
                                     if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
+
+                                        gpx_text = harmonize_gpx_times(gpx_text) # Convert format with milliseconds into format without milliseconds
+
                                         gpx_files_info.append({
                                             'filename': file_name,
                                             'name': file_name,

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" creator="Intervals.icu" version="1.1">
+  <trk>
+    <name>Solo sprint triathlon AST route</name>
+    <link href="https://intervals.icu/activities/i86071248">
+      <text>i86071248</text>
+    </link>
+    <type>Ride</type>
+    <trkseg>
+      <trkpt xmlns="" lat="60.32334" lon="24.663918">
+        <ele>81.6</ele>
+        <time>2024-07-13T09:54:22Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.323395" lon="24.663887">
+        <ele>81.8</ele>
+        <time>2024-07-13T09:54:24Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.32347" lon="24.663876">
+        <ele>81.4</ele>
+        <time>2024-07-13T09:54:26Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.32356" lon="24.663874">
+        <ele>81.6</ele>
+        <time>2024-07-13T09:54:28Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.323666" lon="24.663885">
+        <ele>81</ele>
+        <time>2024-07-13T09:54:30Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.323788" lon="24.66389">
+        <ele>80.8</ele>
+        <time>2024-07-13T09:54:32Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.323917" lon="24.663925">
+        <ele>80.4</ele>
+        <time>2024-07-13T09:54:34Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324036" lon="24.663975">
+        <ele>80.6</ele>
+        <time>2024-07-13T09:54:36Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324165" lon="24.664038">
+        <ele>80.8</ele>
+        <time>2024-07-13T09:54:38Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324303" lon="24.664095">
+        <ele>81.4</ele>
+        <time>2024-07-13T09:54:40Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324436" lon="24.664122">
+        <ele>81</ele>
+        <time>2024-07-13T09:54:42Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324562" lon="24.664175">
+        <ele>80.6</ele>
+        <time>2024-07-13T09:54:44Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324696" lon="24.664234">
+        <ele>80.2</ele>
+        <time>2024-07-13T09:54:46Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324818" lon="24.664318">
+        <ele>81</ele>
+        <time>2024-07-13T09:54:48Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.324944" lon="24.664415">
+        <ele>82.4</ele>
+        <time>2024-07-13T09:54:50Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.32506" lon="24.664513">
+        <ele>83.8</ele>
+        <time>2024-07-13T09:54:52Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.325172" lon="24.66463">
+        <ele>83.2</ele>
+        <time>2024-07-13T09:54:54Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.3253" lon="24.66472">
+        <ele>83.4</ele>
+        <time>2024-07-13T09:54:56Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.3254" lon="24.664701">
+        <ele>82.8</ele>
+        <time>2024-07-13T09:54:58Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.32544" lon="24.664555">
+        <ele>80.4</ele>
+        <time>2024-07-13T09:55:00Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.32544" lon="24.664383">
+        <ele>78.8</ele>
+        <time>2024-07-13T09:55:02Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.32544" lon="24.66421">
+        <ele>78</ele>
+        <time>2024-07-13T09:55:04Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

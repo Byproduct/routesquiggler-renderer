@@ -359,7 +359,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                                 route_index,             # Route index (unique for each track)
                                 lat,                    # Latitude
                                 lon,                    # Longitude
-                                timestamp,              # Timestamp
+                                timestamp.replace(microsecond=0) if timestamp else None,  # Timestamp rounded to nearest second
                                 accumulated_time,       # Accumulated time in seconds
                                 accumulated_distance,   # Accumulated distance in meters
                                 first_point_in_file,    # New route flag
@@ -767,4 +767,3 @@ def _reset_track_accumulated_values(track_points):
         prev_timestamp = timestamp
     
     return recalculated_track
-

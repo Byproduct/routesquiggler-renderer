@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" creator="Intervals.icu" version="1.1">
+  <trk>
+    <name>Solo sprint triathlon AST route</name>
+    <link href="https://intervals.icu/activities/i86071246">
+      <text>i86071246</text>
+    </link>
+    <type>OpenWaterSwim</type>
+    <trkseg>
+      <trkpt xmlns="" lat="60.32274" lon="24.664421">
+        <time>2024-07-13T09:34:36Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.322655" lon="24.664223">
+        <time>2024-07-13T09:34:38Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.322643" lon="24.664207">
+        <time>2024-07-13T09:34:40Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.322636" lon="24.664194">
+        <time>2024-07-13T09:34:42Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.322628" lon="24.664179">
+        <time>2024-07-13T09:34:44Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.323254" lon="24.663568">
+        <ele>76.4</ele>
+        <time>2024-07-13T09:51:11Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

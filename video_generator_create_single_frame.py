@@ -855,22 +855,16 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
 
             # Get filename from first point of the track (index 7)
             filename = track[0][7] if len(track[0]) > 7 else None
-            
-            # Debug: Log the filename we're processing
-            print(f"\nProcessing track with filename: {filename}")
-            print(f"Available color mappings: {list(filename_to_rgba.keys())}" if filename_to_rgba else "No filename_to_rgba mapping available")
-            
+                      
             # Look up pre-computed RGBA color for this filename
             if filename and filename_to_rgba:
                 if filename in filename_to_rgba:
                     rgba_color = filename_to_rgba[filename]
-                    print(f"Found color for '{filename}': {rgba_color}")
                 else:
                     # Try to find a matching filename with different case or whitespace
                     matching_key = next((k for k in filename_to_rgba.keys() 
                                       if k and filename and k.lower() == filename.lower()), None)
                     if matching_key:
-                        print(f"Found case-insensitive match: '{filename}' -> '{matching_key}'")
                         rgba_color = filename_to_rgba[matching_key]
                     else:
                         print(f"WARNING: No color mapping found for filename: '{filename}'. Using default red.")

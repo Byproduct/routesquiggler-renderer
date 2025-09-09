@@ -1,0 +1,748 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" creator="Intervals.icu" version="1.1">
+  <trk>
+    <name>Solo sprint triathlon AST route</name>
+    <link href="https://intervals.icu/activities/i86071254">
+      <text>i86071254</text>
+    </link>
+    <type>Run</type>
+    <trkseg>
+      <trkpt xmlns="" lat="60.296825" lon="24.69134">
+        <ele>48.8</ele>
+        <time>2024-07-13T10:34:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.296864" lon="24.691298">
+        <ele>49</ele>
+        <time>2024-07-13T10:34:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.296913" lon="24.691256">
+        <ele>49.6</ele>
+        <time>2024-07-13T10:34:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.296963" lon="24.691208">
+        <ele>50.4</ele>
+        <time>2024-07-13T10:34:31Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297012" lon="24.691195">
+        <ele>50.8</ele>
+        <time>2024-07-13T10:34:33Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297062" lon="24.691185">
+        <ele>51.2</ele>
+        <time>2024-07-13T10:34:35Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.2971" lon="24.691208">
+        <ele>51.4</ele>
+        <time>2024-07-13T10:34:37Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297146" lon="24.69124">
+        <ele>51.8</ele>
+        <time>2024-07-13T10:34:39Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297195" lon="24.691256">
+        <ele>52</ele>
+        <time>2024-07-13T10:34:41Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297237" lon="24.691286">
+        <ele>52.4</ele>
+        <time>2024-07-13T10:34:43Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29728" lon="24.691307">
+        <ele>52.6</ele>
+        <time>2024-07-13T10:34:45Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297325" lon="24.691326">
+        <ele>53</ele>
+        <time>2024-07-13T10:34:47Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297375" lon="24.691359">
+        <ele>53.4</ele>
+        <time>2024-07-13T10:34:49Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29741" lon="24.691393">
+        <ele>53.6</ele>
+        <time>2024-07-13T10:34:51Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29745" lon="24.69143">
+        <ele>54</ele>
+        <time>2024-07-13T10:34:53Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297485" lon="24.69148">
+        <ele>54.2</ele>
+        <time>2024-07-13T10:34:55Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297527" lon="24.691538">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:34:57Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29756" lon="24.6916">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:34:59Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29759" lon="24.691664">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:01Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29761" lon="24.691742">
+        <ele>55</ele>
+        <time>2024-07-13T10:35:03Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29763" lon="24.691835">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:05Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29764" lon="24.691938">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:07Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297646" lon="24.692034">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:09Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297646" lon="24.692139">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:11Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297646" lon="24.692242">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:13Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297646" lon="24.692358">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:15Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29764" lon="24.692467">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:17Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297634" lon="24.69257">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:19Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29763" lon="24.692673">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:21Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297626" lon="24.69278">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:35:23Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29763" lon="24.692896">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29763" lon="24.693008">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297626" lon="24.69312">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297626" lon="24.693218">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:35:31Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297623" lon="24.693317">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:35:33Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297626" lon="24.693445">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:35:35Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297626" lon="24.693573">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:35:37Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297626" lon="24.693691">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:35:39Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297634" lon="24.6938">
+        <ele>55</ele>
+        <time>2024-07-13T10:35:41Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297634" lon="24.693905">
+        <ele>55</ele>
+        <time>2024-07-13T10:35:43Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297634" lon="24.694012">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:45Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29762" lon="24.694122">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:47Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297604" lon="24.694239">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:49Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297592" lon="24.694345">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:51Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29758" lon="24.694452">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:53Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29756" lon="24.694551">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:55Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297543" lon="24.69465">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:35:57Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297523" lon="24.694767">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:35:59Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.2975" lon="24.694883">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:36:01Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29748" lon="24.69499">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:36:03Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29746" lon="24.69509">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:36:05Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29744" lon="24.695187">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:36:07Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297424" lon="24.695286">
+        <ele>54.4</ele>
+        <time>2024-07-13T10:36:09Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.2974" lon="24.695393">
+        <ele>54.4</ele>
+        <time>2024-07-13T10:36:11Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297386" lon="24.695505">
+        <ele>54.4</ele>
+        <time>2024-07-13T10:36:13Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29737" lon="24.695618">
+        <ele>54.4</ele>
+        <time>2024-07-13T10:36:15Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297356" lon="24.695719">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:36:17Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297344" lon="24.695814">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:36:19Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297337" lon="24.695917">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:36:21Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297325" lon="24.696012">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:36:23Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29731" lon="24.696121">
+        <ele>55</ele>
+        <time>2024-07-13T10:36:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29729" lon="24.696234">
+        <ele>55</ele>
+        <time>2024-07-13T10:36:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29727" lon="24.696335">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:36:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297253" lon="24.696434">
+        <ele>55.4</ele>
+        <time>2024-07-13T10:36:31Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29723" lon="24.696543">
+        <ele>55.8</ele>
+        <time>2024-07-13T10:36:33Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297203" lon="24.696642">
+        <ele>56</ele>
+        <time>2024-07-13T10:36:35Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29717" lon="24.69676">
+        <ele>56</ele>
+        <time>2024-07-13T10:36:37Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297142" lon="24.696863">
+        <ele>56</ele>
+        <time>2024-07-13T10:36:39Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297115" lon="24.696959">
+        <ele>55.8</ele>
+        <time>2024-07-13T10:36:41Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297092" lon="24.697052">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:36:43Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29707" lon="24.697147">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:36:45Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297035" lon="24.697237">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:36:47Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297012" lon="24.697323">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:36:49Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29698" lon="24.697409">
+        <ele>55.8</ele>
+        <time>2024-07-13T10:36:51Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.296963" lon="24.697506">
+        <ele>56.2</ele>
+        <time>2024-07-13T10:36:53Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.296955" lon="24.697632">
+        <ele>56.4</ele>
+        <time>2024-07-13T10:36:55Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.296986" lon="24.697739">
+        <ele>56.6</ele>
+        <time>2024-07-13T10:36:57Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297035" lon="24.697763">
+        <ele>56.8</ele>
+        <time>2024-07-13T10:36:59Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297085" lon="24.69777">
+        <ele>56.6</ele>
+        <time>2024-07-13T10:37:01Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29713" lon="24.697767">
+        <ele>56.6</ele>
+        <time>2024-07-13T10:37:03Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297184" lon="24.697748">
+        <ele>57</ele>
+        <time>2024-07-13T10:37:05Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297226" lon="24.697702">
+        <ele>57.2</ele>
+        <time>2024-07-13T10:37:07Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29727" lon="24.697664">
+        <ele>57.2</ele>
+        <time>2024-07-13T10:37:09Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29731" lon="24.697615">
+        <ele>57.6</ele>
+        <time>2024-07-13T10:37:11Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297356" lon="24.697565">
+        <ele>57.6</ele>
+        <time>2024-07-13T10:37:13Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297398" lon="24.697496">
+        <ele>57.6</ele>
+        <time>2024-07-13T10:37:15Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29744" lon="24.69744">
+        <ele>57.8</ele>
+        <time>2024-07-13T10:37:17Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297478" lon="24.697393">
+        <ele>57.8</ele>
+        <time>2024-07-13T10:37:19Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297516" lon="24.697338">
+        <ele>57.8</ele>
+        <time>2024-07-13T10:37:21Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297554" lon="24.69728">
+        <ele>58</ele>
+        <time>2024-07-13T10:37:23Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297596" lon="24.697224">
+        <ele>58.2</ele>
+        <time>2024-07-13T10:37:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297638" lon="24.697168">
+        <ele>58.6</ele>
+        <time>2024-07-13T10:37:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29768" lon="24.69712">
+        <ele>58.8</ele>
+        <time>2024-07-13T10:37:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29773" lon="24.697086">
+        <ele>59</ele>
+        <time>2024-07-13T10:37:31Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29778" lon="24.697042">
+        <ele>59.4</ele>
+        <time>2024-07-13T10:37:33Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29783" lon="24.697023">
+        <ele>59.8</ele>
+        <time>2024-07-13T10:37:35Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29787" lon="24.697008">
+        <ele>60.2</ele>
+        <time>2024-07-13T10:37:37Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29792" lon="24.697002">
+        <ele>60.4</ele>
+        <time>2024-07-13T10:37:39Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.297974" lon="24.697008">
+        <ele>60.8</ele>
+        <time>2024-07-13T10:37:41Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298023" lon="24.697018">
+        <ele>61.2</ele>
+        <time>2024-07-13T10:37:43Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29807" lon="24.697023">
+        <ele>61.4</ele>
+        <time>2024-07-13T10:37:45Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298115" lon="24.697027">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:37:47Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298172" lon="24.697035">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:37:49Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29822" lon="24.697039">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:37:51Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29827" lon="24.697042">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:37:53Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29832" lon="24.697046">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:37:55Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29837" lon="24.697042">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:37:57Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29843" lon="24.697023">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:37:59Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298485" lon="24.696991">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:01Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298534" lon="24.69694">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:03Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29858" lon="24.6969">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:05Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298626" lon="24.69685">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:07Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29868" lon="24.6968">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:09Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29873" lon="24.696754">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:11Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29877" lon="24.696692">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:13Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298817" lon="24.696636">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:15Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298855" lon="24.696583">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:17Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298897" lon="24.696527">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:19Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298943" lon="24.69648">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:21Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.298992" lon="24.696428">
+        <ele>61.6</ele>
+        <time>2024-07-13T10:38:23Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299038" lon="24.696371">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299084" lon="24.696333">
+        <ele>62</ele>
+        <time>2024-07-13T10:38:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299133" lon="24.696308">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29918" lon="24.696278">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:31Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29923" lon="24.696247">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:33Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299274" lon="24.696232">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:35Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299328" lon="24.696226">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:37Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29939" lon="24.696222">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:39Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299454" lon="24.696232">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:38:41Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29951" lon="24.696255">
+        <ele>62</ele>
+        <time>2024-07-13T10:38:43Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29956" lon="24.696291">
+        <ele>62</ele>
+        <time>2024-07-13T10:38:45Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29961" lon="24.696331">
+        <ele>62.2</ele>
+        <time>2024-07-13T10:38:47Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299667" lon="24.696365">
+        <ele>62.2</ele>
+        <time>2024-07-13T10:38:49Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29971" lon="24.696424">
+        <ele>62.4</ele>
+        <time>2024-07-13T10:38:51Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.29976" lon="24.696478">
+        <ele>62.4</ele>
+        <time>2024-07-13T10:38:53Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299805" lon="24.696533">
+        <ele>62.6</ele>
+        <time>2024-07-13T10:38:55Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299843" lon="24.696596">
+        <ele>62.6</ele>
+        <time>2024-07-13T10:38:57Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299885" lon="24.69665">
+        <ele>62.8</ele>
+        <time>2024-07-13T10:38:59Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299934" lon="24.696703">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:01Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.299976" lon="24.696777">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:03Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300026" lon="24.69684">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:05Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30007" lon="24.696896">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:07Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300114" lon="24.696962">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:09Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30016" lon="24.697016">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:11Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30021" lon="24.69707">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:13Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300255" lon="24.697138">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:15Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300304" lon="24.697199">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:17Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300354" lon="24.697247">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:19Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300404" lon="24.697304">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:21Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30045" lon="24.697351">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:23Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.3005" lon="24.697403">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300552" lon="24.697449">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300602" lon="24.697489">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30066" lon="24.6975">
+        <ele>63</ele>
+        <time>2024-07-13T10:39:31Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300713" lon="24.697523">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:33Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30076" lon="24.697535">
+        <ele>63.4</ele>
+        <time>2024-07-13T10:39:35Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30081" lon="24.697546">
+        <ele>63.6</ele>
+        <time>2024-07-13T10:39:37Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30087" lon="24.697563">
+        <ele>64</ele>
+        <time>2024-07-13T10:39:39Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300922" lon="24.697563">
+        <ele>64</ele>
+        <time>2024-07-13T10:39:41Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.300976" lon="24.697563">
+        <ele>64</ele>
+        <time>2024-07-13T10:39:43Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301025" lon="24.697573">
+        <ele>64</ele>
+        <time>2024-07-13T10:39:45Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30108" lon="24.69757">
+        <ele>64.2</ele>
+        <time>2024-07-13T10:39:47Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301132" lon="24.697582">
+        <ele>64</ele>
+        <time>2024-07-13T10:39:49Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30119" lon="24.697573">
+        <ele>63.6</ele>
+        <time>2024-07-13T10:39:51Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301247" lon="24.697563">
+        <ele>63.4</ele>
+        <time>2024-07-13T10:39:53Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.3013" lon="24.697563">
+        <ele>63.2</ele>
+        <time>2024-07-13T10:39:55Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30136" lon="24.697544">
+        <ele>62.6</ele>
+        <time>2024-07-13T10:39:57Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301414" lon="24.697533">
+        <ele>62.4</ele>
+        <time>2024-07-13T10:39:59Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30148" lon="24.697529">
+        <ele>61.8</ele>
+        <time>2024-07-13T10:40:01Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301537" lon="24.697517">
+        <ele>61.4</ele>
+        <time>2024-07-13T10:40:03Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301594" lon="24.697514">
+        <ele>61</ele>
+        <time>2024-07-13T10:40:05Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301655" lon="24.697512">
+        <ele>60.4</ele>
+        <time>2024-07-13T10:40:07Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301712" lon="24.697517">
+        <ele>59.6</ele>
+        <time>2024-07-13T10:40:09Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301773" lon="24.697533">
+        <ele>59.2</ele>
+        <time>2024-07-13T10:40:11Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301838" lon="24.697554">
+        <ele>58.2</ele>
+        <time>2024-07-13T10:40:13Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301903" lon="24.697588">
+        <ele>57.4</ele>
+        <time>2024-07-13T10:40:15Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.301968" lon="24.697615">
+        <ele>57</ele>
+        <time>2024-07-13T10:40:17Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30203" lon="24.697657">
+        <ele>56.6</ele>
+        <time>2024-07-13T10:40:19Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.302094" lon="24.697712">
+        <ele>56</ele>
+        <time>2024-07-13T10:40:21Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30215" lon="24.697765">
+        <ele>55.6</ele>
+        <time>2024-07-13T10:40:23Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.302208" lon="24.697823">
+        <ele>55.2</ele>
+        <time>2024-07-13T10:40:25Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30226" lon="24.697903">
+        <ele>54.8</ele>
+        <time>2024-07-13T10:40:27Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.302315" lon="24.69798">
+        <ele>54.6</ele>
+        <time>2024-07-13T10:40:29Z</time>
+      </trkpt>
+      <trkpt xmlns="" lat="60.30236" lon="24.698061">
+        <ele>54.4</ele>
+        <time>2024-07-13T10:40:31Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

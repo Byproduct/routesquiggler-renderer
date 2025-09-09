@@ -1,0 +1,25 @@
+{
+  "created_at": "2025-09-05T21:44:44.319175+00:00",
+  "folder": "C7HYMF0fELEy1",
+  "image_resolution_x": 1920,
+  "image_resolution_y": 1080,
+  "job_id": 322,
+  "job_type": "image",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "osm",
+  "map_transparency": 30,
+  "newest_on_top": true,
+  "route_name": "Kind outing 2025-07-15",
+  "statistics": "off",
+  "user_id": 1,
+  "track_objects": [
+    {
+      "filename": "suuntoapp-OpenwaterSwimming-2025-07-15T14-32-00Z-route.gpx",
+      "date": "2025-07-15",
+      "color": "#004080",
+      "name": ""
+    }
+  ]
+}
