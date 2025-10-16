@@ -191,7 +191,7 @@ class JobRequestManager:
     def delayed_job_retry(self):
         """Retry requesting a new job after a delay."""
         self.main_window.log_widget.add_log("=== delayed_job_retry called ===")
-        self.main_window.log_widget.add_log("Retrying job request...")
+        self.main_window.log_widget.add_log("Retrying job request.")
         self.request_new_job_qt_network()
     
     def on_job_received(self, json_data, gpx_files_info):
@@ -222,7 +222,7 @@ class JobRequestManager:
             
             # Route to appropriate generator based on job type
             if job_type == 'video':
-                self.main_window.log_widget.add_log("Creating video generator worker...")
+                self.main_window.log_widget.add_log("Creating video generator worker.")
                 # Import here to avoid circular import
                 from video_generator_main import VideoGeneratorWorker, VideoWorkerThread
                 
@@ -240,11 +240,11 @@ class JobRequestManager:
                     self.main_window.app_version, 
                     self.main_window.available_threads,
                     is_test=is_test_job,
-                    gpu_rendering=self.main_window.bootup_manager.gpu_rendering
+                    gpu_rendering=self.main_window.bootup_manager.config.gpu_rendering
                 )
                 self.main_window.worker_thread = VideoWorkerThread(self.main_window.worker)
             else:
-                self.main_window.log_widget.add_log("Creating image generator worker...")
+                self.main_window.log_widget.add_log("Creating image generator worker.")
                 # Import here to avoid circular import
                 from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
                 
@@ -261,7 +261,7 @@ class JobRequestManager:
                 )
                 self.main_window.worker_thread = ImageWorkerThread(self.main_window.worker)
             
-            self.main_window.log_widget.add_log("Connecting worker signals...")
+            self.main_window.log_widget.add_log("Connecting worker signals.")
             # Connect signals (same for both worker types)
             self.main_window.worker.finished.connect(self.main_window.on_worker_finished)
             self.main_window.worker.error.connect(self.main_window.on_worker_error)
@@ -274,6 +274,10 @@ class JobRequestManager:
             
             # Connect image-specific signals only for image workers
             if job_type != 'video':
+                # Connect debug message signal
+                if hasattr(self.main_window.worker, 'debug_message'):
+                    self.main_window.worker.debug_message.connect(self.main_window.log_widget.add_debug_log)
+                
                 self.main_window.worker.status_queue_ready.connect(self.main_window.setup_status_monitoring)
                 self.main_window.worker.zoom_levels_ready.connect(self.main_window.create_status_labels)
             

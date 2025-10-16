@@ -24,7 +24,8 @@ try:
     TQDM_AVAILABLE = True
 except ImportError:
     TQDM_AVAILABLE = False
-    print("Warning: tqdm not available. Install with 'pip install tqdm' for progress bars.")
+
+from write_log import write_log, write_debug_log
 
 
 def is_blank_or_erroneous_tile(npy_file_path: str) -> bool:
@@ -106,17 +107,17 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     Returns:
         Tuple of (good_tiles_count, blank_or_erroneous_tiles_count, list_of_blank_tile_paths)
     """
-    print(f"Scanning directory: {cache_dir}")
+    write_log(f"Scanning directory: {cache_dir}")
     
     # Find all .npy files
     npy_files = find_npy_files(cache_dir)
     total_files = len(npy_files)
     
     if total_files == 0:
-        print("No .npy files found in the directory.")
+        write_log("No .npy files found in the directory.")
         return 0, 0
     
-    print(f"Found {total_files} .npy files to process")
+    write_log(f"Found {total_files} .npy files to process")
     
     good_tiles = 0
     blank_or_erroneous_tiles = 0
@@ -128,7 +129,7 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     else:
         iterator = npy_files
         if not use_progress_bar:
-            print("Processing files (no progress bar for remote directory)...")
+            write_log("Processing files (no progress bar for remote directory)...")
     
     # Process each file
     for npy_file in iterator:
@@ -172,12 +173,9 @@ def main():
     
     test_mode = args.mode.lower() == 'test'
     
-    print("Map Tile Cache Sweep - Starting...")
+    write_log("Running map tile cache sweep.")
     if test_mode:
-        print("Running in TEST MODE - no files will be deleted")
-    else:
-        print("Running in PRODUCTION MODE - files will be deleted")
-    print("=" * 50)
+        write_log("Map tile sweep running in test mode - files will not be actually deleted.")
     
     start_time = time.time()
     
@@ -194,21 +192,21 @@ def main():
     if os.path.exists(local_cache) and os.path.isdir(local_cache):
         cache_dir = local_cache
         use_progress_bar = True
-        print(f"Using local cache directory: {cache_dir}")
+        write_log(f"Using local cache directory: {cache_dir}")
     elif os.path.exists(remote_cache1) and os.path.isdir(remote_cache1):
         cache_dir = remote_cache1
         use_progress_bar = False
-        print(f"Using remote cache directory: {cache_dir}")
+        write_log(f"Using remote cache directory: {cache_dir}")
     elif os.path.exists(remote_cache2) and os.path.isdir(remote_cache2):
         cache_dir = remote_cache2
         use_progress_bar = False
-        print(f"Using remote cache directory: {cache_dir}")
+        write_log(f"Using remote cache directory: {cache_dir}")
     else:
-        print("Error: No cache directory found!")
-        print(f"Looked for:")
-        print(f"  - {local_cache}")
-        print(f"  - {remote_cache1}")
-        print(f"  - {remote_cache2}")
+        write_log("Error: No cache directory found!")
+        write_log(f"Looked for:")
+        write_log(f"  - {local_cache}")
+        write_log(f"  - {remote_cache1}")
+        write_log(f"  - {remote_cache2}")
         sys.exit(1)
     
     # Process the cache directory
@@ -220,29 +218,27 @@ def main():
         duration = end_time - start_time
         total_tiles = good_tiles + blank_or_erroneous_tiles
         
-        print("\n" + "=" * 50)
-        print("RESULTS:")
-        print(f"Total tiles processed: {total_tiles}")
-        print(f"Good tiles (kept): {good_tiles}")
+        write_log(f"Total tiles processed: {total_tiles}")
+        write_log(f"Good tiles (kept): {good_tiles}")
         if test_mode:
-            print(f"Blank/erroneous tiles (would be deleted): {blank_or_erroneous_tiles}")
+            write_log(f"Blank/erroneous tiles (would be deleted): {blank_or_erroneous_tiles}")
             if blank_tile_paths:
-                print("\nPaths of blank/erroneous tiles:")
+                write_log("\nPaths of blank/erroneous tiles:")
                 for path in blank_tile_paths:
-                    print(f"  - {path}")
+                    write_log(f"  - {path}")
         else:
-            print(f"Blank/erroneous tiles (deleted): {blank_or_erroneous_tiles}")
+            write_log(f"Blank/erroneous tiles (deleted): {blank_or_erroneous_tiles}")
         
-        print(f"\nOperation completed in: {format_duration(duration)}")
+        write_log(f"\nOperation completed in: {format_duration(duration)}")
         if test_mode:
-            print("\nNOTE: This was a test run - no files were actually deleted.")
-            print("Run without 'test' parameter to perform actual deletion.")
+            write_log("\nNOTE: This was a test run - no files were actually deleted.")
+            write_log("Run without 'test' parameter to perform actual deletion.")
         
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
+        write_log("\nOperation cancelled by user.")
         sys.exit(1)
     except Exception as e:
-        print(f"Error during processing: {e}")
+        write_log(f"Error during processing: {e}")
         sys.exit(1)
 
 

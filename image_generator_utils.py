@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict, Optional
 from datetime import datetime
 import math
+import zipfile
 
 import cartopy.crs as ccrs
 import matplotlib
@@ -19,6 +20,55 @@ matplotlib.use('Agg')  # Use non-interactive backend for server
 
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_gpx_files_from_zip(zip_path: str, log_callback=None) -> List[Dict]:
+    """
+    Load and decode GPX files from a zip archive.
+    
+    Args:
+        zip_path: Path to the zip file containing GPX files
+        log_callback: Optional callback function for logging messages
+        
+    Returns:
+        List of dictionaries with 'filename', 'name', and 'content' keys
+    """
+    from job_request import harmonize_gpx_times
+    
+    gpx_files_info = []
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            for file_name in zip_ref.namelist():
+                with zip_ref.open(file_name) as gpx_file:
+                    gpx_content = gpx_file.read()
+                    # Try different encodings
+                    for encoding in ['utf-8', 'latin1', 'cp1252']:
+                        try:
+                            gpx_text = gpx_content.decode(encoding)
+                            # Basic validation that this is a GPX file
+                            if '<gpx' in gpx_text:
+                                # Harmonize time formats (remove milliseconds if needed)
+                                gpx_text = harmonize_gpx_times(gpx_text)
+                                
+                                gpx_files_info.append({
+                                    'filename': file_name,
+                                    'name': file_name,
+                                    'content': gpx_text
+                                })
+                                break
+                        except UnicodeDecodeError:
+                            continue
+                    else:
+                        # If no encoding worked, log an error
+                        if log_callback:
+                            log_callback(f"Failed to decode {file_name} with any supported encoding")
+    except Exception as e:
+        if log_callback:
+            log_callback(f"Error loading GPX files from zip: {str(e)}")
+        raise
+    
+    return gpx_files_info
 
 
 def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

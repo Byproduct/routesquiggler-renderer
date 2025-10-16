@@ -28,6 +28,7 @@ from moviepy import VideoClip
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
 from video_generator_create_single_frame import generate_video_frame_in_memory
 from video_generator_create_single_frame_utils import hex_to_rgba
+from write_log import write_log, write_debug_log
 
 
 def _binary_search_cutoff_index(route_points, target_time):
@@ -933,7 +934,8 @@ class StreamingFrameGenerator:
             
             # Request this specific frame if it hasn't been requested yet AND it's within the generateable range
             if frame_number <= self.frames_to_generate:  # Only request frames that can be generated
-                print(f"\nRequesting missing frame {frame_number} on-demand (consecutive: {self.consecutive_on_demand_requests})")
+                if self.consecutive_on_demand_requests > 1:
+                    write_debug_log(f"Requesting missing frame {frame_number} on-demand (consecutive: {self.consecutive_on_demand_requests})")
                 work_item = self.work_items[frame_number - 1]
                 async_result = self.pool.apply_async(_streaming_frame_worker, (work_item,))
                 self.pending_results[frame_number] = async_result

@@ -6,10 +6,10 @@ This module handles running test videos from local test folders.
 import os
 import glob
 import json
-import zipfile
 import traceback
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel
 from PySide6.QtCore import Qt
+from image_generator_utils import load_gpx_files_from_zip
 
 class TestFolderSelectionDialog(QDialog):
     """Custom dialog for selecting test folders."""
@@ -224,29 +224,9 @@ class TestVideoManager:
             # Ensure this is treated as a video job
             json_data['job_type'] = 'video'
 
-            # Load GPX files
-            gpx_files_info = []
+            # Load GPX files using shared utility function
             zip_path = os.path.join(folder, 'gpx_files.zip')
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                for file_name in zip_ref.namelist():
-                    with zip_ref.open(file_name) as gpx_file:
-                        gpx_content = gpx_file.read()
-                        # Try different encodings
-                        for encoding in ['utf-8', 'latin1', 'cp1252']:
-                            try:
-                                gpx_text = gpx_content.decode(encoding)
-                                gpx_files_info.append({
-                                    'filename': file_name,
-                                    'name': file_name,
-                                    'content': gpx_text
-                                })
-                                break
-                            except UnicodeDecodeError:
-                                continue
-                        else:
-                            # If no encoding worked, log an error
-                            self.main_window.log_widget.add_log(f"Failed to decode {file_name} with any supported encoding")
-                            continue
+            gpx_files_info = load_gpx_files_from_zip(zip_path, log_callback=self.main_window.log_widget.add_log)
 
             if not gpx_files_info:
                 self.main_window.log_widget.add_log("No valid GPX files found in the ZIP")

@@ -7,3 +7,4 @@ storage_box_password: R0uteSquigglerBocks
 debug_logging: true
 sync_map_tile_cache: false
 gpu_rendering: true
+gui: true

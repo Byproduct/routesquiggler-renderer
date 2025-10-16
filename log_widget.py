@@ -133,6 +133,12 @@ class LogWidget(QWidget):
         scrollbar = self.log_text.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
     
+    def add_debug_log(self, message):
+        """Add a debug message to the log (only if debug logging is enabled)"""
+        from config import config
+        if config.debug_logging:
+            self.add_log(f"Debug: {message}")
+    
     def _enforce_line_limit(self):
         """Remove oldest lines if we exceed the maximum line limit"""
         document = self.log_text.document()

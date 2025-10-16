@@ -20,6 +20,7 @@ class ImageGeneratorWorker(QObject):
     finished = Signal()
     error = Signal(str)
     log_message = Signal(str)
+    debug_message = Signal(str)  # Emits debug messages (only logged if debug_logging is enabled)
     status_queue_ready = Signal(object)  # Emits the status queue for UI updates
     zoom_levels_ready = Signal(list)  # Emits the zoom levels as soon as they're calculated
     job_completed = Signal(str)  # Emits job ID when all uploads are successful
@@ -41,6 +42,9 @@ class ImageGeneratorWorker(QObject):
     def image_generator_process(self):
         """Main processing method that runs in the worker thread."""
         try:
+            import time
+            start_time = time.time()
+            
             self.log_message.emit("Starting image generation.")
                       
             # Create track lookup
@@ -79,16 +83,16 @@ class ImageGeneratorWorker(QObject):
             statistics_setting = self.json_data.get('statistics', 'off')
             if statistics_setting in ['light', 'dark'] and self.json_data.get('job_type') == 'image':
                 try:
-                    self.log_message.emit("Calculating statistics from GPX files...")
+                    self.debug_message.emit("Calculating statistics from GPX files...")
                     statistics_data = processor.calculate_statistics_from_gpx_files(self.gpx_files_info, track_lookup)
                     if statistics_data:
-                        self.log_message.emit("Statistics calculated successfully")
+                        self.debug_message.emit("Statistics calculated successfully")
                         # Log calculated values for debugging
-                        self.log_message.emit(f"  Starting time: {statistics_data.get('starting_time', 'N/A')}")
-                        self.log_message.emit(f"  Ending time: {statistics_data.get('ending_time', 'N/A')}")
-                        self.log_message.emit(f"  Elapsed time: {statistics_data.get('elapsed_time', 'N/A')}")
-                        self.log_message.emit(f"  Distance: {statistics_data.get('distance', 'N/A')} km")
-                        self.log_message.emit(f"  Average speed: {statistics_data.get('average_speed', 'N/A')} km/h")
+                        self.debug_message.emit(f"  Starting time: {statistics_data.get('starting_time', 'N/A')}")
+                        self.debug_message.emit(f"  Ending time: {statistics_data.get('ending_time', 'N/A')}")
+                        self.debug_message.emit(f"  Elapsed time: {statistics_data.get('elapsed_time', 'N/A')}")
+                        self.debug_message.emit(f"  Distance: {statistics_data.get('distance', 'N/A')} km")
+                        self.debug_message.emit(f"  Average speed: {statistics_data.get('average_speed', 'N/A')} km/h")
                     else:
                         self.log_message.emit("Warning: Could not calculate statistics (no timestamps found)")
                 except Exception as e:
@@ -125,7 +129,7 @@ class ImageGeneratorWorker(QObject):
             resolution_x = _parse_dimension(raw_x, 1920)
             resolution_y = _parse_dimension(raw_y, 1080)
             try:
-                self.log_message.emit(f"Requested image_resolution: raw=({raw_x}x{raw_y}) parsed=({resolution_x}x{resolution_y})")
+                self.debug_message.emit(f"Requested image_resolution: raw=({raw_x}x{raw_y}) parsed=({resolution_x}x{resolution_y})")
             except Exception:
                 pass
 
@@ -181,7 +185,7 @@ class ImageGeneratorWorker(QObject):
             
             # Log the resolved output resolution for debugging
             try:
-                self.log_message.emit(f"Output image resolution: {resolution_x_value}x{resolution_y_value}")
+                self.debug_message.emit(f"Output image resolution: {resolution_x_value}x{resolution_y_value}")
             except Exception:
                 pass
             
@@ -234,6 +238,10 @@ class ImageGeneratorWorker(QObject):
                     self.log_message.emit
                 )
             
+            # Calculate and emit completion time
+            elapsed_time = int(time.time() - start_time)
+            self.log_message.emit(f"Image generation completed in {elapsed_time} seconds.")
+            
             self.finished.emit()
             
         except Exception as e:
@@ -270,7 +278,7 @@ class ImageGeneratorWorker(QObject):
             import gc
             gc.collect()
             
-            self.log_message.emit("Matplotlib and Qt resources cleaned up")
+            self.debug_message.emit("Matplotlib and Qt resources cleaned up")
             
         except Exception as e:
             self.log_message.emit(f"Warning: Error during resource cleanup: {str(e)}")

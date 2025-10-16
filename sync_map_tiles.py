@@ -234,8 +234,7 @@ class MapTileSyncer:
 
     def _download_files_parallel(self, files_to_download, max_workers):
         """Download files in parallel."""
-        self.log_callback("Starting parallel download...")
-        self.progress_callback("Syncing map tile cache: Starting download...")
+        self.progress_callback("Syncing map tile cache: Starting download.")
         
         downloaded_count = 0
         with ThreadPoolExecutor(max_workers=max_workers) as executor:

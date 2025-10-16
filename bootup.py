@@ -17,6 +17,8 @@ from PySide6.QtCore import QObject, Signal, QThread
 from sync_map_tiles import sync_map_tiles
 from debug_logger import setup_debug_logging
 import map_tile_cache_sweep
+from write_log import write_log, write_debug_log
+
 
 # Conditionally import SystemTray - it handles its own platform detection
 try:
@@ -29,84 +31,52 @@ except ImportError:
 class BootupManager:
     def __init__(self, main_window, log_callback=None, progress_callback=None):
         self.main_window = main_window
-        self.log_callback = log_callback or (lambda msg: None)  # Default to no-op if no callback provided
-        self.progress_callback = progress_callback or (lambda msg: None)  # Default to no-op if no callback provided
-        self.collapse_log_callback = None  # Will be set by the worker
+        
+        if log_callback:
+            # Use provided callback in GUI mode
+            self.log_callback = log_callback
+        else:
+            from write_log import write_log
+            self.log_callback = write_log
+        
+        self.progress_callback = progress_callback or (lambda msg: None) 
+        self.collapse_log_callback = None  
         self.config_callback = None
         self.hardware_id_callback = None
         self.system_tray_callback = None
-        self.app_version = None
-        self.api_url = None
-        self.user = None
-        self.hardware_id = None
-        self.system_tray = None
-        self.storage_box_address = None
-        self.storage_box_user = None
-        self.storage_box_password = None
-        self.debug_logging = False
-        self.sync_map_tile_cache = True  # Default to True for backward compatibility
-        self.gpu_rendering = True  # Default to True for backward compatibility
-        self.drive_space_warning_callback = None # New attribute for drive space warning
+        self.drive_space_warning_callback = None
+        
+        # Import global config object
+        from config import config
+        self.config = config
+        
+        # Setup debug logging if enabled
+        from debug_logger import setup_debug_logging
+        setup_debug_logging(config.debug_logging)
+        
+        self.log_callback("Configuration loaded")
+        if config.gui:
+            self.log_callback("GUI mode enabled")
+        else:
+            self.log_callback("Terminal-only mode enabled")
+        if config.debug_logging:
+            self.log_callback("Debug logging enabled")
+        if config.gpu_rendering:
+            self.log_callback("GPU rendering enabled")
+        else:
+            self.log_callback("GPU rendering disabled")
+        
+        # Note: config callback will be called later when BootupWorker sets it up
 
     @property
     def storage_box_credentials(self):
         """Return storage box credentials as a dictionary."""
         return {
-            'address': self.storage_box_address,
-            'user': self.storage_box_user,
-            'password': self.storage_box_password
+            'address': self.config.storage_box_address,
+            'user': self.config.storage_box_user,
+            'password': self.config.storage_box_password
         }
 
-    def load_config(self):
-        """Load configuration variables from config.txt file"""
-        try:
-            with open('config.txt', 'r', encoding='utf-8') as file:
-                for line in file:
-                    line = line.strip()
-                    if line and ':' in line:
-                        key, value = line.split(':', 1)
-                        key = key.strip()
-                        value = value.strip()
-                        
-                        if key == 'app_version':
-                            self.app_version = value
-                        elif key == 'api_url':
-                            self.api_url = value
-                        elif key == 'user':
-                            self.user = value
-                        elif key == 'storage_box_address':
-                            self.storage_box_address = value
-                        elif key == 'storage_box_user':
-                            self.storage_box_user = value
-                        elif key == 'storage_box_password':
-                            self.storage_box_password = value
-                        elif key == 'debug_logging':
-                            self.debug_logging = value.lower() == 'true'
-                        elif key == 'sync_map_tile_cache':
-                            self.sync_map_tile_cache = value.lower() == 'true'
-                        elif key == 'gpu_rendering':
-                            self.gpu_rendering = value.lower() == 'true'
-            
-            # Setup debug logging if enabled
-            setup_debug_logging(self.debug_logging)
-            
-            self.log_callback("Configuration loaded")
-            if self.debug_logging:
-                self.log_callback("Debug logging enabled")
-            if self.gpu_rendering:
-                self.log_callback("GPU rendering enabled")
-            else:
-                self.log_callback("GPU rendering disabled")
-            if self.config_callback:
-                self.config_callback(self.app_version, self.api_url, self.user)
-            return True
-            
-        except FileNotFoundError:
-            self.log_callback("config.txt file not found")
-            return False
-        except Exception as e:
-            self.log_callback(f"Error loading config: {str(e)}")
-            return False
     
     def get_and_log_hardware_id(self):
         """Get the hardware ID and store it in a variable, then log it"""
@@ -123,7 +93,7 @@ class BootupManager:
     
     def display_system_info(self):
         """Display all system and configuration information"""
-        self.log_callback(f"App version: {self.app_version or 'Not set'}")
+        self.log_callback(f"App version: {self.config.app_version or 'Not set'}")
         return True
     
     def setup_system_tray(self):
@@ -146,22 +116,22 @@ class BootupManager:
     
     def make_heartbeat_call(self):
         """Make a heartbeat API call to register with the server"""
-        if not self.user or not self.hardware_id or not self.api_url:
+        if not self.config.user or not self.hardware_id or not self.config.api_url:
             self.log_callback("Cannot make heartbeat call: missing user, hardware_id, or api_url")
             return False
         
         try:
             # Construct URL from config api_url + heartbeat endpoint
-            url = f"{self.api_url.rstrip('/')}/heartbeat/"
+            url = f"{self.config.api_url.rstrip('/')}/heartbeat/"
             headers = {
-                'X-API-Key': self.user,
+                'X-API-Key': self.config.user,
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache'
             }
             body = {
                 'hardware_id': self.hardware_id,
-                'app_version': self.app_version
+                'app_version': self.config.app_version
             }
             
             self.log_callback("Testing connection to web server")
@@ -204,7 +174,7 @@ class BootupManager:
 
     def test_storage_box(self):
         """Test connection to storage box by creating a test folder and file"""
-        if not all([self.storage_box_address, self.storage_box_user, self.storage_box_password]):
+        if not all([self.config.storage_box_address, self.config.storage_box_user, self.config.storage_box_password]):
             self.log_callback("Cannot test storage box: missing connection details")
             return False
 
@@ -212,8 +182,8 @@ class BootupManager:
         test_folder = None
         try:
             # Connect to FTP
-            ftp = ftplib.FTP(self.storage_box_address)
-            ftp.login(self.storage_box_user, self.storage_box_password)
+            ftp = ftplib.FTP(self.config.storage_box_address)
+            ftp.login(self.config.storage_box_user, self.config.storage_box_password)
 
             # Create random folder name
             test_folder = str(random.randint(0, 99))
@@ -267,17 +237,15 @@ class BootupManager:
     def do_sync_map_tile_cache(self):
         """Sync map tile cache files between local machine and storage box using the modular syncer."""
         # Check if map tile cache syncing is disabled in config
-        if not self.sync_map_tile_cache:
+        if not self.config.sync_map_tile_cache:
             self.log_callback("Map tile cache syncing is disabled in config. Skipping sync.")
             return True  # Return True to not block bootup
         
-        if not all([self.storage_box_address, self.storage_box_user, self.storage_box_password]):
+        if not all([self.config.storage_box_address, self.config.storage_box_user, self.config.storage_box_password]):
             self.log_callback("Cannot sync map tile cache: missing storage box credentials.")
             return False
 
         try:
-            # Clean bad tiles from cache before syncing
-            self.log_callback("Cleaning bad tiles from cache before sync")
             try:
                 # Run cache sweep in production mode (actually delete files)
                 import sys
@@ -303,9 +271,9 @@ class BootupManager:
             
             # Use the modular sync_map_tiles function
             success, uploaded_count, downloaded_count = sync_map_tiles(
-                storage_box_address=self.storage_box_address,
-                storage_box_user=self.storage_box_user,
-                storage_box_password=self.storage_box_password,
+                storage_box_address=self.config.storage_box_address,
+                storage_box_user=self.config.storage_box_user,
+                storage_box_password=self.config.storage_box_password,
                 local_cache_dir="map tile cache",
                 log_callback=self.log_callback,
                 progress_callback=self.progress_callback,
@@ -323,9 +291,7 @@ class BootupManager:
         """Check both current and system drives for sufficient free space."""
         try:
             import hard_drive_space_check
-            
-            self.log_callback("Checking drive space...")
-            
+                      
             # Check current drive
             current_drive_ok = hard_drive_space_check.check_current_drive()
             if not current_drive_ok:
@@ -371,6 +337,10 @@ class BootupManager:
 
     def sync_state_callback(self, state):
         """Handle sync state changes (start/complete)."""
+        if not self.main_window:
+            # Terminal mode - no GUI elements to update
+            return
+            
         if state == 'start':
             # Trigger the same behavior as pause button - stop requesting jobs
             if hasattr(self.main_window, 'pause_processing'):
@@ -392,6 +362,41 @@ class BootupManager:
             if hasattr(self.main_window, 'play_label'):
                 self.main_window.play_label.setText("Processing paused. Press play to continue.")
                 self.main_window.play_label.hide()
+
+    def run_bootup_terminal(self):
+        """Run bootup sequence directly for terminal mode (no threading)."""
+        try:
+            write_log("------------------------------------------")
+            write_log("Starting up Route Squiggler render client.")
+                      
+            write_debug_log("Getting hardware ID.")
+            if not self.get_and_log_hardware_id():
+                write_log("Hardware ID retrieval failed.")
+                return False
+            
+            write_debug_log("Testing web server connection.")
+            if not self.make_heartbeat_call():
+                write_log("Web server connection failed.")
+                return False
+            
+            # Test storage box connection
+            write_debug_log("Testing storage box connection.")
+            if not self.test_storage_box():
+                write_log("Storage box connection failed.")
+                return False
+            
+            # Sync map tile cache
+            write_log("Syncing map tile cache")
+            if not self.do_sync_map_tile_cache():
+                write_log("Warning: map tile cache sync failed. Continuing regardless.")
+            
+            write_debug_log("Checking drive space.")
+            self.check_drive_space()
+            return True
+            
+        except Exception as e:
+            write_log(f"Bootup failed with error: {str(e)}")
+            return False
 
 
 class BootupWorker(QObject):
@@ -426,8 +431,14 @@ class BootupWorker(QObject):
         
     def run_bootup(self):
         """Run the complete bootup sequence."""
+        # Emit config loaded signal first, now that callbacks are connected
+        self.config_loaded.emit(
+            self.bootup_manager.config.app_version, 
+            self.bootup_manager.config.api_url, 
+            self.bootup_manager.config.user
+        )
+        
         steps = [
-            ("Loading configuration", self.bootup_manager.load_config),
             ("Getting hardware ID", self.bootup_manager.get_and_log_hardware_id),
             ("Displaying system info", self.bootup_manager.display_system_info),
             ("Setting up system tray", self.bootup_manager.setup_system_tray),

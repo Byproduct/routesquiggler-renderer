@@ -252,16 +252,7 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
         point_filename = point[7] if len(point) > 7 else None
         if point_filename:
             unique_filenames.add(point_filename)
-    
-    # Debug: Log all unique filenames found in tail points
-    if unique_filenames:
-        print("\nDebug - Filenames in tail points:")
-        for fn in sorted(unique_filenames):
-            color = filename_to_rgba.get(fn, "NOT FOUND")
-            print(f"  {fn}: {color}")
-    else:
-        print("\nDebug: No filenames found in tail points")
-    
+       
     # Reset for processing
     current_segment = []
     current_filename = None

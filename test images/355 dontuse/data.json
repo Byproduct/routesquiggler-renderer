@@ -1,0 +1,33 @@
+{
+  "created_at": "2025-10-16T16:44:43.985714+00:00",
+  "folder": "Or1HJYxdGBeCKPv",
+  "image_resolution_x": 1920,
+  "image_resolution_y": 1080,
+  "job_id": 354,
+  "job_type": "image",
+  "legend": "off",
+  "legend_theme": "dark",
+  "line_width": 4,
+  "map_style": "otm",
+  "map_transparency": 30,
+  "newest_on_top": true,
+  "route_name": "Kypäränouto_imgtest_2",
+  "statistics": "dark",
+  "statistics_distance": true,
+  "statistics_elapsed_time": true,
+  "user_id": 1,
+  "track_objects": [
+    {
+      "filename": "2025-10-15.gpx",
+      "date": "2025-10-15",
+      "color": "#ff0080",
+      "name": ""
+    },
+    {
+      "filename": "2025-10-15-1.gpx",
+      "date": "2025-10-15",
+      "color": "#8000ff",
+      "name": ""
+    }
+  ]
+}
