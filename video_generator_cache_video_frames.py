@@ -484,9 +484,9 @@ class StreamingFrameGenerator:
                 stamp_file = "img/stamp_1x.npy"
             
             self.stamp_array = np.load(stamp_file)
-            print(f"Loaded stamp: {stamp_file}")
+            write_debug_log(f"Loaded stamp: {stamp_file}")
         except Exception as e:
-            print(f"Warning: Could not load stamp: {e}")
+            write_log(f"Warning: Could not load stamp: {e}")
         
         # Calculate video parameters
         video_length = float(json_data.get('video_length', 30))
@@ -559,7 +559,7 @@ class StreamingFrameGenerator:
             max_workers = min(4, multiprocessing.cpu_count())
         self.num_workers = min(max_workers, self.total_frames)
         
-        print(f"Using {self.num_workers} worker processes for frame generation")
+        write_debug_log(f"Using {self.num_workers} worker processes for frame generation")
         
         # Log the ending structure for user feedback
         if progress_callback: # Changed from log_callback to progress_callback
@@ -609,7 +609,7 @@ class StreamingFrameGenerator:
             # Large videos: use 15x workers buffer, but cap at 200 frames for memory efficiency
             self.buffer_size = min(15 * self.num_workers, 200, self.total_frames)
         
-        print(f"Buffer size: {self.buffer_size} frames (total frames: {self.total_frames})")
+        write_debug_log(f"Buffer size: {self.buffer_size} frames (total frames: {self.total_frames})")
         
         self.current_frame = 0
         self.pool = None
@@ -651,7 +651,7 @@ class StreamingFrameGenerator:
     
     def _pre_warm_buffer(self):
         """Pre-warm the buffer with initial frames to prevent startup bottleneck"""
-        print(f"Pre-warming buffer with initial frames...")
+        write_debug_log(f"Pre-warming buffer with initial frames")
         
         # Calculate how many frames to pre-warm (aim for 50% of buffer size)
         pre_warm_count = min(self.buffer_size // 2, self.total_frames)
@@ -669,7 +669,7 @@ class StreamingFrameGenerator:
                 self.next_frame_to_request += 1
                 self.frames_requested += 1
         
-        print(f"Pre-warmed {pre_warm_count} frames")
+        write_debug_log(f"Pre-warmed {pre_warm_count} frames")
         
         # Wait for some frames to complete to establish the pipeline
         wait_time = 0
@@ -680,7 +680,7 @@ class StreamingFrameGenerator:
             self._collect_ready_frames()
             wait_time += 0.5
         
-        print(f"Buffer pre-warmed: {len(self.frame_buffer)} frames ready")
+        write_debug_log(f"Buffer pre-warmed: {len(self.frame_buffer)} frames ready")
         
     def _request_more_frames(self):
         """Request more frames to be generated up to buffer limit"""
@@ -994,7 +994,7 @@ class StreamingFrameGenerator:
             self.pool = None
 
 
-def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
+def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
     """
     Create video by streaming frames directly to ffmpeg without saving to disk.
     
@@ -1004,6 +1004,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         combined_route_data (dict): Combined route data
         progress_callback (callable, optional): Function to call with progress updates
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         shared_map_cache (dict, optional): Shared memory cache for map images
         shared_route_cache (dict, optional): Shared memory cache for route images
@@ -1013,8 +1014,8 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         str: Path to the created video file, or None if failed
     """
     try:
-        if log_callback:
-            log_callback("Starting streaming video creation")
+        if debug_callback:
+            debug_callback("Starting streaming video creation")
         
         # Calculate video parameters
         video_length = float(json_data.get('video_length', 30))
@@ -1048,9 +1049,9 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
             extended_video_length = video_length  # No tail phase
             final_video_length = extended_video_length + cloned_ending_duration
             
-            if log_callback:
-                log_callback(f"SIMULTANEOUS MODE: Creating video: {video_length}s route + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
-                log_callback(f"Each route handles its own completion and tail fade-out individually")
+            if debug_callback:
+                debug_callback(f"SIMULTANEOUS MODE: Creating video: {video_length}s route + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
+                debug_callback(f"Each route handles its own completion and tail fade-out individually")
         else:
             # SEQUENTIAL MODE: Use the original tail-only phase logic
             tail_length = int(json_data.get('tail_length', 0))  # Ensure tail_length is int
@@ -1061,13 +1062,13 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
             extended_video_length = video_length + tail_length if tail_length > 0 else video_length
             final_video_length = extended_video_length + cloned_ending_duration
             
-            if log_callback:
+            if debug_callback:
                 if tail_length > 0 and cloned_ending_duration > 0:
-                    log_callback(f"SEQUENTIAL MODE: Creating video: {video_length}s route + {tail_length}s tail + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
+                    debug_callback(f"SEQUENTIAL MODE: Creating video: {video_length}s route + {tail_length}s tail + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
                 elif tail_length > 0:
-                    log_callback(f"SEQUENTIAL MODE: Creating video: {video_length}s route + {tail_length}s tail = {final_video_length}s total (no additional frames needed)")
+                    debug_callback(f"SEQUENTIAL MODE: Creating video: {video_length}s route + {tail_length}s tail = {final_video_length}s total (no additional frames needed)")
                 else:
-                    log_callback(f"SEQUENTIAL MODE: Creating video: {video_length}s route + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
+                    debug_callback(f"SEQUENTIAL MODE: Creating video: {video_length}s route + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
         
         # Calculate frame counts
         original_frames = int(video_length * video_fps)
@@ -1075,13 +1076,13 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         cloned_frames = int(cloned_ending_duration * video_fps)
         total_frames = int(final_video_length * video_fps)
 
-        if log_callback:
+        if debug_callback:
             if tail_length > 0 and cloned_ending_duration > 0:
-                log_callback(f"Frame breakdown: {original_frames} route + {tail_frames} tail + {cloned_frames} cloned = {total_frames} total frames")
+                debug_callback(f"Frame breakdown: {original_frames} route + {tail_frames} tail + {cloned_frames} cloned = {total_frames} total frames")
             elif tail_length > 0:
-                log_callback(f"Frame breakdown: {original_frames} route + {tail_frames} tail = {total_frames} total frames")
+                debug_callback(f"Frame breakdown: {original_frames} route + {tail_frames} tail = {total_frames} total frames")
             else:
-                log_callback(f"Frame breakdown: {original_frames} route + {cloned_frames} cloned = {total_frames} total frames")
+                debug_callback(f"Frame breakdown: {original_frames} route + {cloned_frames} cloned = {total_frames} total frames")
         
         # Generate output filename
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -1112,13 +1113,13 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, output_filename)
         
-        if log_callback:
-            log_callback(f"Output video will be saved to: {output_path}")
+        if debug_callback:
+            debug_callback(f"Output video will be saved to: {output_path}")
             if is_test_job:
-                log_callback("Test job mode: Video will be saved in test jobs directory")
+                debug_callback("Test job mode: Video will be saved in test jobs directory")
             else:
-                log_callback(f"Regular job mode: Video will be saved in job directory: {job_id}")
-                log_callback(f"Video filename: {output_filename}")
+                debug_callback(f"Regular job mode: Video will be saved in job directory: {job_id}")
+                debug_callback(f"Video filename: {output_filename}")
         
         # Create the frame generator
         frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time)
@@ -1131,15 +1132,15 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         clip = VideoClip(frame_generator.make_frame, duration=frame_generator.final_video_length)
         
         # Write the video file
-        if log_callback:
-            log_callback("Starting video encoding")
+        if debug_callback:
+            debug_callback("Starting video encoding")
         
         # Use GPU rendering setting from config
-        if log_callback:
+        if debug_callback:
             if gpu_rendering:
-                log_callback("Using GPU rendering (NVIDIA NVENC)")
+                debug_callback("Using GPU rendering (NVIDIA NVENC)")
             else:
-                log_callback("Using CPU rendering (libx264)")
+                debug_callback("Using CPU rendering (libx264)")
         
         try:
             # Use moviepy to write the video
@@ -1161,6 +1162,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                     bitrate='15000k',    # Can be reduced for smaller files (e.g., '8000k', '5000k')
                     audio=False,
                     threads=max_workers,
+                    logger="bar",         # Suppress MoviePy logger messages
                     ffmpeg_params=[
                         '-pix_fmt', 'yuv420p',
                         '-preset', 'slow',        # Options: fast, slow, hq, ll, llhq, lossless
@@ -1180,6 +1182,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                     bitrate='15000k',
                     audio=False,
                     threads=max_workers,
+                    logger="bar",         # Suppress MoviePy logger messages
                     ffmpeg_params=[
                         '-pix_fmt', 'yuv420p',
                         '-preset', 'medium',        # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
@@ -1194,14 +1197,14 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
             if progress_callback:
                 progress_callback("progress_bar_frames", 100, "Frame generation complete")
             
-            if log_callback:
-                log_callback(f"Streaming video creation complete: {output_path}")
+            if debug_callback:
+                debug_callback(f"Streaming video creation complete: {output_path}")
             
             # Generate thumbnail for non-test jobs
             if not is_test_job:
                 try:
-                    if log_callback:
-                        log_callback("Generating thumbnail from last frame...")
+                    if debug_callback:
+                        debug_callback("Generating thumbnail from last frame...")
                     
                     # Extract the last frame using ffmpeg
                     import subprocess
@@ -1222,8 +1225,8 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                     # Run ffmpeg command
                     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                     
-                    if log_callback:
-                        log_callback(f"FFmpeg command executed successfully")
+                    if debug_callback:
+                        debug_callback(f"FFmpeg command executed successfully")
                     
                     # Load the extracted frame and resize it
                     from PIL import Image
@@ -1247,8 +1250,8 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                     except:
                         pass  # Ignore cleanup errors
                     
-                    if log_callback:
-                        log_callback(f"Thumbnail generated: {thumbnail_path} ({new_width}x{new_height})")
+                    if debug_callback:
+                        debug_callback(f"Thumbnail generated: {thumbnail_path} ({new_width}x{new_height})")
                         
                 except subprocess.CalledProcessError as e:
                     if log_callback:
@@ -1280,8 +1283,8 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                         if proc.info['name'] and 'ffmpeg' in proc.info['name'].lower():
                             cmdline = proc.info['cmdline']
                             if cmdline and any('moviepy' in str(arg).lower() or 'temp' in str(arg).lower() for arg in cmdline):
-                                if log_callback:
-                                    log_callback(f"Terminating hanging FFmpeg process: PID {proc.info['pid']}")
+                                if debug_callback:
+                                    debug_callback(f"Terminating hanging FFmpeg process: PID {proc.info['pid']}")
                                 proc.terminate()
                                 proc.wait(timeout=5)  # Wait up to 5 seconds for graceful termination
                     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
@@ -1291,8 +1294,8 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                         if log_callback:
                             log_callback(f"Warning: Error checking FFmpeg process: {str(e)}")
                 
-                if log_callback:
-                    log_callback("MoviePy and FFmpeg processes cleaned up")
+                if debug_callback:
+                    debug_callback("MoviePy and FFmpeg processes cleaned up")
                     
             except Exception as e:
                 if log_callback:
@@ -1304,7 +1307,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         return None
 
 
-def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
+def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
     """
     Cache video frames for video generation using streaming approach.
     
@@ -1314,6 +1317,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         combined_route_data (dict): Combined route data
         progress_callback (callable, optional): Function to call with progress updates
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         shared_map_cache (dict, optional): Shared memory cache for map images
         shared_route_cache (dict, optional): Shared memory cache for route images
@@ -1323,8 +1327,8 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         dict: Cache results with timing information, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Starting video frame generation with streaming approach...")
+        if debug_callback:
+            debug_callback("Starting video frame generation with streaming approach...")
         
         # Use provided shared map cache or create new one if not provided
         if shared_map_cache is None:
@@ -1334,7 +1338,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         # Create video using streaming approach
         video_path = create_video_streaming(
             json_data, route_time_per_frame, combined_route_data, 
-            progress_callback, log_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering
+            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering
         )
         
         if video_path:
@@ -1383,11 +1387,11 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
             frames_generated = int(extended_video_length * video_fps)  # Only frames that were actually generated
             cloned_frames = int(cloned_ending_duration * video_fps)
             
-            if log_callback:
+            if debug_callback:
                 if is_simultaneous_mode:
-                    log_callback(f"SIMULTANEOUS MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames")
+                    debug_callback(f"SIMULTANEOUS MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames")
                 else:
-                    log_callback(f"SEQUENTIAL MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames")
+                    debug_callback(f"SEQUENTIAL MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames")
             
             return {
                 'total_frames_created': frames_generated,  # Frames actually generated (not including cloned)
@@ -1408,7 +1412,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         return None
 
 
-def cache_video_frames(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
+def cache_video_frames(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
     """
     Cache video frames for video generation.
     
@@ -1417,6 +1421,7 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
         combined_route_data (dict, optional): Combined route data containing gpx_time_per_video_time
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         shared_map_cache (dict, optional): Shared memory cache for map images
         shared_route_cache (dict, optional): Shared memory cache for route images
@@ -1427,8 +1432,8 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
         dict: Cache results with timing information, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Starting video generation")
+        if debug_callback:
+            debug_callback("Starting video generation")
         
         if progress_callback:
             progress_callback("progress_bar_frames", 0, "Starting video generation")
@@ -1450,21 +1455,21 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
             video_fps = float(json_data.get('video_fps', 30))
             route_time_per_frame = gpx_time_per_video_time / video_fps
             
-            if log_callback:
-                # log_callback(f"Using gpx_time_per_video_time from combined_route_data: {gpx_time_per_video_time}")
-                # log_callback(f"Calculated route_time_per_frame: {route_time_per_frame:.6f} seconds")
+            if debug_callback:
+                # debug_callback(f"Using gpx_time_per_video_time from combined_route_data: {gpx_time_per_video_time}")
+                # debug_callback(f"Calculated route_time_per_frame: {route_time_per_frame:.6f} seconds")
                 pass
         else:
             # Fallback to calculating route time per frame
-            route_time_per_frame = calculate_route_time_per_frame(json_data, combined_route_data, log_callback)
+            route_time_per_frame = calculate_route_time_per_frame(json_data, combined_route_data, log_callback, debug_callback)
         
         if route_time_per_frame is None:
             if log_callback:
                 log_callback("Error: Could not calculate route time per frame")
             return None
         
-        if log_callback:
-            log_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
+        if debug_callback:
+            debug_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
         
         if combined_route_data is None:
             if log_callback:
@@ -1474,7 +1479,7 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
         # Create video using streaming approach
         cache_result = cache_video_frames_for_video(
             json_data, route_time_per_frame, combined_route_data, 
-            progress_callback, log_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering
+            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering
         )
         
         if cache_result is None:

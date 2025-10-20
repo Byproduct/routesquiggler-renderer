@@ -15,10 +15,11 @@ from PIL import Image
 # Increase PIL image size limit to 200 megapixels to handle large renders
 Image.MAX_IMAGE_PIXELS = 200_000_000
 
-from image_generator_maptileutils import debug_log, create_map_tiles, set_cache_directory
+from image_generator_maptileutils import create_map_tiles, set_cache_directory
 from image_generator_postprocess import add_stamp_to_plot, add_legend_to_plot, optimize_png_bytes, add_title_text_to_plot
 from image_generator_utils import ImageGenerator
 from html_file_generator import generate_image_gallery_html
+from write_log import write_log, write_debug_log
 
 class StatusUpdate:
     """Status update message from a worker process."""
@@ -86,7 +87,7 @@ def split_track_at_longitude_wrap(lats: List[float], lons: List[float]) -> List[
     
     # Log if wrapping was detected
     if wrap_count > 0:
-        debug_log(f"Longitude wrapping detected: track split into {len(segments)} segments after {wrap_count} wrap(s)")
+        write_log(f"Longitude wrapping detected: track split into {len(segments)} segments after {wrap_count} wrap(s)")
     
     return segments
 
@@ -135,7 +136,7 @@ def generate_images_parallel(
     else:
         max_workers = min(max_workers, len(zoom_levels))  # Don't exceed number of zoom levels
     
-    debug_log(f"Using {max_workers} worker processes for {len(zoom_levels)} zoom levels")
+    write_debug_log(f"Using {max_workers} worker processes for {len(zoom_levels)} zoom levels")
     
     # Create result queue
     result_queue = mp.Queue()
@@ -177,7 +178,7 @@ def generate_images_parallel(
         )
         process.start()
         active_processes[process] = zoom_level
-        debug_log(f"Started worker process for zoom level {zoom_level}")
+        write_debug_log(f"Started worker process for zoom level {zoom_level}")
     
     # Collect results and start new processes as others complete
     results = []
@@ -191,7 +192,7 @@ def generate_images_parallel(
             if result[1] is not None:  # Only add successful results
                 results.append(result)
             completed_processes += 1
-            debug_log(f"Completed zoom level {result[0]} ({completed_processes}/{total_processes})")
+            write_debug_log(f"Completed zoom level {result[0]} ({completed_processes}/{total_processes})")
             
             # Find and clean up the completed process
             completed_process = None
@@ -238,10 +239,10 @@ def generate_images_parallel(
                 )
                 process.start()
                 active_processes[process] = next_zoom_level
-                debug_log(f"Started worker process for zoom level {next_zoom_level}")
+                write_debug_log(f"Started worker process for zoom level {next_zoom_level}")
                 
         except Empty:
-            debug_log("Timeout waiting for worker process to complete")
+            write_log("Timeout waiting for worker process to complete")
             break
     
     # Clean up any remaining processes
@@ -306,7 +307,7 @@ def _worker_process(
         )
         result_queue.put(result)
     except Exception as e:
-        debug_log(f"Error in worker process for zoom level {zoom_level}: {str(e)}")
+        write_log(f"Error in worker process for zoom level {zoom_level}: {str(e)}")
         result_queue.put((zoom_level, None))  # Signal error for this zoom level
 
 
@@ -372,7 +373,7 @@ def generate_image_for_zoom_level(
                 # Small sleep to ensure the status is processed
                 time.sleep(0.01)
             except Exception as e:
-                debug_log(f"Failed to send status update: {e}")
+                write_log(f"Failed to send status update: {e}")
         
         # Create an ImageGenerator instance for this process
         generator = ImageGenerator()
@@ -398,7 +399,7 @@ def generate_image_for_zoom_level(
         try:
             set_cache_directory(map_style)
         except Exception as e:
-            debug_log(f"Failed to set cache directory for style '{map_style}': {e}")
+            write_log(f"Failed to set cache directory for style '{map_style}': {e}")
         
         # Load map tiles (download from server or read from cache)
         update_status("loading tiles", textfield=False)
@@ -469,7 +470,7 @@ def generate_image_for_zoom_level(
             for segment_lats, segment_lons in segments:
                 ax.plot(segment_lons, segment_lats, transform=ccrs.PlateCarree(), color=color, linewidth=effective_line_width)
         
-        debug_log(f"Plotted {track_count} tracks as {total_segments} segments (zoom level {zoom_level})")
+        write_debug_log(f"Plotted {track_count} tracks as {total_segments} segments (zoom level {zoom_level})")
         
         # Add statistics if requested
         if statistics != "off":
@@ -506,7 +507,7 @@ def generate_image_for_zoom_level(
                         image_scale=image_scale,
                     )
         except Exception as e:
-            debug_log(f"Failed to add title text: {e}")
+            write_log(f"Failed to add title text: {e}")
 
         # Add stamp
         update_status("adding stamp", textfield=False)
@@ -590,12 +591,12 @@ def generate_image_for_zoom_level(
         
     except Exception as e:
         error_msg = f"Error generating image for zoom level {zoom_level}: {str(e)}\n{traceback.format_exc()}"
-        debug_log(error_msg)
+        write_log(error_msg)
         try:
             status_queue.put(StatusUpdate(zoom_level, "error", error_msg))
             time.sleep(0.01)  # Small sleep to ensure the error status is processed
         except Exception as send_error:
-            debug_log(f"Failed to send error status: {send_error}")
+            write_log(f"Failed to send error status: {send_error}")
         return zoom_level, None
 
 
@@ -755,11 +756,11 @@ def upload_to_storage_box(
         try:
             file_size = ftp.size(filename)
         except:
-            debug_log(f"Failed to get size for {filename}")
+            write_log(f"Failed to get size for {filename}")
             return False
             
         if file_size <= 0:
-            debug_log(f"File {filename} has zero or negative size")
+            write_log(f"File {filename} has zero or negative size")
             return False
 
         # If we have a thumbnail, upload it too
@@ -772,11 +773,11 @@ def upload_to_storage_box(
             try:
                 thumb_size = ftp.size(thumb_filename)
             except:
-                debug_log(f"Failed to get size for {thumb_filename}")
+                write_log(f"Failed to get size for {thumb_filename}")
                 return False
                 
             if thumb_size <= 0:
-                debug_log(f"File {thumb_filename} has zero or negative size")
+                write_log(f"File {thumb_filename} has zero or negative size")
                 return False
             
             # After successful thumbnail upload, generate and upload gallery
@@ -792,19 +793,19 @@ def upload_to_storage_box(
                     try:
                         html_size = ftp.size('images.html')
                         if html_size <= 0:
-                            debug_log("Gallery HTML file has zero or negative size")
+                            write_log("Gallery HTML file has zero or negative size")
                         else:
-                            debug_log(f"Successfully uploaded gallery HTML ({html_size} bytes)")
+                            write_debug_log(f"Successfully uploaded gallery HTML ({html_size} bytes)")
                     except:
-                        debug_log("Failed to verify gallery HTML file size")
+                        write_log("Failed to verify gallery HTML file size")
                         
                 except Exception as e:
-                    debug_log(f"Error generating/uploading gallery HTML: {str(e)}")
+                    write_log(f"Error generating/uploading gallery HTML: {str(e)}")
         
         return True
         
     except Exception as e:
-        debug_log(f"Upload failed: {str(e)}")
+        write_log(f"Upload failed: {str(e)}")
         return False
     finally:
         if ftp:

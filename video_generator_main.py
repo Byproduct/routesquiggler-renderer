@@ -219,6 +219,7 @@ class VideoGeneratorWorker(QObject):
     finished = Signal()
     error = Signal(str)
     log_message = Signal(str)
+    debug_message = Signal(str)  # New signal for debug-only messages
     job_completed = Signal(str)  # Emits job ID when all uploads are successful
     progress_update = Signal(str, int, str)  # Emits (progress_bar_name, percentage, progress_text) for UI updates
 
@@ -265,7 +266,7 @@ class VideoGeneratorWorker(QObject):
     def video_generator_process(self):
         """Main processing method that runs in the worker thread."""
         try:
-            self.log_message.emit("Video generation triggered.")
+            self.debug_message.emit("Video generation triggered.")
             
             # Add test job flag to json_data for use throughout the pipeline
             self.json_data['test_job'] = self.is_test
@@ -274,13 +275,14 @@ class VideoGeneratorWorker(QObject):
             self.log_message.emit("Step 1: Sorting GPX files chronologically")           
             self.sorted_gpx_files = get_sorted_gpx_list(
                 self.gpx_files_info, 
-                log_callback=self.log_message.emit
+                log_callback=self.log_message.emit,
+                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
             )
             
             if not self.sorted_gpx_files:
                 raise ValueError("Failed to sort GPX files chronologically")
             
-            self.log_message.emit(f"Chronological sorting completed with {len(self.sorted_gpx_files)} files")
+            self.debug_message.emit(f"Chronological sorting completed with {len(self.sorted_gpx_files)} files")
             
             # Step 2: Create combined route
             self.log_message.emit("Step 2: Creating combined route")           
@@ -302,10 +304,10 @@ class VideoGeneratorWorker(QObject):
             # Log summary
             total_points = self.combined_route_data.get('total_points', 0)
             total_distance_km = self.combined_route_data.get('total_distance', 0) / 1000
-            self.log_message.emit(f"Combined route created successfully:")
-            self.log_message.emit(f"  - Total points: {total_points:,}")
-            self.log_message.emit(f"  - Total distance: {total_distance_km:.2f} km")
-            self.log_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
+            self.debug_message.emit(f"Combined route created successfully:")
+            self.debug_message.emit(f"  - Total points: {total_points:,}")
+            self.debug_message.emit(f"  - Total distance: {total_distance_km:.2f} km")
+            self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
             
             # Step 3: Calculate unique bounding boxes and cache map tiles
             self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")           
@@ -324,7 +326,7 @@ class VideoGeneratorWorker(QObject):
             
             # START TIMER: Begin timing the rendering process
             render_start_time = time.time()
-            self.log_message.emit("Starting render timer - beginning map image caching and video generation")
+            self.debug_message.emit("Starting render timer - beginning map image caching and video generation")
             
             # Create shared map cache for faster image loading between steps
             from multiprocessing import Manager
@@ -352,10 +354,10 @@ class VideoGeneratorWorker(QObject):
                 total_images = cache_info.get('total_images_created', 0)
                 failed_images = cache_info.get('total_images_failed', 0)
                 total_bboxes = cache_info.get('total_bboxes', 0)
-                self.log_message.emit(f"Map image caching completed:")
-                self.log_message.emit(f"  - Images created: {total_images}")
-                self.log_message.emit(f"  - Images failed: {failed_images}")
-                self.log_message.emit(f"  - Total bounding boxes: {total_bboxes}")
+                self.debug_message.emit(f"Map image caching completed:")
+                self.debug_message.emit(f"  - Images created: {total_images}")
+                self.debug_message.emit(f"  - Images failed: {failed_images}")
+                self.debug_message.emit(f"  - Total bounding boxes: {total_bboxes}")
                 
                 # Step 5: Generate video frames using shared map cache
                 self.log_message.emit("Step 5: Generating video frames")
@@ -381,11 +383,11 @@ class VideoGeneratorWorker(QObject):
                 total_frames_failed = frame_cache_info.get('total_frames_failed', 0)
                 total_frames = frame_cache_info.get('total_frames', 0)
                 video_path = frame_cache_info.get('video_path', 'Unknown')
-                self.log_message.emit(f"Video frame generation completed:")
-                self.log_message.emit(f"  - Frames created: {total_frames_created}")
-                self.log_message.emit(f"  - Frames failed: {total_frames_failed}")
-                self.log_message.emit(f"  - Total frames: {total_frames}")
-                self.log_message.emit(f"  - Video file: {video_path}")
+                self.debug_message.emit(f"Video frame generation completed:")
+                self.debug_message.emit(f"  - Frames created: {total_frames_created}")
+                self.debug_message.emit(f"  - Frames failed: {total_frames_failed}")
+                self.debug_message.emit(f"  - Total frames: {total_frames}")
+                self.debug_message.emit(f"  - Video file: {video_path}")
                 
                 # STOP TIMER: End timing and log total rendering time
                 render_end_time = time.time()
@@ -494,7 +496,7 @@ class VideoGeneratorWorker(QObject):
             import gc
             gc.collect()
             
-            self.log_message.emit("Matplotlib and Qt resources cleaned up")
+            self.debug_message.emit("Matplotlib and Qt resources cleaned up")
             
         except Exception as e:
             self.log_message.emit(f"Warning: Error during resource cleanup: {str(e)}")
@@ -511,14 +513,14 @@ class VideoGeneratorWorker(QObject):
                     if proc.info['name'] and 'ffmpeg' in proc.info['name'].lower():
                         cmdline = proc.info['cmdline']
                         if cmdline and any('moviepy' in str(arg).lower() or 'temp' in str(arg).lower() for arg in cmdline):
-                            self.log_message.emit(f"Terminating hanging FFmpeg process: PID {proc.info['pid']}")
+                            self.debug_message.emit(f"Terminating hanging FFmpeg process: PID {proc.info['pid']}")
                             proc.terminate()
                             proc.wait(timeout=5)  # Wait up to 5 seconds for graceful termination
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
                     # Process already terminated or we don't have permission
                     pass
                 except Exception as e:
-                    self.log_message.emit(f"Warning: Error checking FFmpeg process: {str(e)}")
+                    self.debug_message.emit(f"Warning: Error checking FFmpeg process: {str(e)}")
             
             # Also try to clean up any temporary files that MoviePy might have left
             import os
@@ -539,7 +541,7 @@ class VideoGeneratorWorker(QObject):
                         if os.path.exists(temp_file):
                             try:
                                 os.remove(temp_file)
-                                self.log_message.emit(f"Cleaned up temporary file: {temp_file}")
+                                self.debug_message.emit(f"Cleaned up temporary file: {temp_file}")
                             except Exception as e:
                                 # File might be in use, ignore
                                 pass
@@ -555,11 +557,11 @@ class VideoGeneratorWorker(QObject):
                 else:  # Linux/Mac
                     subprocess.run(['pkill', '-f', 'ffmpeg'], 
                                  capture_output=True, timeout=10)
-                self.log_message.emit("Force-killed any remaining FFmpeg processes")
+                self.debug_message.emit("Force-killed any remaining FFmpeg processes")
             except Exception as e:
-                self.log_message.emit(f"Warning: Error force-killing FFmpeg: {str(e)}")
+                self.debug_message.emit(f"Warning: Error force-killing FFmpeg: {str(e)}")
             
-            self.log_message.emit("MoviePy and FFmpeg processes cleaned up")
+            self.debug_message.emit("MoviePy and FFmpeg processes cleaned up")
             
         except Exception as e:
             self.log_message.emit(f"Warning: Error during MoviePy cleanup: {str(e)}")

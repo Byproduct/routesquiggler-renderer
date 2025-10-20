@@ -11,7 +11,7 @@ import gpxpy
 from image_generator_utils import calculate_haversine_distance
 
 
-def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=None, log_callback=None):
+def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=None, log_callback=None, debug_callback=None):
     """
     Create combined routes from chronologically sorted GPX files.
     Supports multiple simultaneous routes based on track names.
@@ -21,13 +21,14 @@ def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=No
         json_data (dict, optional): Job data containing configuration parameters and track_objects
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
     
     Returns:
         dict: Combined route data with 'combined_route' and 'total_distance' keys, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Creating combined routes from sorted GPX files...")
+        if debug_callback:
+            debug_callback("Creating combined routes from sorted GPX files.")
         
         # Create output directory
         output_dir = Path("temporary files/route")
@@ -50,18 +51,18 @@ def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=No
                     if filename and name:
                         track_name_map[filename] = name
                 
-                if log_callback:
-                    log_callback(f"Multiple routes mode: Found {len(track_name_map)} named tracks")
+                if debug_callback:
+                    debug_callback(f"Multiple routes mode: Found {len(track_name_map)} named tracks")
             else:
-                if log_callback:
-                    log_callback("Single route mode: All track names are empty")
+                if debug_callback:
+                    debug_callback("Single route mode: All track names are empty")
         
         # Used to be split into separate functions for single and multiple runners, but the function is now unified
         if not use_multiple_routes:
             # For single route mode, create an empty track_name_map so all files become "unnamed"
             track_name_map = {}
         
-        return _create_multiple_routes(sorted_gpx_files, track_name_map, json_data, progress_callback, log_callback)
+        return _create_multiple_routes(sorted_gpx_files, track_name_map, json_data, progress_callback, log_callback, debug_callback)
         
     except Exception as e:
         if log_callback:
@@ -70,7 +71,7 @@ def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=No
 
 
 
-def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, progress_callback=None, log_callback=None):
+def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, progress_callback=None, log_callback=None, debug_callback=None):
     """
     Create combined routes from chronologically sorted GPX files.
     Handles both single runner (empty track_name_map) and multiple runners (populated track_name_map).
@@ -79,11 +80,11 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # Determine if this is single route mode (empty track_name_map means all files are unnamed)
         is_single_route_mode = len(track_name_map) == 0
         
-        if log_callback:
+        if debug_callback:
             if is_single_route_mode:
-                log_callback("Creating single combined route...")
+                debug_callback("Creating single combined route.")
             else:
-                log_callback("Creating multiple combined routes...")
+                debug_callback("Creating multiple combined routes.")
         
         # Group files by track name
         files_by_track = {}
@@ -100,18 +101,18 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
                 # File not found in track_name_map, add to unnamed files
                 unnamed_files.append(gpx_info)
         
-        if log_callback:
-            log_callback(f"Grouped files by track: {len(files_by_track)} named tracks, {len(unnamed_files)} unnamed files")
+        if debug_callback:
+            debug_callback(f"Grouped files by track: {len(files_by_track)} named tracks, {len(unnamed_files)} unnamed files")
             for track_name, files in files_by_track.items():
-                log_callback(f"  Track '{track_name}': {len(files)} files")
+                debug_callback(f"  Track '{track_name}': {len(files)} files")
         
         # Create routes for each track
         all_routes = []
         total_tracks = len(files_by_track)
         
         for track_index, (track_name, track_files) in enumerate(files_by_track.items()):
-            if log_callback:
-                log_callback(f"Processing track '{track_name}' ({track_index + 1}/{total_tracks})")
+            if debug_callback:
+                debug_callback(f"Processing track '{track_name}' ({track_index + 1}/{total_tracks})")
             
             # Update progress
             if progress_callback:
@@ -120,22 +121,22 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
                 progress_callback("progress_bar_combined_route", progress_percentage, progress_text)
             
             # Create route for this track
-            track_route_data = _create_route_for_track(track_files, track_index, track_name, json_data, log_callback)
+            track_route_data = _create_route_for_track(track_files, track_index, track_name, json_data, log_callback, debug_callback)
             if track_route_data:
                 all_routes.append(track_route_data)
         
         # Handle unnamed files if any (create a separate route)
         if unnamed_files:
-            if log_callback:
-                log_callback(f"Processing {len(unnamed_files)} unnamed files")
+            if debug_callback:
+                debug_callback(f"Processing {len(unnamed_files)} unnamed files")
             
-            unnamed_route_data = _create_route_for_track(unnamed_files, len(all_routes), "Unnamed", json_data, log_callback)
+            unnamed_route_data = _create_route_for_track(unnamed_files, len(all_routes), "Unnamed", json_data, log_callback, debug_callback)
             if unnamed_route_data:
                 all_routes.append(unnamed_route_data)
         
         if not all_routes:
             if log_callback:
-                log_callback("No routes were created successfully")
+                log_callback("Warning: No routes were created successfully")
             return None
         
         # Calculate overall statistics
@@ -193,8 +194,8 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
             if all_routes and all_routes[0].get('combined_route'):
                 last_point = all_routes[0]['combined_route'][-1]
                 total_accumulated_time = last_point[4] if len(last_point) > 4 else 0  # accumulated_time at index 4
-                if log_callback:
-                    log_callback(f"Single route mode: Using sequential time accumulation: {total_accumulated_time:.1f}s")
+                if debug_callback:
+                    debug_callback(f"Single route mode: Using sequential time accumulation: {total_accumulated_time:.1f}s")
             else:
                 total_accumulated_time = 0
                 if log_callback:
@@ -205,10 +206,10 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
                 total_span_seconds = (latest_end_time - earliest_start_time).total_seconds()
                 total_accumulated_time = total_span_seconds
                 
-                if log_callback:
-                    log_callback(f"Simultaneous mode: Using total span: {total_span_seconds:.1f}s")
-                    log_callback(f"  Earliest route starts at: {earliest_start_time.strftime('%H:%M:%S')}")
-                    log_callback(f"  Latest route ends at: {latest_end_time.strftime('%H:%M:%S')}")
+                if debug_callback:
+                    debug_callback(f"Simultaneous mode: Using total span: {total_span_seconds:.1f}s")
+                    debug_callback(f"  Earliest route starts at: {earliest_start_time.strftime('%H:%M:%S')}")
+                    debug_callback(f"  Latest route ends at: {latest_end_time.strftime('%H:%M:%S')}")
             else:
                 # Fallback to first route's time if no timestamps found
                 total_accumulated_time = all_routes[0].get('total_accumulated_time', 0) if all_routes else 0
@@ -229,14 +230,14 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # Calculate gpx_time_per_video_time using the same method as caching phase
         gpx_time_per_video_time = route_time_per_frame * video_fps
         
-        if log_callback:
-            log_callback(f"Created {len(all_routes)} routes:")
+        if debug_callback:
+            debug_callback(f"Created {len(all_routes)} routes:")
             for i, route in enumerate(all_routes):
                 route_name = route.get('track_name', f'Route {i}')
                 points = route.get('total_points', 0)
                 distance = route.get('total_distance', 0)
-                log_callback(f"  Route {i}: '{route_name}' - {points} points, {distance:.2f}m")
-            log_callback(f"Total across all routes: {total_points} points, {total_distance:.2f}m")
+                debug_callback(f"  Route {i}: '{route_name}' - {points} points, {distance:.2f}m")
+            debug_callback(f"Total across all routes: {total_points} points, {total_distance:.2f}m")
         
         # Write debug file for all routes
         debug_file_path = Path("temporary files/route") / "debug_tuple.txt"
@@ -250,8 +251,8 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
                         elevation_str = str(elevation) if elevation is not None else ""
                         f.write(f"{route_index}, {lat}, {lon}, {timestamp_str}, {accumulated_time:.0f}, {distance:.2f}, {new_route}, {filename}, {elevation_str}\n")
             
-            if log_callback:
-                log_callback(f"Wrote debug_tuple.txt successfully to {debug_file_path}")
+            if debug_callback:
+                debug_callback(f"Wrote debug_tuple.txt successfully to {debug_file_path}")
         except Exception as e:
             if log_callback:
                 log_callback(f"Error writing debug file: {str(e)}")
@@ -282,13 +283,13 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         return None
 
 
-def _create_route_for_track(track_files, route_index, track_name, json_data=None, log_callback=None):
+def _create_route_for_track(track_files, route_index, track_name, json_data=None, log_callback=None, debug_callback=None):
     """
     Create a single route for a specific track from its files.
     """
     try:
-        if log_callback:
-            log_callback(f"Creating route {route_index} for track '{track_name}' with {len(track_files)} files")
+        if debug_callback:
+            debug_callback(f"Creating route {route_index} for track '{track_name}' with {len(track_files)} files")
         
         # List to store all points in chronological order
         combined_route = []
@@ -309,8 +310,8 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
             filename = gpx_info.get('filename', f'file_{file_index}')
             content = gpx_info.get('content', '')
             
-            if log_callback:
-                log_callback(f"  Processing {filename}, accumulated distance: {accumulated_distance:.2f} meters, accumulated time: {accumulated_time:.1f} seconds")
+            if debug_callback:
+                debug_callback(f"  Processing {filename}, accumulated distance: {accumulated_distance:.2f} meters, accumulated time: {accumulated_time:.1f} seconds")
             
             # Always extract filename without extension for color mapping
             # This is needed for route colors even if name_tags and legend are disabled
@@ -381,10 +382,10 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                     log_callback(f"  Error processing file {filename}: {str(e)}")
                 continue
         
-        if log_callback:
-            log_callback(f"  Completed track '{track_name}'. Total points: {len(combined_route)}")
-            log_callback(f"  Total distance: {accumulated_distance:.2f} meters ({accumulated_distance/1000:.2f} km)")
-            log_callback(f"  Total time: {accumulated_time:.1f} seconds ({accumulated_time/60:.1f} minutes)")
+        if debug_callback:
+            debug_callback(f"  Completed track '{track_name}'. Total points: {len(combined_route)}")
+            debug_callback(f"  Total distance: {accumulated_distance:.2f} meters ({accumulated_distance/1000:.2f} km)")
+            debug_callback(f"  Total time: {accumulated_time:.1f} seconds ({accumulated_time/60:.1f} minutes)")
         
         # Apply pruning if json_data is provided
         if json_data:
@@ -395,8 +396,8 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
             
             if not prune_route:
                 # Pruning disabled by job parameters (route_accuracy = 'maximum')
-                if log_callback:
-                    log_callback(f"  Route pruning skipped for track '{track_name}' as per job parameters (route_accuracy = 'maximum').")
+                if debug_callback:
+                    debug_callback(f"  Route pruning skipped for track '{track_name}' as per job parameters (route_accuracy = 'maximum').")
                 final_route_data = {
                     'combined_route': combined_route,
                     'total_distance': accumulated_distance,
@@ -425,16 +426,16 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                 pruning_interval = max(1, int(round(reduced_interval_seconds)))
                 interpolation_interval_seconds = raw_interval_seconds * 2.0
                 
-                if log_callback:
-                    log_callback(
+                if debug_callback:
+                    debug_callback(
                         f"  Calculated dynamic pruning interval for track '{track_name}': ~1 point/frame → "
                         f"raw={raw_interval_seconds:.2f}s (gpx_time_per_video_time/video_fps), reduced by 20% → "
                         f"{reduced_interval_seconds:.2f}s, interval={pruning_interval}s"
                     )
-                    log_callback(
+                    debug_callback(
                         f"  Starting route pruning for track '{track_name}': {total_points:,} points, interval: {pruning_interval} seconds"
                     )
-                    log_callback(
+                    debug_callback(
                         f"  Interpolation interval for track '{track_name}' (for later use): {interpolation_interval_seconds:.2f}s"
                     )
                 
@@ -449,7 +450,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                 }
                 
                 # Apply pruning
-                final_route_data = prune_route_by_interval(temp_route_data, pruning_interval, log_callback)
+                final_route_data = prune_route_by_interval(temp_route_data, pruning_interval, log_callback, debug_callback)
                 
                 if not final_route_data:
                     if log_callback:
@@ -467,6 +468,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                         final_route_data.get('combined_route', []),
                         interpolation_interval_seconds,
                         log_callback,
+                        debug_callback,
                     )
                     final_route_data['combined_route'] = interpolated
                     final_route_data['total_points'] = len(interpolated)
@@ -493,7 +495,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
         return None
 
 
-def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=None):
+def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=None, debug_callback=None):
     """
     Prune route points by time interval, keeping points that are at least 
     interval_seconds apart in time.
@@ -502,6 +504,7 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
         combined_route_data (dict): Combined route data with 'combined_route' key
         interval_seconds (int): Minimum time interval in seconds between kept points
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
     
     Returns:
         dict: Pruned route data with updated 'combined_route' and stats, or None if error
@@ -514,13 +517,13 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
         
         combined_route = combined_route_data['combined_route']
         
-        if log_callback:
-            log_callback(f"Pruning route by {interval_seconds} second intervals...")
-            log_callback(f"Original route has {len(combined_route)} points")
+        if debug_callback:
+            debug_callback(f"Pruning route by {interval_seconds} second intervals")
+            debug_callback(f"Original route has {len(combined_route)} points")
         
         if len(combined_route) <= 2:
-            if log_callback:
-                log_callback("Route has 2 or fewer points, no pruning needed")
+            if debug_callback:
+                debug_callback("Route has 2 or fewer points, no pruning needed")
             return combined_route_data
         
         # Collect points with time information
@@ -628,8 +631,8 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
             }
         }
         
-        if log_callback:
-            log_callback("Pruning complete")
+        if debug_callback:
+            debug_callback("Pruning complete")
         
         return pruned_route_data
         
@@ -639,7 +642,7 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
         return None
 
 
-def interpolate_route_by_interval(route_points, interpolation_interval_seconds, log_callback=None):
+def interpolate_route_by_interval(route_points, interpolation_interval_seconds, log_callback=None, debug_callback=None):
     """Interpolate points so that gaps larger than the threshold in accumulated_time are filled.
     New points copy all attributes of the previous point except accumulated_time, which is advanced.
     Interpolation is skipped if the next point has new_route_flag=True.
@@ -707,8 +710,8 @@ def interpolate_route_by_interval(route_points, interpolation_interval_seconds, 
         # Append the last original point
         new_points.append(route_points[-1])
         
-        if log_callback:
-            log_callback(f"Interpolation complete: {original_count} → {len(new_points)} points")
+        if debug_callback:
+            debug_callback(f"Interpolation complete: {original_count} → {len(new_points)} points")
         
         return new_points
     except Exception as e:

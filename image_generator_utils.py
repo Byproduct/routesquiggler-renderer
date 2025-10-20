@@ -8,6 +8,7 @@ from image_generator_maptileutils import debug_log
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import re
 import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict, Optional
 from datetime import datetime
@@ -22,6 +23,35 @@ matplotlib.use('Agg')  # Use non-interactive backend for server
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 
+# --- GPX time harmonization ---
+TIME_NO_MS_RE = re.compile(r'<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</time>')
+TIME_MS_RE = re.compile(r'(<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d{3}(Z</time>)')
+
+def harmonize_gpx_times(gpx_text: str) -> str:
+    """
+    Harmonize GPX time formats by removing milliseconds if present.
+    
+    If any <time> tag without milliseconds exists, return as-is (fast path).
+    Otherwise, if <time> tags with milliseconds exist, strip the .ddd part everywhere.
+    
+    Args:
+        gpx_text: The GPX file content as a string
+        
+    Returns:
+        The GPX text with harmonized time formats
+    """
+    # Fast path: if the non-ms format exists, keep file untouched
+    if TIME_NO_MS_RE.search(gpx_text):
+        return gpx_text
+
+    # Otherwise, if ms tags exist, drop the .ddd across the file
+    if TIME_MS_RE.search(gpx_text):
+        return TIME_MS_RE.sub(r'\1\2', gpx_text)
+
+    # Neither format found: return unchanged
+    return gpx_text
+
+
 def load_gpx_files_from_zip(zip_path: str, log_callback=None) -> List[Dict]:
     """
     Load and decode GPX files from a zip archive.
@@ -33,8 +63,6 @@ def load_gpx_files_from_zip(zip_path: str, log_callback=None) -> List[Dict]:
     Returns:
         List of dictionaries with 'filename', 'name', and 'content' keys
     """
-    from job_request import harmonize_gpx_times
-    
     gpx_files_info = []
     
     try:

@@ -233,7 +233,7 @@ def create_map_image_worker(args):
         }
 
 
-def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None, max_workers=None, shared_map_cache=None):
+def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None):
     """
     Cache map images for all unique bounding boxes required for video generation.
     Uses shared memory cache exclusively for maximum performance.
@@ -243,6 +243,7 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         json_data (dict): Job data containing video parameters
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         shared_map_cache (dict, optional): Shared memory cache for storing map images (required)
     
@@ -250,8 +251,8 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         dict: Cache results with timing information, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Starting map image caching for video generation")
+        if debug_callback:
+            debug_callback("Starting map image caching for video generation")
         
         # Validate that shared map cache is provided
         if shared_map_cache is None:
@@ -266,8 +267,8 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         bbox_list = list(unique_bounding_boxes)
         total_bboxes = len(bbox_list)
         
-        if log_callback:
-            log_callback(f"Processing {total_bboxes} unique bounding boxes for map images")
+        if debug_callback:
+            debug_callback(f"Processing {total_bboxes} unique bounding boxes for map images")
         
         # Determine number of workers to use
         if max_workers is None:
@@ -276,13 +277,13 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         # Limit workers to available work
         workers_to_use = min(max_workers, total_bboxes)
         
-        if log_callback:
-            log_callback(f"Using {workers_to_use} worker processes for map image generation")
+        if debug_callback:
+            debug_callback(f"Using {workers_to_use} worker processes for map image generation")
         
         # Handle case where there are no bounding boxes
         if total_bboxes == 0:
-            if log_callback:
-                log_callback("No bounding boxes to process")
+            if debug_callback:
+                debug_callback("No bounding boxes to process")
             if progress_callback:
                 progress_callback("progress_bar_map_images", 100, "No map images needed")
             return {
@@ -314,8 +315,8 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
             
             if workers_to_use == 1:
                 # Single-threaded execution for debugging or when only one worker
-                if log_callback:
-                    log_callback("Using single-threaded execution")
+                if debug_callback:
+                    debug_callback("Using single-threaded execution")
                 
                 for work_arg in work_args:
                     result = create_map_image_worker(work_arg)
@@ -335,8 +336,8 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
                     #    log_callback(result['message'])
             else:
                 # Multi-threaded execution
-                if log_callback:
-                    log_callback(f"Using multi-threaded execution with {workers_to_use} workers")
+                if debug_callback:
+                    debug_callback(f"Using multi-threaded execution with {workers_to_use} workers")
                 
                 with Pool(processes=workers_to_use) as pool:
                     # Submit all work
@@ -366,8 +367,8 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         
         # Summary logging
         failed_images = total_bboxes - successful_images
-        if log_callback:
-            log_callback(f"Map image caching complete: {successful_images} successful, {failed_images} failed, {total_bboxes} total")
+        if debug_callback:
+            debug_callback(f"Map image caching complete: {successful_images} successful, {failed_images} failed, {total_bboxes} total")
         
         return {
             'total_images_created': successful_images,
@@ -383,7 +384,7 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         return None
 
 
-def cache_map_images(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, max_workers=None, shared_map_cache=None):
+def cache_map_images(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None):
     """
     Cache map images needed for video generation using shared memory exclusively.
     
@@ -392,6 +393,7 @@ def cache_map_images(json_data=None, combined_route_data=None, progress_callback
         combined_route_data (dict, optional): Combined route data containing gpx_time_per_video_time
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         shared_map_cache (dict, optional): Shared memory cache for storing map images (required)
     
@@ -399,8 +401,8 @@ def cache_map_images(json_data=None, combined_route_data=None, progress_callback
         dict: Cache results with timing information, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Starting map image caching")
+        if debug_callback:
+            debug_callback("Starting map image caching")
         
         # Validate that shared map cache is provided
         if shared_map_cache is None:
@@ -428,35 +430,35 @@ def cache_map_images(json_data=None, combined_route_data=None, progress_callback
             video_fps = float(json_data.get('video_fps', 30))
             route_time_per_frame = gpx_time_per_video_time / video_fps
             
-            if log_callback:
-                # log_callback(f"Using gpx_time_per_video_time from combined_route_data: {gpx_time_per_video_time}")
-                # log_callback(f"Calculated route_time_per_frame: {route_time_per_frame:.6f} seconds")
+            if debug_callback:
+                # debug_callback(f"Using gpx_time_per_video_time from combined_route_data: {gpx_time_per_video_time}")
+                # debug_callback(f"Calculated route_time_per_frame: {route_time_per_frame:.6f} seconds")
                 pass
         else:
             # Fallback to calculating route time per frame
-            route_time_per_frame = calculate_route_time_per_frame(json_data, log_callback)
+            route_time_per_frame = calculate_route_time_per_frame(json_data, combined_route_data, log_callback, debug_callback)
             
             if route_time_per_frame is None:
                 if log_callback:
                     log_callback("Error: Could not calculate route time per frame")
                 return None
             
-            if log_callback:
-                log_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
+            if debug_callback:
+                debug_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
         
         # Calculate unique bounding boxes across all frames
-        unique_bounding_boxes = calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback, max_workers, combined_route_data)
+        unique_bounding_boxes = calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback, max_workers, combined_route_data, debug_callback)
         
         if unique_bounding_boxes is None:
             if log_callback:
                 log_callback("Error: Could not calculate unique bounding boxes")
             return None
         
-        if log_callback:
-            log_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
+        if debug_callback:
+            debug_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
         
         # Cache map images for all unique bounding boxes
-        cache_result = cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback, log_callback, max_workers, shared_map_cache)
+        cache_result = cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback, log_callback, debug_callback, max_workers, shared_map_cache)
         
         if cache_result is None:
             if log_callback:

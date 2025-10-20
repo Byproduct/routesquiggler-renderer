@@ -28,7 +28,7 @@ def set_storage_box_credentials(credentials):
     global STORAGE_BOX_CREDENTIALS
     STORAGE_BOX_CREDENTIALS = credentials
 
-def trigger_background_sync(log_callback=None):
+def trigger_background_sync(log_callback=None, debug_callback=None):
     """Trigger background tile syncing if new tiles were cached during video generation."""
     global STORAGE_BOX_CREDENTIALS
     
@@ -40,8 +40,8 @@ def trigger_background_sync(log_callback=None):
     def sync_worker():
         """Background worker to perform tile syncing."""
         try:
-            if log_callback:
-                log_callback("Starting background tile sync...")
+            if debug_callback:
+                debug_callback("Starting background tile sync...")
             
             success, uploaded_count, downloaded_count = sync_map_tiles(
                 storage_box_address=STORAGE_BOX_CREDENTIALS['address'],
@@ -57,8 +57,8 @@ def trigger_background_sync(log_callback=None):
             )
             
             if success:
-                if log_callback:
-                    log_callback(f"Background tile sync completed: {uploaded_count} uploaded, {downloaded_count} downloaded")
+                if debug_callback:
+                    debug_callback(f"Background tile sync completed: {uploaded_count} uploaded, {downloaded_count} downloaded")
             else:
                 if log_callback:
                     log_callback("Background tile sync failed")
@@ -71,8 +71,8 @@ def trigger_background_sync(log_callback=None):
     sync_thread = threading.Thread(target=sync_worker, daemon=True)
     sync_thread.start()
     
-    if log_callback:
-        log_callback("Background tile sync started (will continue in background)")
+    if debug_callback:
+        debug_callback("Background tile sync started (will continue in background)")
 
 
 def is_tile_cached(cache_dir, x, y, zoom, map_style):
@@ -132,7 +132,7 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
         return False
 
 
-def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None):
+def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None, debug_callback=None):
     """
     Pre-cache map tiles for all unique bounding boxes required for video generation.
     
@@ -141,13 +141,14 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         json_data (dict): Job data containing video parameters
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
     
     Returns:
         dict: Cache results with timing information, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Starting tile pre-caching for video generation")
+        if debug_callback:
+            debug_callback("Starting tile pre-caching for video generation")
         
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, "Calculating bounding boxes")
@@ -168,15 +169,15 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             import cartopy
             cache_dir = cartopy.config.get('cache_dir', '')
         
-        if log_callback:
-            log_callback(f"Using cache directory: {cache_dir}")
+        if debug_callback:
+            debug_callback(f"Using cache directory: {cache_dir}")
         
         # Convert bounding boxes to list for iteration
         bbox_list = list(unique_bounding_boxes)
         total_bboxes = len(bbox_list)
         
-        if log_callback:
-            log_callback(f"Processing {total_bboxes} unique bounding boxes")
+        if debug_callback:
+            debug_callback(f"Processing {total_bboxes} unique bounding boxes")
         
         # Determine max tiles based on map style
         max_tiles_config = {
@@ -191,8 +192,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         max_tiles = max_tiles_config.get(map_style, 100)
         
         # Phase 1: Gather all required tiles
-        if log_callback:
-            log_callback("Phase 1: Gathering all required tiles...")
+        if debug_callback:
+            debug_callback("Phase 1: Gathering all required tiles...")
         
         all_required_tiles = set()  # Use set to automatically remove duplicates
         
@@ -214,8 +215,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             
             # Cap zoom level to 17 for video mode (tiles above zoom 17 don't exist in most providers)
             if zoom_level > 17:
-                if log_callback:
-                    log_callback(f"Zoom level {zoom_level} too high for video mode, capping to 17")
+                if debug_callback:
+                    debug_callback(f"Zoom level {zoom_level} too high for video mode, capping to 17")
                 zoom_level = 17
             
             # Convert coordinates to tile coordinates
@@ -254,12 +255,12 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                     all_required_tiles.add((x, y, zoom_level))
         
         total_required_tiles = len(all_required_tiles)
-        if log_callback:
-            log_callback(f"Found {total_required_tiles} unique tiles required across all bounding boxes")
+        if debug_callback:
+            debug_callback(f"Found {total_required_tiles} unique tiles required across all bounding boxes")
         
         # Phase 2: Filter out existing tiles
-        if log_callback:
-            log_callback("Phase 2: Checking which tiles are already cached...")
+        if debug_callback:
+            debug_callback("Phase 2: Checking which tiles are already cached...")
         
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, "Determining files to download")
@@ -306,13 +307,13 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         
         total_to_download = len(tiles_to_download)
         
-        if log_callback:
-            log_callback(f"Tile analysis complete: {tiles_already_cached} already cached, {total_to_download} need downloading")
+        if debug_callback:
+            debug_callback(f"Tile analysis complete: {tiles_already_cached} already cached, {total_to_download} need downloading")
         
         # Phase 3: Download missing tiles
         if total_to_download == 0:
-            if log_callback:
-                log_callback("All tiles are already cached! No downloads needed.")
+            if debug_callback:
+                debug_callback("All tiles are already cached! No downloads needed.")
             if progress_callback:
                 progress_callback("progress_bar_tiles", 100, "All tiles already cached")
             return {
@@ -324,8 +325,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                 'success': True
             }
         
-        if log_callback:
-            log_callback(f"Phase 3: Downloading {total_to_download} missing tiles...")
+        if debug_callback:
+            debug_callback(f"Phase 3: Downloading {total_to_download} missing tiles...")
         
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, f"Downloading {total_to_download} tiles")
@@ -402,8 +403,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                 progress_callback("progress_bar_tiles", progress_percent, progress_text)
         
         # Phase 4: Second pass to catch any failed downloads
-        if log_callback:
-            log_callback("Running second tile cache pass.")
+        if debug_callback:
+            debug_callback("Running second tile cache pass.")
         
         # Check for any tiles that might have failed to download in the first pass
         tiles_still_missing = []
@@ -413,8 +414,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                 tiles_still_missing.append(tile_coords)
         
         if tiles_still_missing:
-            if log_callback:
-                log_callback(f"Second pass: Found {len(tiles_still_missing)} tiles still missing, retrying")
+            if debug_callback:
+                debug_callback(f"Second pass: Found {len(tiles_still_missing)} tiles still missing, retrying")
             
             # Reset error tracking for second pass
             consecutive_errors = 0
@@ -465,8 +466,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                     time.sleep(10)  # Longer pause when many errors
                     consecutive_errors = 0
         else:
-            if log_callback:
-                log_callback("Second pass: All tiles successfully cached in first pass.")
+            if debug_callback:
+                debug_callback("Second pass: All tiles successfully cached in first pass.")
         
         # Ensure the progress bar is at 100% when caching is complete
         if progress_callback:
@@ -478,8 +479,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             for error_type, count in error_types.items():
                 log_callback(f"  - {error_type}: {count} occurrences")
         
-        if log_callback:
-            log_callback(f"Tile caching complete: {total_tiles_cached} downloaded, {tiles_already_cached} already cached, {total_required_tiles} total")
+        if debug_callback:
+            debug_callback(f"Tile caching complete: {total_tiles_cached} downloaded, {tiles_already_cached} already cached, {total_required_tiles} total")
         
         # Note: Background sync removed to preserve tile quality - sync only on startup/exit
         
@@ -498,7 +499,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         return None
 
 
-def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, max_workers=None):
+def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None):
     """
     Cache map tiles needed for video generation.
     
@@ -507,14 +508,15 @@ def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=
         combined_route_data (dict, optional): Combined route data containing gpx_time_per_video_time
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
     
     Returns:
         dict: Cache results with timing information, or None if error
     """
     try:
-        if log_callback:
-            log_callback("Starting map tile caching")
+        if debug_callback:
+            debug_callback("Starting map tile caching")
         
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, "Starting map tile caching")
@@ -536,9 +538,9 @@ def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=
             video_fps = float(json_data.get('video_fps', 30))
             route_time_per_frame = gpx_time_per_video_time / video_fps
             
-            if log_callback:
-                # log_callback(f"Using gpx_time_per_video_time from combined_route_data: {gpx_time_per_video_time}")
-                # log_callback(f"Calculated route_time_per_frame: {route_time_per_frame:.6f} seconds")
+            if debug_callback:
+                # debug_callback(f"Using gpx_time_per_video_time from combined_route_data: {gpx_time_per_video_time}")
+                # debug_callback(f"Calculated route_time_per_frame: {route_time_per_frame:.6f} seconds")
                 pass
         else:
             # Fallback to calculating route time per frame
@@ -549,22 +551,22 @@ def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=
                     log_callback("Error: Could not calculate route time per frame")
                 return None
             
-            if log_callback:
-                log_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
+            if debug_callback:
+                debug_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
         
         # Calculate unique bounding boxes across all frames
-        unique_bounding_boxes = calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback, max_workers, combined_route_data)
+        unique_bounding_boxes = calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback, max_workers, combined_route_data, debug_callback)
         
         if unique_bounding_boxes is None:
             if log_callback:
                 log_callback("Error: Could not calculate unique bounding boxes")
             return None
         
-        if log_callback:
-            log_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
+        if debug_callback:
+            debug_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
         
         # Pre-cache map tiles for all unique bounding boxes
-        cache_result = pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_callback, log_callback)
+        cache_result = pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_callback, log_callback, debug_callback)
         
         if cache_result is None:
             if log_callback:
@@ -585,4 +587,3 @@ def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=
         if log_callback:
             log_callback(f"Error in map tiles caching: {str(e)}")
         return None
-

@@ -6,30 +6,10 @@ This module handles requesting and processing new jobs from the server.
 import json
 import traceback
 from io import BytesIO
-import re
 import zipfile
 import requests
 from PySide6.QtCore import QObject, Signal, QThread, QTimer, QMetaObject, Qt
-
-
-# --- GPX time harmonization, removing milliseconds ---
-TIME_NO_MS_RE = re.compile(r'<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</time>')
-TIME_MS_RE    = re.compile(r'(<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d{3}(Z</time>)')
-def harmonize_gpx_times(gpx_text: str) -> str:
-    """
-    If any <time> tag without milliseconds exists, return as-is (fast path).
-    Otherwise, if <time> tags with milliseconds exist, strip the .ddd part everywhere.
-    """
-    # Fast path: if the non-ms format exists, keep file untouched
-    if TIME_NO_MS_RE.search(gpx_text):
-        return gpx_text
-
-    # Otherwise, if ms tags exist, drop the .ddd across the file
-    if TIME_MS_RE.search(gpx_text):
-        return TIME_MS_RE.sub(r'\1\2', gpx_text)
-
-    # Neither format found: return unchanged
-    return gpx_text
+from image_generator_utils import harmonize_gpx_times
 
 
 def update_job_status(api_url, user, hardware_id, app_version, job_id, status, log_callback=None):
@@ -268,16 +248,16 @@ class JobRequestManager:
             self.main_window.worker.log_message.connect(self.main_window.log_widget.add_log)
             self.main_window.worker.job_completed.connect(self.main_window.on_job_completed)
             
+            # Connect debug message signal for both image and video workers
+            if hasattr(self.main_window.worker, 'debug_message'):
+                self.main_window.worker.debug_message.connect(self.main_window.log_widget.add_debug_log)
+            
             # Connect video-specific signals only for video workers
             if job_type == 'video':
                 self.main_window.worker.progress_update.connect(self.main_window.on_video_progress_update)
             
             # Connect image-specific signals only for image workers
             if job_type != 'video':
-                # Connect debug message signal
-                if hasattr(self.main_window.worker, 'debug_message'):
-                    self.main_window.worker.debug_message.connect(self.main_window.log_widget.add_debug_log)
-                
                 self.main_window.worker.status_queue_ready.connect(self.main_window.setup_status_monitoring)
                 self.main_window.worker.zoom_levels_ready.connect(self.main_window.create_status_labels)
             

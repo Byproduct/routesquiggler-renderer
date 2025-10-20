@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-def sort_gpx_files_chronologically(gpx_files_info, log_callback=None):
+def sort_gpx_files_chronologically(gpx_files_info, log_callback=None, debug_callback=None):
     """
     Sort GPX files chronologically based on their time tags.
     
@@ -27,8 +27,8 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None):
         # Matches both formats: YYYY-MM-DDTHH:MM:SSZ and YYYY-MM-DDTHH:MM:SS.000Z
         time_pattern = r'<time>(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z)</time>'
         
-        if log_callback:
-            log_callback(f"Sorting {len(gpx_files_info)} GPX files chronologically...")
+        if debug_callback:
+            debug_callback(f"Sorting {len(gpx_files_info)} GPX files chronologically...")
         
         for gpx_info in gpx_files_info:
             try:
@@ -65,8 +65,8 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None):
                         # Add to chronological list
                         chronological_files.append((dt, gpx_info))
                         
-                        if log_callback:
-                            log_callback(f"Found timestamp in {filename}: {dt.strftime('%Y-%m-%d %H:%M:%S')}")
+                        if debug_callback:
+                            debug_callback(f"Found timestamp in {filename}: {dt.strftime('%Y-%m-%d %H:%M:%S')}")
                     except ValueError as parse_error:
                         if log_callback:
                             log_callback(f"Warning: Could not parse timestamp '{time_str}' in {filename}: {parse_error}")
@@ -95,11 +95,11 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None):
             oldest_time = chronological_files[0][0].strftime('%Y-%m-%d %H:%M:%S')
             newest_time = chronological_files[-1][0].strftime('%Y-%m-%d %H:%M:%S')
             
-            if log_callback:
-                log_callback(f"Chronological sorting completed:")
-                log_callback(f"Oldest route: {oldest_file} ({oldest_time})")
-                log_callback(f"Newest route: {newest_file} ({newest_time})")
-                log_callback(f"Total files sorted: {len(chronological_files)}")
+            if debug_callback:
+                debug_callback(f"Chronological sorting completed:")
+                debug_callback(f"Oldest route: {oldest_file} ({oldest_time})")
+                debug_callback(f"Newest route: {newest_file} ({newest_time})")
+                debug_callback(f"Total files sorted: {len(chronological_files)}")
         
         return chronological_files
         
@@ -109,7 +109,7 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None):
         return None
 
 
-def get_sorted_gpx_list(gpx_files_info, log_callback=None):
+def get_sorted_gpx_list(gpx_files_info, log_callback=None, debug_callback=None):
     """
     Get a list of GPX file info dictionaries sorted chronologically.
     
@@ -120,15 +120,15 @@ def get_sorted_gpx_list(gpx_files_info, log_callback=None):
     Returns:
         list: List of GPX file info dictionaries sorted chronologically, or original list if sorting fails
     """
-    chronological_files = sort_gpx_files_chronologically(gpx_files_info, log_callback)
+    chronological_files = sort_gpx_files_chronologically(gpx_files_info, log_callback, debug_callback)
     
     if chronological_files:
         # Extract just the GPX file info from the tuples
         sorted_gpx_files = [gpx_info for datetime_obj, gpx_info in chronological_files]
         return sorted_gpx_files
     else:
-        if log_callback:
-            log_callback("Chronological sorting failed, using original order")
+        if debug_callback:
+            debug_callback("Chronological sorting failed, using original order")
         return gpx_files_info
 
 

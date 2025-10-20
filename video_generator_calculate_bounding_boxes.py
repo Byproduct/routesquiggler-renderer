@@ -8,6 +8,7 @@ import math
 import pickle
 from pathlib import Path
 from datetime import timedelta
+from write_log import write_log, write_debug_log
 
 
 def split_coordinates_at_longitude_wrap(lats, lons):
@@ -266,13 +267,14 @@ def _binary_search_cutoff_index(route_points, target_time):
     return result
 
 
-def save_final_bounding_box(final_bbox, log_callback=None):
+def save_final_bounding_box(final_bbox, log_callback=None, debug_callback=None):
     """
     Save the final bounding box to a file for later use.
     
     Args:
         final_bbox (tuple): Final bounding box as (lon_min, lon_max, lat_min, lat_max)
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
     """
     try:
         # Create output directory
@@ -284,20 +286,21 @@ def save_final_bounding_box(final_bbox, log_callback=None):
         with open(bbox_file, 'wb') as f:
             pickle.dump(final_bbox, f)
         
-        if log_callback:
-            log_callback(f"Saved final bounding box to {bbox_file}")
+        if debug_callback:
+            debug_callback(f"Saved final bounding box to {bbox_file}")
             
     except Exception as e:
         if log_callback:
             log_callback(f"Error saving final bounding box: {str(e)}")
 
 
-def load_final_bounding_box(log_callback=None):
+def load_final_bounding_box(log_callback=None, debug_callback=None):
     """
     Load the final bounding box from file.
     
     Args:
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
     
     Returns:
         tuple: Final bounding box as (lon_min, lon_max, lat_min, lat_max), or None if not found
@@ -307,14 +310,14 @@ def load_final_bounding_box(log_callback=None):
         
         if not bbox_file.exists():
             if log_callback:
-                log_callback(f"Final bounding box file not found: {bbox_file}")
+                log_callback(f"Warning: Final bounding box file not found: {bbox_file}")
             return None
         
         with open(bbox_file, 'rb') as f:
             final_bbox = pickle.load(f)
         
-        if log_callback:
-            log_callback(f"Loaded final bounding box: {final_bbox}")
+        if debug_callback:
+            debug_callback(f"Loaded final bounding box: {final_bbox}")
         
         return final_bbox
         
@@ -324,7 +327,7 @@ def load_final_bounding_box(log_callback=None):
         return None
 
 
-def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=None):
+def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=None, debug_callback=None):
     """
     Calculate the time per frame for route progression based on video parameters and route data.
     
@@ -332,6 +335,7 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         json_data (dict): Job data containing video parameters
         combined_route_data (dict): Combined route data
         log_callback (callable, optional): Function to call for logging messages
+        debug_callback (callable, optional): Function to call for debug logging messages
     
     Returns:
         float: Time per frame in seconds, or None if calculation fails
@@ -353,8 +357,8 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         # Calculate total number of frames
         total_frames = video_length * video_fps
         
-        if log_callback:
-            log_callback(f"Video parameters: {video_length} seconds × {video_fps} fps = {total_frames} total frames")
+        if debug_callback:
+            debug_callback(f"Video parameters: {video_length} seconds × {video_fps} fps = {total_frames} total frames")
         
         if not combined_route_data:
             if log_callback:
@@ -383,8 +387,8 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
             latest_end_time = None
             route_count = len(all_routes)
             
-            if log_callback:
-                log_callback(f"Multiple routes mode: Calculating total time from {route_count} staggered routes")
+            if debug_callback:
+                debug_callback(f"Multiple routes mode: Calculating total time from {route_count} staggered routes")
             
             for i, route_data in enumerate(all_routes):
                 route_points = route_data.get('combined_route', [])
@@ -410,9 +414,9 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
                             if latest_end_time is None or route_end_timestamp > latest_end_time:
                                 latest_end_time = route_end_timestamp
                             
-                            if log_callback:
+                            if debug_callback:
                                 track_name = route_data.get('track_name', f'Route {i}')
-                                log_callback(f"  Route '{track_name}': starts at {route_start_timestamp.strftime('%H:%M:%S')}, duration {route_duration:.1f}s, ends at {route_end_timestamp.strftime('%H:%M:%S')}")
+                                debug_callback(f"  Route '{track_name}': starts at {route_start_timestamp.strftime('%H:%M:%S')}, duration {route_duration:.1f}s, ends at {route_end_timestamp.strftime('%H:%M:%S')}")
             
             # SIMULTANEOUS MODE FIX: Ensure all routes can complete within the specified video duration
             # The issue is that we need to ensure the latest-starting route has enough time to complete
@@ -447,13 +451,13 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
                     delay_from_earliest = (latest_start_time - earliest_start_time).total_seconds()
                     min_video_duration_needed = delay_from_earliest + max_route_duration
                     
-                    if log_callback:
-                        log_callback(f"SIMULTANEOUS MODE ANALYSIS:")
-                        log_callback(f"  Total span of all routes: {total_span_seconds:.1f}s")
-                        log_callback(f"  Latest route starts at: {latest_start_time.strftime('%H:%M:%S')} (delay: {delay_from_earliest:.1f}s)")
-                        log_callback(f"  Latest route duration: {max_route_duration:.1f}s")
-                        log_callback(f"  Minimum video duration needed: {min_video_duration_needed:.1f}s")
-                        log_callback(f"  Actual video duration: {video_length:.1f}s")
+                    if debug_callback:
+                        debug_callback(f"SIMULTANEOUS MODE ANALYSIS:")
+                        debug_callback(f"  Total span of all routes: {total_span_seconds:.1f}s")
+                        debug_callback(f"  Latest route starts at: {latest_start_time.strftime('%H:%M:%S')} (delay: {delay_from_earliest:.1f}s)")
+                        debug_callback(f"  Latest route duration: {max_route_duration:.1f}s")
+                        debug_callback(f"  Minimum video duration needed: {min_video_duration_needed:.1f}s")
+                        debug_callback(f"  Actual video duration: {video_length:.1f}s")
                     
                     # Use the minimum video duration needed, but don't exceed the actual video duration
                     # This ensures all routes can complete within the available time
@@ -463,14 +467,14 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
                     # This ensures the route_time_per_frame calculation gives enough time for all routes
                     total_route_time = effective_video_duration
                     
-                    if log_callback:
-                        log_callback(f"SIMULTANEOUS MODE FIX: Using effective video duration: {effective_video_duration:.1f}s")
-                        log_callback(f"  This ensures all routes can complete within the video time")
+                    if debug_callback:
+                        debug_callback(f"SIMULTANEOUS MODE FIX: Using effective video duration: {effective_video_duration:.1f}s")
+                        debug_callback(f"  This ensures all routes can complete within the video time")
                 else:
                     # Fallback to original calculation
                     total_route_time = total_span_seconds
-                    if log_callback:
-                        log_callback(f"SIMULTANEOUS MODE: Using fallback total span: {total_route_time:.1f}s")
+                    if debug_callback:
+                        debug_callback(f"SIMULTANEOUS MODE: Using fallback total span: {total_route_time:.1f}s")
             else:
                 # Fallback to old method if timestamps are missing
                 total_route_time = 0.0
@@ -522,8 +526,8 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
             last_point = combined_route[-1]
             total_route_time = last_point[4]  # accumulated_time is at index 4
             
-            if log_callback:
-                log_callback(f"Original single route mode: Total route time: {total_route_time:.1f} seconds ({total_route_time/60:.1f} minutes)")
+            if debug_callback:
+                debug_callback(f"Original single route mode: Total route time: {total_route_time:.1f} seconds ({total_route_time/60:.1f} minutes)")
         
         # Calculate route time per frame
         if total_frames == 0:
@@ -549,8 +553,8 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         if final_frame_target_time < total_route_time * 0.99:  # Allow 1% tolerance
             # Adjust route_time_per_frame to ensure complete coverage
             route_time_per_frame = total_route_time / (total_frames - 1)  # Adjust for 0-based indexing
-            if log_callback:
-                log_callback(f"ROUTE COMPLETION FIX: Adjusted route_time_per_frame to {route_time_per_frame:.6f}s to ensure complete route coverage")
+            if debug_callback:
+                debug_callback(f"ROUTE COMPLETION FIX: Adjusted route_time_per_frame to {route_time_per_frame:.6f}s to ensure complete route coverage")
         
         return route_time_per_frame
         
@@ -586,7 +590,7 @@ def calculate_bounding_box_for_points(points, padding_percent=0.1):
     return calculate_bounding_box_for_wrapped_coordinates(all_lats, all_lons, padding_percent)
 
 
-def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback=None, max_workers=None, combined_route_data=None):
+def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback=None, max_workers=None, combined_route_data=None, debug_callback=None):
     """
     Calculate unique bounding boxes for all frames in the video.
     
@@ -596,6 +600,7 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
         log_callback (callable, optional): Function to call for logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         combined_route_data (dict, optional): Combined route data containing gpx_time_per_video_time
+        debug_callback (callable, optional): Function to call for debug logging messages
     
     Returns:
         list: List of unique bounding boxes as tuples (lon_min, lon_max, lat_min, lat_max), or None if error
@@ -622,8 +627,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
         # Calculate total number of frames
         total_frames = int(video_length * video_fps)  # Convert to int for range operations
         
-        if log_callback:
-            log_callback(f"Calculating unique bounding boxes for {total_frames} frames")
+        if debug_callback:
+            debug_callback(f"Calculating unique bounding boxes for {total_frames} frames")
         
         if not combined_route_data:
             if log_callback:
@@ -635,8 +640,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
         
         if zoom_mode == 'final':
             # For final zoom mode, calculate only the bounding box of the complete route
-            if log_callback:
-                log_callback("Using 'final' zoom mode - calculating single bounding box for entire route")
+            if debug_callback:
+                debug_callback("Using 'final' zoom mode - calculating single bounding box for entire route")
             
             # Check if we have multiple routes
             all_routes = combined_route_data.get('all_routes', None)
@@ -646,8 +651,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 combined_route = []
                 route_count = len(all_routes)
                 
-                if log_callback:
-                    log_callback(f"Final zoom mode: Collecting points from {route_count} routes")
+                if debug_callback:
+                    debug_callback(f"Final zoom mode: Collecting points from {route_count} routes")
                 
                 for route_data in all_routes:
                     route_points = route_data.get('combined_route', [])
@@ -656,8 +661,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 # Sort all points by accumulated_time to ensure chronological order
                 combined_route.sort(key=lambda point: point[4] if len(point) > 4 else 0)  # accumulated_time at index 4
                 
-                if log_callback:
-                    log_callback(f"Final zoom mode: Total points from all routes: {len(combined_route)}")
+                if debug_callback:
+                    debug_callback(f"Final zoom mode: Total points from all routes: {len(combined_route)}")
             else:
                 # Single route mode (backward compatibility)
                 combined_route = combined_route_data.get('combined_route', [])
@@ -769,19 +774,19 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
             )
             
             # Save the final bounding box for later use
-            save_final_bounding_box(final_bbox, log_callback)
+            save_final_bounding_box(final_bbox, log_callback, debug_callback)
             
             route_count = len(all_routes) if all_routes else 1
-            if log_callback:
-                log_callback(f"Final zoom mode: calculated single bounding box {final_bbox} from {route_count} route{'s' if route_count > 1 else ''}")
+            if debug_callback:
+                debug_callback(f"Final zoom mode: calculated single bounding box {final_bbox} from {route_count} route{'s' if route_count > 1 else ''}")
             
             # Return list with single bounding box
             return [final_bbox]
         
         else:
             # Dynamic zoom mode - calculate bounding boxes for each frame as before
-            if log_callback:
-                log_callback("Using 'dynamic' zoom mode - calculating bounding boxes for each frame")
+            if debug_callback:
+                debug_callback("Using 'dynamic' zoom mode - calculating bounding boxes for each frame")
             
             # Divide frames into chunks of 500
             chunk_size = 500
@@ -791,8 +796,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 end_frame = min(start_frame + chunk_size, total_frames)
                 frame_chunks.append((start_frame, end_frame))
             
-            if log_callback:
-                log_callback(f"Created {len(frame_chunks)} chunks of up to {chunk_size} frames each")
+            if debug_callback:
+                debug_callback(f"Created {len(frame_chunks)} chunks of up to {chunk_size} frames each")
             
             # Determine number of worker processes
             constraints = [multiprocessing.cpu_count(), len(frame_chunks)]
@@ -800,11 +805,11 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 constraints.append(max_workers)
             num_workers = min(constraints)
             
-            if log_callback:
+            if debug_callback:
                 constraint_names = [f"CPU cores: {multiprocessing.cpu_count()}", f"chunks: {len(frame_chunks)}"]
                 if max_workers is not None:
                     constraint_names.append(f"user setting: {max_workers}")
-                log_callback(f"Using {num_workers} worker processes (limited by {', '.join(constraint_names)})")
+                debug_callback(f"Using {num_workers} worker processes (limited by {', '.join(constraint_names)})")
             
             # Create multiprocessing pool and process chunks
             with multiprocessing.Pool(processes=num_workers) as pool:
@@ -820,8 +825,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                     ))
                 
                 # Execute workers in parallel
-                if log_callback:
-                    log_callback("Starting parallel processing of frame chunks")
+                if debug_callback:
+                    debug_callback("Starting parallel processing of frame chunks")
                 
                 results = pool.starmap(process_frame_chunk, worker_args)
             
@@ -834,8 +839,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
             # Create set of unique bounding boxes
             unique_bounding_boxes = list(set(all_bounding_boxes))
             
-            if log_callback:
-                log_callback(f"Collected {len(all_bounding_boxes)} total bounding boxes")
+            if debug_callback:
+                debug_callback(f"Collected {len(all_bounding_boxes)} total bounding boxes")
             
             return unique_bounding_boxes
         
@@ -947,7 +952,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
             expected_frames = end_frame - start_frame
             actual_bboxes = len(bounding_boxes)
             route_count = len(all_routes)
-            print(f"Chunk {start_frame}-{end_frame}: Expected {expected_frames} frames, produced {actual_bboxes} bounding boxes, {frames_without_points} frames had no points (using {route_count} staggered routes)")
+            write_debug_log(f"Chunk {start_frame}-{end_frame}: Expected {expected_frames} frames, produced {actual_bboxes} bounding boxes, {frames_without_points} frames had no points (using {route_count} staggered routes)")
             
             return bounding_boxes
         else:
@@ -988,7 +993,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
         # Debug logging for this chunk
         expected_frames = end_frame - start_frame
         actual_bboxes = len(bounding_boxes)
-        print(f"Chunk {start_frame}-{end_frame}: Expected {expected_frames} frames, produced {actual_bboxes} bounding boxes, {frames_without_points} frames had no points (single route mode)")
+        write_debug_log(f"Chunk {start_frame}-{end_frame}: Expected {expected_frames} frames, produced {actual_bboxes} bounding boxes, {frames_without_points} frames had no points (single route mode)")
         
         # Additional debug for problematic chunks
         if frames_without_points > 0:
@@ -996,11 +1001,11 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
             last_frame_target_time = (end_frame - 1) * route_time_per_frame
             first_route_time = combined_route[0][4] if combined_route else "N/A"  # accumulated_time at index 4
             last_route_time = combined_route[-1][4] if combined_route else "N/A"  # accumulated_time at index 4
-            print(f"  Debug: Chunk target times {first_frame_target_time:.2f}-{last_frame_target_time:.2f}s, route times {first_route_time}-{last_route_time}s")
+            write_debug_log(f"  Debug: Chunk target times {first_frame_target_time:.2f}-{last_frame_target_time:.2f}s, route times {first_route_time}-{last_route_time}s")
         
         return bounding_boxes
         
     except Exception as e:
         # Return empty list on error (will be logged by parent process)
-        print(f"Error in process_frame_chunk({start_frame}-{end_frame}): {str(e)}")
+        write_log(f"Error in process_frame_chunk({start_frame}-{end_frame}): {str(e)}")
         return [] 
