@@ -1,0 +1,45 @@
+{
+  "user_id": 1,
+  "map_style": "osm",
+  "map_transparency": "20",
+  "line_width": "3",
+  "track_objects": [
+    {
+      "filename": "2025-07-19(4).gpx",
+      "date": "2025-07-19",
+      "color": "#0000ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-19(3).gpx",
+      "date": "2025-07-19",
+      "color": "#8000ff",
+      "name": ""
+    }
+  ],
+  "route_name": "Surf Shack 2025-07-19",
+  "created_at": "2025-07-21T00:13:25.341656+00:00",
+  "job_id": 1000112,
+  "folder": "ZA08zWq6atD5",
+  "job_type": "video",
+  "newest_on_top": true,
+  "legend": "off",
+  "legend_theme": "light",
+  "statistics": "dark",
+  "statistics_current_time": true,
+  "statistics_elapsed_time": true,
+  "statistics_distance": true,
+  "statistics_current_speed": true,
+  "statistics_average_speed": true,
+  "video_resolution_x": 2560,
+  "video_resolution_y": 1440,
+  "video_fps": "20",
+  "squiggle_speed": "relative",
+  "zoom_mode": "dynamic",
+  "video_length": 20,
+  "route_accuracy": "normal",
+  "tail_length": "3",
+  "tail_width": "3",
+  "title_text": "Surf Shack 2025-07-19",
+  "tail_color": "#AA00AA"
+}

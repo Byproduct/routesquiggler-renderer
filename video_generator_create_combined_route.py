@@ -218,14 +218,17 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         
         # Calculate route_time_per_frame using the same method as caching phase
         # Use adjusted calculation to ensure complete route coverage
-        route_time_per_frame = total_accumulated_time / total_frames
-        
-        # Verify that the last frame will capture all points
-        final_frame_target_time = (total_frames - 1) * route_time_per_frame
-        
-        if final_frame_target_time < total_accumulated_time * 0.99:  # Allow 1% tolerance
-            # Adjust route_time_per_frame to ensure complete coverage
-            route_time_per_frame = total_accumulated_time / (total_frames - 1)  # Adjust for 0-based indexing
+        # 
+        # ROUTE COMPLETION FIX: The formula must use (total_frames - 1) as divisor because:
+        # - Frame numbers are 1-indexed: 1, 2, 3, ..., total_frames
+        # - target_time_route = (frame_number - 1) * route_time_per_frame
+        # - So frame 1 has target_time = 0, and we want the last frame to reach total_accumulated_time
+        # - Last frame target_time = (total_frames - 1) * route_time_per_frame = total_accumulated_time
+        # - Therefore: route_time_per_frame = total_accumulated_time / (total_frames - 1)
+        if total_frames > 1:
+            route_time_per_frame = total_accumulated_time / (total_frames - 1)
+        else:
+            route_time_per_frame = total_accumulated_time
         
         # Calculate gpx_time_per_video_time using the same method as caching phase
         gpx_time_per_video_time = route_time_per_frame * video_fps
@@ -414,11 +417,13 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                 # Avoid division by zero
                 if total_frames <= 1:
                     total_frames = max(1.0, total_frames)
-                # Compute route_time_per_frame for this track and adjust for full coverage
-                route_time_per_frame = accumulated_time / total_frames
-                final_frame_target_time = (total_frames - 1) * route_time_per_frame
-                if final_frame_target_time < accumulated_time * 0.99:
-                    route_time_per_frame = accumulated_time / max(1.0, (total_frames - 1))
+                # Compute route_time_per_frame for this track
+                # Use (total_frames - 1) as divisor to ensure complete route coverage
+                # (see explanation in _create_multiple_routes)
+                if total_frames > 1:
+                    route_time_per_frame = accumulated_time / (total_frames - 1)
+                else:
+                    route_time_per_frame = accumulated_time
                 gpx_time_per_video_time = route_time_per_frame * video_fps
                 raw_interval_seconds = gpx_time_per_video_time / video_fps
                 

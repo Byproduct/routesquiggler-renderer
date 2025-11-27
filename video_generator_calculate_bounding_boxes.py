@@ -539,22 +539,16 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         # Calculate route_time_per_frame to guarantee all points are shown by the final frame
         # This prevents premature transition to tail-only phase
         
-        # For single route mode, we want the last point to be reached at the final frame
-        # So route_time_per_frame should progress from 0 to total_route_time over total_frames
-        # But we need to account for the fact that frames start at frame 1, not 0
-        # Final frame (frame total_frames) should reach total_route_time
-        
-        # Calculate route_time_per_frame to ensure complete route coverage
-        route_time_per_frame = total_route_time / total_frames
-        
-        # Verify that the last frame will capture all points
-        final_frame_target_time = (total_frames - 1) * route_time_per_frame
-        
-        if final_frame_target_time < total_route_time * 0.99:  # Allow 1% tolerance
-            # Adjust route_time_per_frame to ensure complete coverage
-            route_time_per_frame = total_route_time / (total_frames - 1)  # Adjust for 0-based indexing
-            if debug_callback:
-                debug_callback(f"ROUTE COMPLETION FIX: Adjusted route_time_per_frame to {route_time_per_frame:.6f}s to ensure complete route coverage")
+        # The formula must use (total_frames - 1) as divisor because:
+        # - Frame numbers are 1-indexed: 1, 2, 3, ..., total_frames
+        # - target_time_route = (frame_number - 1) * route_time_per_frame
+        # - So frame 1 has target_time = 0, and we want the last frame to reach total_route_time
+        # - Last frame target_time = (total_frames - 1) * route_time_per_frame = total_route_time
+        # - Therefore: route_time_per_frame = total_route_time / (total_frames - 1)
+        if total_frames > 1:
+            route_time_per_frame = total_route_time / (total_frames - 1)
+        else:
+            route_time_per_frame = total_route_time
         
         return route_time_per_frame
         

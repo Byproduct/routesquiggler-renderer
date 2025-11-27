@@ -1,0 +1,15 @@
+[19:31:17] Starting Route Squiggler Render Client in GUI mode (from config.txt)
+[19:31:17] Using 6 threads (default: max-2, min 1)
+[19:31:17] Debug logging: disabled (from config.txt)
+[19:31:17] Configuration loaded
+[19:31:17] GUI mode enabled
+[19:31:17] GPU rendering enabled
+[19:31:18] Running map tile cache sweep.
+[19:31:18] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[19:31:18] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[19:31:19] Found 46217 .npy files to process
+[19:32:09] Total tiles processed: 46217
+[19:32:09] Good tiles (kept): 46217
+[19:32:09] Blank/erroneous tiles (deleted): 0
+[19:32:09] 
+Operation completed in: 50s

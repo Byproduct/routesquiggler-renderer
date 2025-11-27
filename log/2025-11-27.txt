@@ -1,0 +1,137 @@
+[19:54:26] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[19:54:26] Using 6 threads (default: max-2, min 1)
+[19:54:26] Debug logging: disabled (from config.txt)
+[19:54:26] Configuration loaded
+[19:54:26] Terminal-only mode enabled
+[19:54:26] GPU rendering enabled
+[19:54:26] ------------------------------------------
+[19:54:26] Starting up Route Squiggler render client.
+[19:54:26] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[19:54:26] Testing connection to web server
+[19:54:27] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-11-27T17:54:27.481266+00:00", "accepted_version": "0.10"}
+[19:54:27] Storage box connection successful.
+[19:54:27] Syncing map tile cache
+[19:54:27] Running map tile cache sweep.
+[19:54:28] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[19:54:28] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[19:54:28] Found 46357 .npy files to process
+[19:55:14] Total tiles processed: 46357
+[19:55:14] Good tiles (kept): 46357
+[19:55:14] Blank/erroneous tiles (deleted): 0
+[19:55:14] 
+Operation completed in: 46s
+[19:55:14] Cache cleaning completed
+[19:55:14] Starting map tile cache sync...
+[19:55:15] Found 13833 files in OSM/OSM
+[19:55:16] Found 1200 files in StadiaLight/CustomStadiaTiles
+[19:55:16] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[19:55:16] Found 3036 files in StadiaToner/CustomStadiaTiles
+[19:55:16] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[19:55:16] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[19:55:17] Found 11168 files in StadiaDark/CustomStadiaTiles
+[19:55:20] Found 46357 local files and 46357 remote files
+[19:55:31] Files to upload: 0, Files to download: 0
+[19:55:31] Using 1 parallel threads for syncing
+[19:55:31] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[19:55:31] Bootup completed successfully
+[19:55:31] Starting job processing mode...
+[19:55:31] Starting job processing loop. Press Ctrl+C to stop.
+[19:55:32] Processing job #366 (type: video)
+[19:55:32] Step 1: Sorting GPX files chronologically
+[19:55:32] Step 2: Creating combined route
+[19:55:33] Step 3: Calculating unique bounding boxes and caching map tiles
+[19:55:34] Step 4: Caching map images for unique bounding boxes
+[19:55:35] Step 5: Generating video frames
+[19:57:03] 🎬 Total rendering time: 1 minute 30.39 seconds
+[19:57:03] Step 6: Uploading video and thumbnail to storage box
+[19:57:03] Starting video upload to storage box...
+[19:57:03] Video file validated: 8133185 bytes
+[19:57:03] Uploading video file: Rare spurt 2024-05-18.mp4
+[19:57:05] Video file uploaded successfully: 8133185 bytes
+[19:57:05] Uploading thumbnail file: thumbnail.png
+[19:57:06] Thumbnail uploaded successfully: 315538 bytes
+[19:57:06] Video upload completed successfully
+[19:57:06] ✅ Video upload completed successfully
+[19:57:06] Job #366 completed successfully
+[19:57:06] Job completed. Requesting next job...
+[19:57:07] Processing job #365 (type: video)
+[19:57:07] Step 1: Sorting GPX files chronologically
+[19:57:07] Step 2: Creating combined route
+[19:57:08] Step 3: Calculating unique bounding boxes and caching map tiles
+[19:57:09] Step 4: Caching map images for unique bounding boxes
+[19:57:10] Step 5: Generating video frames
+[19:57:28] 🎬 Total rendering time: 20.18 seconds
+[19:57:28] Step 6: Uploading video and thumbnail to storage box
+[19:57:28] Starting video upload to storage box...
+[19:57:28] Video file validated: 1493645 bytes
+[19:57:28] Uploading video file: Rare spurt 2024-05-18.mp4
+[19:57:29] Video file uploaded successfully: 1493645 bytes
+[19:57:29] Uploading thumbnail file: thumbnail.png
+[19:57:29] Thumbnail uploaded successfully: 314283 bytes
+[19:57:29] Video upload completed successfully
+[19:57:29] ✅ Video upload completed successfully
+[19:57:30] Job #365 completed successfully
+[19:57:30] Job completed. Requesting next job...
+[20:03:12] Processing job #367 (type: video)
+[20:03:12] Step 1: Sorting GPX files chronologically
+[20:03:12] Step 2: Creating combined route
+[20:03:13] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:03:14] Step 4: Caching map images for unique bounding boxes
+[20:03:16] Step 5: Generating video frames
+[20:05:20] 🎬 Total rendering time: 2 minutes 6.82 seconds
+[20:05:20] Step 6: Uploading video and thumbnail to storage box
+[20:05:20] Starting video upload to storage box...
+[20:05:20] Video file validated: 8600486 bytes
+[20:05:20] Uploading video file: Rare spurt 2024-05-18.mp4
+[20:05:23] Video file uploaded successfully: 8600486 bytes
+[20:05:23] Uploading thumbnail file: thumbnail.png
+[20:05:23] Thumbnail uploaded successfully: 314817 bytes
+[20:05:23] Video upload completed successfully
+[20:05:23] ✅ Video upload completed successfully
+[20:05:24] Job #367 completed successfully
+[20:05:24] Job completed. Requesting next job...
+[20:08:39] Starting Route Squiggler Render Client in GUI mode (from config.txt)
+[20:08:39] Using 6 threads (default: max-2, min 1)
+[20:08:39] Debug logging: disabled (from config.txt)
+[20:08:39] Configuration loaded
+[20:08:39] GUI mode enabled
+[20:08:39] GPU rendering enabled
+[20:08:40] Running map tile cache sweep.
+[20:08:40] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:08:40] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:08:40] Found 46357 .npy files to process
+[20:08:50] Total tiles processed: 46357
+[20:08:50] Good tiles (kept): 46357
+[20:08:50] Blank/erroneous tiles (deleted): 0
+[20:08:50] 
+Operation completed in: 9s
+[20:17:33] Starting Route Squiggler Render Client in GUI mode (from config.txt)
+[20:17:33] Using 6 threads (default: max-2, min 1)
+[20:17:33] Debug logging: disabled (from config.txt)
+[20:17:33] Configuration loaded
+[20:17:33] GUI mode enabled
+[20:17:33] GPU rendering enabled
+[20:17:34] Running map tile cache sweep.
+[20:17:34] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:17:34] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:17:34] Found 46357 .npy files to process
+[20:17:43] Total tiles processed: 46357
+[20:17:43] Good tiles (kept): 46357
+[20:17:43] Blank/erroneous tiles (deleted): 0
+[20:17:43] 
+Operation completed in: 8s
+[20:24:39] Starting Route Squiggler Render Client in GUI mode (from config.txt)
+[20:24:39] Using 6 threads (default: max-2, min 1)
+[20:24:39] Debug logging: disabled (from config.txt)
+[20:24:39] Configuration loaded
+[20:24:39] GUI mode enabled
+[20:24:39] GPU rendering enabled
+[20:24:41] Running map tile cache sweep.
+[20:24:41] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:24:41] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:24:41] Found 46357 .npy files to process
+[20:24:49] Total tiles processed: 46357
+[20:24:49] Good tiles (kept): 46357
+[20:24:49] Blank/erroneous tiles (deleted): 0
+[20:24:49] 
+Operation completed in: 8s

@@ -1,0 +1,56 @@
+[23:09:51] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[23:09:51] Using 6 threads (default: max-2, min 1)
+[23:09:51] Debug logging: disabled (from config.txt)
+[23:09:51] Configuration loaded
+[23:09:51] Terminal-only mode enabled
+[23:09:51] GPU rendering enabled
+[23:09:51] ------------------------------------------
+[23:09:51] Starting up Route Squiggler render client.
+[23:09:51] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[23:09:51] Testing connection to web server
+[23:09:51] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-11-21T21:09:52.755411+00:00", "accepted_version": "0.10"}
+[23:09:52] Storage box connection successful.
+[23:09:52] Syncing map tile cache
+[23:09:52] Running map tile cache sweep.
+[23:09:52] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[23:09:52] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[23:09:53] Found 46344 .npy files to process
+[23:10:39] Total tiles processed: 46344
+[23:10:39] Good tiles (kept): 46344
+[23:10:39] Blank/erroneous tiles (deleted): 0
+[23:10:39] 
+Operation completed in: 46s
+[23:10:39] Cache cleaning completed
+[23:10:39] Starting map tile cache sync...
+[23:10:40] Found 1200 files in StadiaLight/CustomStadiaTiles
+[23:10:41] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[23:10:41] Found 3036 files in StadiaToner/CustomStadiaTiles
+[23:10:41] Found 8030 files in StadiaOutdoors/CustomStadiaTiles
+[23:10:41] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[23:10:41] Found 11168 files in StadiaDark/CustomStadiaTiles
+[23:10:41] Found 13833 files in OSM/OSM
+[23:10:45] Found 46344 local files and 46344 remote files
+[23:10:57] Files to upload: 0, Files to download: 0
+[23:10:57] Using 1 parallel threads for syncing
+[23:10:57] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[23:10:57] Bootup completed successfully
+[23:10:57] Starting job processing mode...
+[23:10:57] Starting job processing loop. Press Ctrl+C to stop.
+[23:10:57] Processing job #258 (type: video)
+[23:10:57] Step 1: Sorting GPX files chronologically
+[23:10:57] Step 2: Creating combined route
+[23:10:58] Step 3: Calculating unique bounding boxes and caching map tiles
+[23:11:01] Step 4: Caching map images for unique bounding boxes
+[23:11:41] Step 5: Generating video frames
+[23:13:10] 🎬 Total rendering time: 2 minutes 10.75 seconds
+[23:13:10] Step 6: Uploading video and thumbnail to storage box
+[23:13:10] Starting video upload to storage box...
+[23:13:10] Video file validated: 29931765 bytes
+[23:13:11] Uploading video file: Promo_Kehä3 light.mp4
+[23:13:17] Video file uploaded successfully: 29931765 bytes
+[23:13:17] Uploading thumbnail file: thumbnail.png
+[23:13:18] Thumbnail uploaded successfully: 220599 bytes
+[23:13:18] Video upload completed successfully
+[23:13:18] ✅ Video upload completed successfully
+[23:13:19] Job #258 completed successfully
+[23:13:19] Job completed. Requesting next job...

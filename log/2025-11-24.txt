@@ -1,0 +1,92 @@
+[17:31:38] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[17:31:38] Using 6 threads (default: max-2, min 1)
+[17:31:38] Debug logging: disabled (from config.txt)
+[17:31:38] Configuration loaded
+[17:31:38] Terminal-only mode enabled
+[17:31:38] GPU rendering enabled
+[17:31:38] ------------------------------------------
+[17:31:38] Starting up Route Squiggler render client.
+[17:31:38] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[17:31:38] Testing connection to web server
+[17:31:38] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-11-24T15:31:38.601310+00:00", "accepted_version": "0.10"}
+[17:31:39] Storage box connection successful.
+[17:31:39] Syncing map tile cache
+[17:31:39] Running map tile cache sweep.
+[17:31:39] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[17:31:39] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[17:31:39] Found 46344 .npy files to process
+[17:32:25] Total tiles processed: 46344
+[17:32:25] Good tiles (kept): 46344
+[17:32:25] Blank/erroneous tiles (deleted): 0
+[17:32:25] 
+Operation completed in: 45s
+[17:32:25] Cache cleaning completed
+[17:32:25] Starting map tile cache sync...
+[17:32:25] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[17:32:25] Found 8030 files in StadiaOutdoors/CustomStadiaTiles
+[17:32:25] Found 3036 files in StadiaToner/CustomStadiaTiles
+[17:32:25] Found 1200 files in StadiaLight/CustomStadiaTiles
+[17:32:25] Found 11168 files in StadiaDark/CustomStadiaTiles
+[17:32:25] Found 13833 files in OSM/OSM
+[17:32:25] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[17:32:29] Found 46344 local files and 46344 remote files
+[17:32:40] Files to upload: 0, Files to download: 0
+[17:32:40] Using 1 parallel threads for syncing
+[17:32:40] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[17:32:40] Bootup completed successfully
+[17:32:40] Starting job processing mode...
+[17:32:40] Starting job processing loop. Press Ctrl+C to stop.
+[17:32:40] Processing job #362 (type: video)
+[17:32:41] Step 1: Sorting GPX files chronologically
+[17:32:41] Step 2: Creating combined route
+[17:32:41] Step 3: Calculating unique bounding boxes and caching map tiles
+[17:32:42] Step 4: Caching map images for unique bounding boxes
+[17:32:44] Step 5: Generating video frames
+[17:33:14] 🎬 Total rendering time: 32.97 seconds
+[17:33:14] Step 6: Uploading video and thumbnail to storage box
+[17:33:14] Starting video upload to storage box...
+[17:33:14] Video file validated: 871851 bytes
+[17:33:15] Uploading video file: Excellent roundabout 2021-05-16.mp4
+[17:33:15] Video file uploaded successfully: 871851 bytes
+[17:33:15] Uploading thumbnail file: thumbnail.png
+[17:33:15] Thumbnail uploaded successfully: 140686 bytes
+[17:33:15] Video upload completed successfully
+[17:33:15] ✅ Video upload completed successfully
+[17:33:16] Job #362 completed successfully
+[17:33:16] Job completed. Requesting next job...
+[17:33:17] Processing job #363 (type: video)
+[17:33:17] Step 1: Sorting GPX files chronologically
+[17:33:17] Step 2: Creating combined route
+[17:33:17] Step 3: Calculating unique bounding boxes and caching map tiles
+[17:33:22] Step 4: Caching map images for unique bounding boxes
+[17:33:23] Step 5: Generating video frames
+[17:33:53] 🎬 Total rendering time: 31.92 seconds
+[17:33:53] Step 6: Uploading video and thumbnail to storage box
+[17:33:53] Starting video upload to storage box...
+[17:33:53] Video file validated: 1521561 bytes
+[17:33:53] Uploading video file: Excellent roundabout 2021-05-16.mp4
+[17:33:54] Video file uploaded successfully: 1521561 bytes
+[17:33:54] Uploading thumbnail file: thumbnail.png
+[17:33:54] Thumbnail uploaded successfully: 293266 bytes
+[17:33:54] Video upload completed successfully
+[17:33:54] ✅ Video upload completed successfully
+[17:33:55] Job #363 completed successfully
+[17:33:55] Job completed. Requesting next job...
+[17:33:56] Processing job #364 (type: video)
+[17:33:56] Step 1: Sorting GPX files chronologically
+[17:33:56] Step 2: Creating combined route
+[17:33:56] Step 3: Calculating unique bounding boxes and caching map tiles
+[17:33:57] Step 4: Caching map images for unique bounding boxes
+[17:33:59] Step 5: Generating video frames
+[17:34:28] 🎬 Total rendering time: 32.04 seconds
+[17:34:28] Step 6: Uploading video and thumbnail to storage box
+[17:34:28] Starting video upload to storage box...
+[17:34:28] Video file validated: 828458 bytes
+[17:34:29] Uploading video file: Excellent roundabout 2021-05-16.mp4
+[17:34:29] Video file uploaded successfully: 828458 bytes
+[17:34:29] Uploading thumbnail file: thumbnail.png
+[17:34:29] Thumbnail uploaded successfully: 183971 bytes
+[17:34:29] Video upload completed successfully
+[17:34:29] ✅ Video upload completed successfully
+[17:34:30] Job #364 completed successfully
+[17:34:30] Job completed. Requesting next job...
