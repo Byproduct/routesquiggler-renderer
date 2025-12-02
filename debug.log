@@ -32821,3 +32821,17 @@ Map image creation for bbox 428: Using map tile cache directory: X:\softa\code\P
   Subdirectories found: ['OSM']
   Subdirectory 'OSM' contains 14483 tile files
   Example tiles in subdirectory: ['0_0_1.npy', '0_0_2.npy', '0_0_3.npy']
+Map image creation for bbox 1: Using map tile cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\OSM
+  Expected base cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+  Map style: osm
+  Cache directory exists with 1 items (0 tile files)
+  Subdirectories found: ['OSM']
+  Subdirectory 'OSM' contains 14483 tile files
+  Example tiles in subdirectory: ['0_0_1.npy', '0_0_2.npy', '0_0_3.npy']
+Map image creation for bbox 1: Using map tile cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache\StadiaDark
+  Expected base cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+  Map style: stadia_dark
+  Cache directory exists with 1 items (0 tile files)
+  Subdirectories found: ['CustomStadiaTiles']
+  Subdirectory 'CustomStadiaTiles' contains 11168 tile files
+  Example tiles in subdirectory: ['1151_483_11.npy', '1151_484_11.npy', '1151_485_11.npy']
