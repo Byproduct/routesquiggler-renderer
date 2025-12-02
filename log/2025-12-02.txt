@@ -550,3 +550,4 @@ Operation completed in: 9s
 [21:01:47] ✅ Video upload completed successfully
 [21:01:48] Job #392 completed successfully
 [21:01:48] Job completed. Requesting next job...
+[21:33:49] Network error requesting job: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))

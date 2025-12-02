@@ -126,6 +126,68 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
     return updated_points
 
 
+def _update_speed_based_color_range(all_routes, json_data, debug_callback=None):
+    """
+    Update speed_based_color_min and speed_based_color_max in json_data based on actual data.
+    
+    If either value is -1, it will be calculated from the minimum/maximum current_speed_smoothed
+    values across all routes. If values are already set (not -1), they are left unchanged.
+    
+    Args:
+        all_routes (list): List of route data dictionaries
+        json_data (dict): Job data dictionary (will be modified in place)
+        debug_callback (callable, optional): Function for debug logging
+    
+    Returns:
+        None (modifies json_data in place)
+    """
+    if not json_data:
+        return
+    
+    speed_min_setting = json_data.get('speed_based_color_min', -1)
+    speed_max_setting = json_data.get('speed_based_color_max', -1)
+    
+    # Check if we need to calculate either value
+    need_min = speed_min_setting == -1
+    need_max = speed_max_setting == -1
+    
+    if not need_min and not need_max:
+        if debug_callback:
+            debug_callback("Speed-based color range already set, skipping auto-calculation")
+        return
+    
+    # Collect all current_speed_smoothed values from all routes
+    all_speeds = []
+    for route in all_routes:
+        route_points = route.get('combined_route', [])
+        for point in route_points:
+            if point.current_speed_smoothed is not None:
+                all_speeds.append(point.current_speed_smoothed)
+    
+    if not all_speeds:
+        if debug_callback:
+            debug_callback("No smoothed speed data available for color range calculation")
+        return
+    
+    # Calculate min/max from actual data
+    calculated_min = min(all_speeds)
+    calculated_max = max(all_speeds)
+    
+    # Update json_data if needed
+    if need_min:
+        json_data['speed_based_color_min'] = calculated_min
+        if debug_callback:
+            debug_callback(f"Auto-calculated speed_based_color_min: {calculated_min} km/h")
+    
+    if need_max:
+        json_data['speed_based_color_max'] = calculated_max
+        if debug_callback:
+            debug_callback(f"Auto-calculated speed_based_color_max: {calculated_max} km/h")
+    
+    if debug_callback and (need_min or need_max):
+        debug_callback(f"Speed-based color range: {json_data.get('speed_based_color_min')} - {json_data.get('speed_based_color_max')} km/h")
+
+
 def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, json_data, debug_callback=None):
     """
     Apply smoothed statistics calculation to all routes.
@@ -472,6 +534,10 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # Calculate smoothed statistics for all routes (if enabled in job settings)
         # This pre-calculates smoothed HR and speed values to avoid per-frame recalculation
         all_routes = _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, json_data, debug_callback)
+        
+        # Auto-calculate speed-based color range if needed (if speed_based_color_min/max are -1)
+        # This must be done after smoothed statistics are calculated
+        _update_speed_based_color_range(all_routes, json_data, debug_callback)
               
         # Final progress update
         if progress_callback:
