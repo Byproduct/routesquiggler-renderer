@@ -23,6 +23,7 @@ from write_log import write_log, write_debug_log
 from image_generator_multiprocess import StatusUpdate
 from image_generator_utils import harmonize_gpx_times
 from sync_map_tiles import sync_map_tiles
+from job_request import apply_vertical_video_swap
 
 # Global flags for graceful shutdown
 shutdown_requested = False
@@ -157,6 +158,9 @@ def run_test_image_terminal(bootup_manager, folder_name=None, app=None):
 
         # Ensure this is treated as an image job
         json_data['job_type'] = json_data.get('job_type', 'image')
+        
+        # Apply vertical_video resolution swap if enabled
+        json_data = apply_vertical_video_swap(json_data, write_log)
 
         # Load GPX files using shared utility function
         zip_path = os.path.join(selected_folder, 'gpx_files.zip')
@@ -278,6 +282,9 @@ def run_test_video_terminal(bootup_manager, folder_name=None, app=None):
 
         # Ensure this is treated as a video job
         json_data['job_type'] = 'video'
+        
+        # Apply vertical_video resolution swap if enabled
+        json_data = apply_vertical_video_swap(json_data, write_log)
 
         # Load GPX files using shared utility function
         zip_path = os.path.join(selected_folder, 'gpx_files.zip')
@@ -486,6 +493,9 @@ def process_job_zip_terminal(zip_data):
                 with outer_zip.open('data.json') as data_file:
                     json_data = json.loads(data_file.read().decode('utf-8'))
                 write_debug_log(f"data.json parsed successfully. Job ID: {json_data.get('job_id', '?')}, Type: {json_data.get('job_type', 'image')}")
+                
+                # Apply vertical_video resolution swap if enabled
+                json_data = apply_vertical_video_swap(json_data, write_log)
             except Exception as e:
                 write_log(f"Error reading data.json: {str(e)}")
                 write_debug_log(traceback.format_exc())

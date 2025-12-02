@@ -634,6 +634,11 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     if json_data.get('statistics_average_speed', False):
         stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} km/h")
     
+    if json_data.get('statistics_average_hr', False):
+        avg_hr = statistics_data.get('average_hr', '0')
+        if avg_hr and avg_hr != '0':
+            stats_lines.append(f"{avg_hr} ❤")
+    
     # If no statistics are configured to be shown, return
     if not stats_lines:
         return

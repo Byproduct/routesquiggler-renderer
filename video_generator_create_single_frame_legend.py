@@ -4,6 +4,7 @@ This module contains functions for creating and managing legends in video frames
 """
 
 from video_generator_create_single_frame_utils import hex_to_rgba
+from video_generator_create_combined_route import RoutePoint
 
 
 def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width):
@@ -39,13 +40,11 @@ def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_lin
 
 def get_filename_legend_data(points_for_frame, json_data, effective_line_width):
     """Get legend data for filename-based legend"""
-    # Gather unique filenames from points_for_frame
+    # Gather unique filenames from points_for_frame using named attributes
     unique_filenames = set()
     for point in points_for_frame:
-        if len(point) > 7:
-            filename = point[7]
-            if filename:
-                unique_filenames.add(filename)
+        if point.filename:
+            unique_filenames.add(point.filename)
     
     if not unique_filenames:
         return None, None
@@ -82,17 +81,14 @@ def get_filename_legend_data(points_for_frame, json_data, effective_line_width):
 
 def get_year_legend_data(points_for_frame, json_data, effective_line_width):
     """Get legend data for year-based legend"""
-    # Gather unique years and their corresponding filenames from points_for_frame
+    # Gather unique years and their corresponding filenames from points_for_frame using named attributes
     year_to_filename = {}
     for point in points_for_frame:
-        if len(point) > 7:
-            timestamp = point[3]  # Element 3 is timestamp
-            filename = point[7]   # Element 7 is filename
-            if timestamp and filename:
-                # Extract year from timestamp (first 4 characters)
-                year = str(timestamp)[:4]
-                if year.isdigit():  # Ensure it's a valid year
-                    year_to_filename[year] = filename
+        if point.timestamp and point.filename:
+            # Extract year from timestamp (first 4 characters)
+            year = str(point.timestamp)[:4]
+            if year.isdigit():  # Ensure it's a valid year
+                year_to_filename[year] = point.filename
     
     if not year_to_filename:
         return None, None
@@ -130,19 +126,16 @@ def get_year_legend_data(points_for_frame, json_data, effective_line_width):
 
 def get_month_legend_data(points_for_frame, json_data, effective_line_width):
     """Get legend data for month-based legend"""
-    # Gather unique months and their corresponding filenames from points_for_frame
+    # Gather unique months and their corresponding filenames from points_for_frame using named attributes
     month_to_filename = {}
     for point in points_for_frame:
-        if len(point) > 7:
-            timestamp = point[3]  # Element 3 is timestamp
-            filename = point[7]   # Element 7 is filename
-            if timestamp and filename:
-                # Extract year and month from timestamp (first 7 characters: YYYY-MM)
-                timestamp_str = str(timestamp)
-                if len(timestamp_str) >= 7 and timestamp_str[4] == '-':
-                    month = timestamp_str[:7]  # YYYY-MM format
-                    if month[:4].isdigit() and month[5:7].isdigit():  # Ensure valid format
-                        month_to_filename[month] = filename
+        if point.timestamp and point.filename:
+            # Extract year and month from timestamp (first 7 characters: YYYY-MM)
+            timestamp_str = str(point.timestamp)
+            if len(timestamp_str) >= 7 and timestamp_str[4] == '-':
+                month = timestamp_str[:7]  # YYYY-MM format
+                if month[:4].isdigit() and month[5:7].isdigit():  # Ensure valid format
+                    month_to_filename[month] = point.filename
     
     if not month_to_filename:
         return None, None
@@ -180,19 +173,16 @@ def get_month_legend_data(points_for_frame, json_data, effective_line_width):
 
 def get_day_legend_data(points_for_frame, json_data, effective_line_width):
     """Get legend data for day-based legend"""
-    # Gather unique days and their corresponding filenames from points_for_frame
+    # Gather unique days and their corresponding filenames from points_for_frame using named attributes
     day_to_filename = {}
     for point in points_for_frame:
-        if len(point) > 7:
-            timestamp = point[3]  # Element 3 is timestamp
-            filename = point[7]   # Element 7 is filename
-            if timestamp and filename:
-                # Extract year, month, and day from timestamp (first 10 characters: YYYY-MM-DD)
-                timestamp_str = str(timestamp)
-                if len(timestamp_str) >= 10 and timestamp_str[4] == '-' and timestamp_str[7] == '-':
-                    day = timestamp_str[:10]  # YYYY-MM-DD format
-                    if day[:4].isdigit() and day[5:7].isdigit() and day[8:10].isdigit():  # Ensure valid format
-                        day_to_filename[day] = filename
+        if point.timestamp and point.filename:
+            # Extract year, month, and day from timestamp (first 10 characters: YYYY-MM-DD)
+            timestamp_str = str(point.timestamp)
+            if len(timestamp_str) >= 10 and timestamp_str[4] == '-' and timestamp_str[7] == '-':
+                day = timestamp_str[:10]  # YYYY-MM-DD format
+                if day[:4].isdigit() and day[5:7].isdigit() and day[8:10].isdigit():  # Ensure valid format
+                    day_to_filename[day] = point.filename
     
     if not day_to_filename:
         return None, None
@@ -230,13 +220,11 @@ def get_day_legend_data(points_for_frame, json_data, effective_line_width):
 
 def get_people_legend_data(points_for_frame, json_data, effective_line_width):
     """Get legend data for people-based legend (uses track object 'name' or falls back to filename)"""
-    # Gather unique filenames from points_for_frame
+    # Gather unique filenames from points_for_frame using named attributes
     unique_filenames = set()
     for point in points_for_frame:
-        if len(point) > 7:
-            filename = point[7]
-            if filename:
-                unique_filenames.add(filename)
+        if point.filename:
+            unique_filenames.add(point.filename)
     
     if not unique_filenames:
         return None, None

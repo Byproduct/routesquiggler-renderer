@@ -28,6 +28,7 @@ from moviepy import VideoClip
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
 from video_generator_create_single_frame import generate_video_frame_in_memory
 from video_generator_create_single_frame_utils import hex_to_rgba
+from video_generator_create_combined_route import RoutePoint
 from write_log import write_log, write_debug_log
 
 
@@ -39,7 +40,7 @@ def _binary_search_cutoff_index(route_points, target_time):
     This allows for efficient list slicing: route_points[:cutoff_index] gives all valid points.
     
     Args:
-        route_points (list): List of route points, chronologically ordered by accumulated_time
+        route_points (list): List of RoutePoint objects, chronologically ordered by accumulated_time
         target_time (float): Target accumulated_time threshold
     
     Returns:
@@ -54,19 +55,14 @@ def _binary_search_cutoff_index(route_points, target_time):
     while left <= right:
         mid = (left + right) // 2
         
-        # Check if this point has the minimum required length and extract accumulated_time
-        if len(route_points[mid]) >= 5:
-            accumulated_time = route_points[mid][4]  # accumulated_time at index 4
-            
-            if accumulated_time <= target_time:
-                # This point should be included, look for later cutoff point
-                left = mid + 1
-            else:
-                # This point should be excluded, it might be our cutoff point
-                result = mid
-                right = mid - 1
+        # Use named attribute for accumulated_time
+        accumulated_time = route_points[mid].accumulated_time
+        
+        if accumulated_time <= target_time:
+            # This point should be included, look for later cutoff point
+            left = mid + 1
         else:
-            # Point doesn't have enough elements, exclude it
+            # This point should be excluded, it might be our cutoff point
             result = mid
             right = mid - 1
     
@@ -107,9 +103,7 @@ def _streaming_frame_worker(args):
                 route_points = route_data.get('combined_route', [])
                 if route_points:
                     first_point = route_points[0]
-                    if len(first_point) >= 1:
-                        route_index = first_point[0]  # route_index at index 0
-                        route_indices.add(route_index)
+                    route_indices.add(first_point.route_index)
             
             has_different_route_indices = len(route_indices) > 1
             
@@ -126,17 +120,16 @@ def _streaming_frame_worker(args):
                         first_point = route_points[0]
                         last_point = route_points[-1]
                         
-                        if len(first_point) >= 4 and len(last_point) >= 5:
-                            route_start_timestamp = first_point[3]  # timestamp at index 3
-                            route_duration = last_point[4]  # accumulated_time at index 4
+                        route_start_timestamp = first_point.timestamp
+                        route_duration = last_point.accumulated_time
+                        
+                        if route_start_timestamp:
+                            if earliest_start_time is None or route_start_timestamp < earliest_start_time:
+                                earliest_start_time = route_start_timestamp
                             
-                            if route_start_timestamp:
-                                if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                                    earliest_start_time = route_start_timestamp
-                                
-                                if latest_start_time is None or route_start_timestamp > latest_start_time:
-                                    latest_start_time = route_start_timestamp
-                                    max_route_duration = route_duration
+                            if latest_start_time is None or route_start_timestamp > latest_start_time:
+                                latest_start_time = route_start_timestamp
+                                max_route_duration = route_duration
                 
                 # Calculate the minimum video duration needed for all routes to complete
                 if earliest_start_time and latest_start_time:
@@ -166,9 +159,7 @@ def _streaming_frame_worker(args):
                 route_points = route_data.get('combined_route', [])
                 if route_points:
                     first_point = route_points[0]
-                    if len(first_point) >= 1:
-                        route_index = first_point[0]  # route_index at index 0
-                        route_indices.add(route_index)
+                    route_indices.add(first_point.route_index)
             
             is_simultaneous_mode = len(route_indices) > 1
         
@@ -186,9 +177,7 @@ def _streaming_frame_worker(args):
                 route_points = route_data.get('combined_route', [])
                 if route_points:
                     first_point = route_points[0]
-                    if len(first_point) >= 1:
-                        route_index = first_point[0]  # route_index at index 0
-                        route_indices.add(route_index)
+                    route_indices.add(first_point.route_index)
             
             has_different_route_indices = len(route_indices) > 1
             
@@ -203,8 +192,8 @@ def _streaming_frame_worker(args):
                 
                 for route_data in all_routes:
                     route_points = route_data.get('combined_route', [])
-                    if route_points and len(route_points[0]) >= 4:  # Check for timestamp at index 3
-                        route_start_timestamp = route_points[0][3]  # timestamp at index 3
+                    if route_points:
+                        route_start_timestamp = route_points[0].timestamp
                         if route_start_timestamp:
                             route_start_times[id(route_data)] = route_start_timestamp
                             if earliest_start_time is None or route_start_timestamp < earliest_start_time:
@@ -226,7 +215,7 @@ def _streaming_frame_worker(args):
                     if is_tail_only_frame:
                         # SIMULTANEOUS MODE TAIL FIX: Each route should have its own individual tail fade-out
                         # Calculate when this specific route ends (accounting for its start delay)
-                        route_end_time = route_points[-1][4] if route_points else 0  # accumulated_time of last point
+                        route_end_time = route_points[-1].accumulated_time if route_points else 0
                         route_end_time_with_delay = route_end_time + route_delay_seconds
                         
                         # Calculate how much time has passed since this route ended
@@ -343,9 +332,7 @@ def _streaming_frame_worker(args):
                 route_points = route_data.get('combined_route', [])
                 if route_points:
                     first_point = route_points[0]
-                    if len(first_point) >= 1:
-                        route_index = first_point[0]  # route_index at index 0
-                        route_indices.add(route_index)
+                    route_indices.add(first_point.route_index)
             
             has_different_route_indices = len(route_indices) > 1
             
@@ -356,8 +343,8 @@ def _streaming_frame_worker(args):
                 
                 for route_data in all_routes:
                     route_points = route_data.get('combined_route', [])
-                    if route_points and len(route_points[0]) >= 4:
-                        route_start_timestamp = route_points[0][3]  # timestamp at index 3
+                    if route_points:
+                        route_start_timestamp = route_points[0].timestamp
                         if route_start_timestamp:
                             route_start_times[id(route_data)] = route_start_timestamp
                             if earliest_start_time is None or route_start_timestamp < earliest_start_time:
@@ -377,11 +364,11 @@ def _streaming_frame_worker(args):
                         route_delay_seconds = (route_start_timestamp - earliest_start_time).total_seconds()
                     
                     # Calculate when this specific route ends
-                    route_end_time = route_points[-1][4] if route_points else 0  # accumulated_time of last point
+                    route_end_time = route_points[-1].accumulated_time if route_points else 0
                     route_end_time_with_delay = route_end_time + route_delay_seconds
                     
                     # Store route-specific tail information
-                    route_index = route_points[0][0] if route_points else 0
+                    route_index = route_points[0].route_index if route_points else 0
                     route_specific_tail_info[route_index] = {
                         'route_end_time': route_end_time_with_delay,
                         'route_delay_seconds': route_delay_seconds
@@ -502,9 +489,7 @@ class StreamingFrameGenerator:
                 route_points = route_data.get('combined_route', [])
                 if route_points:
                     first_point = route_points[0]
-                    if len(first_point) >= 1:
-                        route_index = first_point[0]  # route_index at index 0
-                        route_indices.add(route_index)
+                    route_indices.add(first_point.route_index)
             
             is_simultaneous_mode = len(route_indices) > 1
         
@@ -1031,9 +1016,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 route_points = route_data.get('combined_route', [])
                 if route_points:
                     first_point = route_points[0]
-                    if len(first_point) >= 1:
-                        route_index = first_point[0]  # route_index at index 0
-                        route_indices.add(route_index)
+                    route_indices.add(first_point.route_index)
             
             is_simultaneous_mode = len(route_indices) > 1
         
@@ -1356,9 +1339,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
                     route_points = route_data.get('combined_route', [])
                     if route_points:
                         first_point = route_points[0]
-                        if len(first_point) >= 1:
-                            route_index = first_point[0]  # route_index at index 0
-                            route_indices.add(route_index)
+                        route_indices.add(first_point.route_index)
                 
                 is_simultaneous_mode = len(route_indices) > 1
             

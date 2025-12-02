@@ -1,0 +1,552 @@
+[00:50:30] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[00:50:30] Using 6 threads (default: max-2, min 1)
+[00:50:30] Debug logging: disabled (from config.txt)
+[00:50:30] Configuration loaded
+[00:50:30] Terminal-only mode enabled
+[00:50:30] GPU rendering enabled
+[00:50:30] ------------------------------------------
+[00:50:30] Starting up Route Squiggler render client.
+[00:50:30] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[00:50:30] Testing connection to web server
+[00:50:30] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-01T22:50:30.665103+00:00", "accepted_version": "0.10"}
+[00:50:31] Storage box connection successful.
+[00:50:31] Syncing map tile cache
+[00:50:31] Running map tile cache sweep.
+[00:50:31] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[00:50:31] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[00:50:31] Found 46817 .npy files to process
+[00:51:18] Total tiles processed: 46817
+[00:51:18] Good tiles (kept): 46817
+[00:51:18] Blank/erroneous tiles (deleted): 0
+[00:51:18] 
+Operation completed in: 47s
+[00:51:18] Cache cleaning completed
+[00:51:18] Starting map tile cache sync...
+[00:51:19] Found 14293 files in OSM/OSM
+[00:51:19] Found 1200 files in StadiaLight/CustomStadiaTiles
+[00:51:19] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[00:51:20] Found 3036 files in StadiaToner/CustomStadiaTiles
+[00:51:20] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[00:51:20] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[00:51:20] Found 11168 files in StadiaDark/CustomStadiaTiles
+[00:51:23] Found 46817 local files and 46817 remote files
+[00:51:35] Files to upload: 0, Files to download: 0
+[00:51:35] Using 1 parallel threads for syncing
+[00:51:35] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[00:51:35] Bootup completed successfully
+[00:51:35] Starting job processing mode...
+[00:51:35] Starting job processing loop. Press Ctrl+C to stop.
+[00:51:36] Processing job #377 (type: image)
+[00:51:36] Starting image generation.
+[00:51:42] Image generation completed in 6 seconds.
+[00:51:42] Job #377 completed successfully
+[00:51:42] Job completed. Requesting next job...
+[00:51:43] Processing job #378 (type: video)
+[00:51:43] Step 1: Sorting GPX files chronologically
+[00:51:43] Step 2: Creating combined route
+[00:51:43] Step 3: Calculating unique bounding boxes and caching map tiles
+[00:51:44] Step 4: Caching map images for unique bounding boxes
+[00:51:45] Step 5: Generating video frames
+[00:52:17] 🎬 Total rendering time: 33.75 seconds
+[00:52:17] Step 6: Uploading video and thumbnail to storage box
+[00:52:17] Starting video upload to storage box...
+[00:52:17] Video file validated: 2332641 bytes
+[00:52:17] Uploading video file: HR_video.mp4
+[00:52:18] Video file uploaded successfully: 2332641 bytes
+[00:52:18] Uploading thumbnail file: thumbnail.png
+[00:52:18] Thumbnail uploaded successfully: 272323 bytes
+[00:52:18] Video upload completed successfully
+[00:52:18] ✅ Video upload completed successfully
+[00:52:19] Job #378 completed successfully
+[00:52:19] Job completed. Requesting next job...
+[01:23:18] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[01:23:18] Using 6 threads (default: max-2, min 1)
+[01:23:18] Debug logging: disabled (from config.txt)
+[01:23:18] Configuration loaded
+[01:23:18] Terminal-only mode enabled
+[01:23:18] GPU rendering enabled
+[01:23:18] ------------------------------------------
+[01:23:18] Starting up Route Squiggler render client.
+[01:23:18] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[01:23:18] Testing connection to web server
+[01:23:19] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-01T23:23:18.908547+00:00", "accepted_version": "0.10"}
+[01:23:19] Storage box connection successful.
+[01:23:19] Syncing map tile cache
+[01:23:19] Running map tile cache sweep.
+[01:23:19] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:23:19] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:23:19] Found 46913 .npy files to process
+[01:23:28] Total tiles processed: 46913
+[01:23:28] Good tiles (kept): 46913
+[01:23:28] Blank/erroneous tiles (deleted): 0
+[01:23:28] 
+Operation completed in: 9s
+[01:23:28] Cache cleaning completed
+[01:23:28] Starting map tile cache sync...
+[01:23:28] Found 1200 files in StadiaLight/CustomStadiaTiles
+[01:23:28] Found 3036 files in StadiaToner/CustomStadiaTiles
+[01:23:28] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[01:23:29] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[01:23:29] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[01:23:29] Found 11168 files in StadiaDark/CustomStadiaTiles
+[01:23:29] Found 14293 files in OSM/OSM
+[01:23:32] Found 46913 local files and 46817 remote files
+[01:23:44] Files to upload: 96, Files to download: 0
+[01:23:44] Using 10 parallel threads for syncing
+[01:23:44] Starting parallel upload...
+[01:23:50] Map tile cache sync completed. Uploaded: 96, downloaded: 0
+[01:23:50] Bootup completed successfully
+[01:23:50] Starting job processing mode...
+[01:23:50] Starting job processing loop. Press Ctrl+C to stop.
+[01:23:50] Processing job #377 (type: image)
+[01:23:50] Starting image generation.
+[01:23:56] Image generation completed in 5 seconds.
+[01:23:56] Job #377 completed successfully
+[01:23:56] Job completed. Requesting next job...
+[01:28:35] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[01:28:35] Using 6 threads (default: max-2, min 1)
+[01:28:35] Debug logging: disabled (from config.txt)
+[01:28:35] Configuration loaded
+[01:28:35] Terminal-only mode enabled
+[01:28:35] GPU rendering enabled
+[01:28:35] ------------------------------------------
+[01:28:35] Starting up Route Squiggler render client.
+[01:28:35] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[01:28:35] Testing connection to web server
+[01:28:36] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-01T23:28:36.012243+00:00", "accepted_version": "0.10"}
+[01:28:36] Storage box connection successful.
+[01:28:36] Syncing map tile cache
+[01:28:36] Running map tile cache sweep.
+[01:28:36] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:28:36] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:28:36] Found 46913 .npy files to process
+[01:28:45] Total tiles processed: 46913
+[01:28:45] Good tiles (kept): 46913
+[01:28:45] Blank/erroneous tiles (deleted): 0
+[01:28:45] 
+Operation completed in: 9s
+[01:28:45] Cache cleaning completed
+[01:28:45] Starting map tile cache sync...
+[01:28:46] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[01:28:46] Found 3036 files in StadiaToner/CustomStadiaTiles
+[01:28:46] Found 1200 files in StadiaLight/CustomStadiaTiles
+[01:28:46] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[01:28:46] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[01:28:46] Found 14389 files in OSM/OSM
+[01:28:46] Found 11168 files in StadiaDark/CustomStadiaTiles
+[01:28:49] Found 46913 local files and 46913 remote files
+[01:29:02] Files to upload: 0, Files to download: 0
+[01:29:02] Using 1 parallel threads for syncing
+[01:29:02] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[01:29:02] Bootup completed successfully
+[01:29:02] Starting job processing mode...
+[01:29:02] Starting job processing loop. Press Ctrl+C to stop.
+[01:29:02] Processing job #377 (type: image)
+[01:29:02] Starting image generation.
+[01:29:08] Image generation completed in 5 seconds.
+[01:29:08] Job #377 completed successfully
+[01:29:08] Job completed. Requesting next job...
+[01:30:39] Processing job #379 (type: image)
+[01:30:39] Starting image generation.
+[01:30:44] Image generation completed in 5 seconds.
+[01:30:44] Job #379 completed successfully
+[01:30:44] Job completed. Requesting next job...
+[01:57:58] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[01:57:58] Using 6 threads (default: max-2, min 1)
+[01:57:58] Debug logging: disabled (from config.txt)
+[01:57:58] Configuration loaded
+[01:57:58] Terminal-only mode enabled
+[01:57:58] GPU rendering enabled
+[01:57:58] ------------------------------------------
+[01:57:58] Starting up Route Squiggler render client.
+[01:57:58] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[01:57:58] Testing connection to web server
+[01:57:58] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-01T23:57:58.429279+00:00", "accepted_version": "0.10"}
+[01:57:58] Storage box connection successful.
+[01:57:58] Syncing map tile cache
+[01:57:58] Running map tile cache sweep.
+[01:57:58] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:57:58] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:57:59] Found 46913 .npy files to process
+[01:58:08] Total tiles processed: 46913
+[01:58:08] Good tiles (kept): 46913
+[01:58:08] Blank/erroneous tiles (deleted): 0
+[01:58:08] 
+Operation completed in: 9s
+[01:58:08] Cache cleaning completed
+[01:58:08] Starting map tile cache sync...
+[01:58:08] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[01:58:09] Found 1200 files in StadiaLight/CustomStadiaTiles
+[01:58:09] Found 3036 files in StadiaToner/CustomStadiaTiles
+[01:58:09] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[01:58:09] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[01:58:09] Found 11168 files in StadiaDark/CustomStadiaTiles
+[01:58:09] Found 14389 files in OSM/OSM
+[01:58:12] Found 46913 local files and 46913 remote files
+[01:58:24] Files to upload: 0, Files to download: 0
+[01:58:24] Using 1 parallel threads for syncing
+[01:58:24] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[01:58:24] Bootup completed successfully
+[01:58:24] Starting job processing mode...
+[01:58:24] Starting job processing loop. Press Ctrl+C to stop.
+[01:58:25] Processing job #380 (type: video)
+[01:58:25] Step 1: Sorting GPX files chronologically
+[01:58:25] Step 2: Creating combined route
+[01:58:25] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:58:26] Step 4: Caching map images for unique bounding boxes
+[01:58:27] Step 5: Generating video frames
+[01:58:59] 🎬 Total rendering time: 33.72 seconds
+[01:58:59] Step 6: Uploading video and thumbnail to storage box
+[01:58:59] Starting video upload to storage box...
+[01:58:59] Video file validated: 2518977 bytes
+[01:58:59] Uploading video file: HR_video.mp4
+[01:59:00] Video file uploaded successfully: 2518977 bytes
+[01:59:00] Uploading thumbnail file: thumbnail.png
+[01:59:00] Thumbnail uploaded successfully: 272291 bytes
+[01:59:00] Video upload completed successfully
+[01:59:00] ✅ Video upload completed successfully
+[01:59:01] Job #380 completed successfully
+[01:59:01] Job completed. Requesting next job...
+[02:01:58] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[02:01:58] Using 6 threads (default: max-2, min 1)
+[02:01:58] Debug logging: disabled (from config.txt)
+[02:01:58] Configuration loaded
+[02:01:58] Terminal-only mode enabled
+[02:01:58] GPU rendering enabled
+[02:01:58] ------------------------------------------
+[02:01:58] Starting up Route Squiggler render client.
+[02:01:58] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[02:01:58] Testing connection to web server
+[02:01:58] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-02T00:01:58.865097+00:00", "accepted_version": "0.10"}
+[02:01:59] Storage box connection successful.
+[02:01:59] Syncing map tile cache
+[02:01:59] Running map tile cache sweep.
+[02:01:59] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[02:01:59] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[02:01:59] Found 46913 .npy files to process
+[02:02:08] Total tiles processed: 46913
+[02:02:08] Good tiles (kept): 46913
+[02:02:08] Blank/erroneous tiles (deleted): 0
+[02:02:08] 
+Operation completed in: 9s
+[02:02:08] Cache cleaning completed
+[02:02:08] Starting map tile cache sync...
+[02:02:08] Found 1200 files in StadiaLight/CustomStadiaTiles
+[02:02:08] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[02:02:08] Found 3036 files in StadiaToner/CustomStadiaTiles
+[02:02:08] Found 14389 files in OSM/OSM
+[02:02:09] Found 11168 files in StadiaDark/CustomStadiaTiles
+[02:02:09] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[02:02:09] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[02:02:12] Found 46913 local files and 46913 remote files
+[02:02:24] Files to upload: 0, Files to download: 0
+[02:02:24] Using 1 parallel threads for syncing
+[02:02:24] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[02:02:24] Bootup completed successfully
+[02:02:24] Starting job processing mode...
+[02:02:24] Starting job processing loop. Press Ctrl+C to stop.
+[02:02:24] Processing job #381 (type: video)
+[02:02:24] Step 1: Sorting GPX files chronologically
+[02:02:24] Step 2: Creating combined route
+[02:02:24] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:02:26] Step 4: Caching map images for unique bounding boxes
+[02:02:27] Step 5: Generating video frames
+[02:02:59] 🎬 Total rendering time: 34.51 seconds
+[02:02:59] Step 6: Uploading video and thumbnail to storage box
+[02:02:59] Starting video upload to storage box...
+[02:02:59] Video file validated: 2519322 bytes
+[02:02:59] Uploading video file: HR_video.mp4
+[02:03:00] Video file uploaded successfully: 2519322 bytes
+[02:03:00] Uploading thumbnail file: thumbnail.png
+[02:03:01] Thumbnail uploaded successfully: 272236 bytes
+[02:03:01] Video upload completed successfully
+[02:03:01] ✅ Video upload completed successfully
+[02:03:02] Job #381 completed successfully
+[02:03:02] Job completed. Requesting next job...
+[02:03:03] Processing job #382 (type: video)
+[02:03:03] Step 1: Sorting GPX files chronologically
+[02:03:03] Step 2: Creating combined route
+[02:03:03] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:03:04] Step 4: Caching map images for unique bounding boxes
+[02:03:05] Step 5: Generating video frames
+[02:03:37] 🎬 Total rendering time: 34.64 seconds
+[02:03:37] Step 6: Uploading video and thumbnail to storage box
+[02:03:37] Starting video upload to storage box...
+[02:03:37] Video file validated: 2379765 bytes
+[02:03:38] Uploading video file: HR_video.mp4
+[02:03:39] Video file uploaded successfully: 2379765 bytes
+[02:03:39] Uploading thumbnail file: thumbnail.png
+[02:03:39] Thumbnail uploaded successfully: 272252 bytes
+[02:03:39] Video upload completed successfully
+[02:03:39] ✅ Video upload completed successfully
+[02:03:40] Job #382 completed successfully
+[02:03:40] Job completed. Requesting next job...
+[02:03:41] Processing job #383 (type: video)
+[02:03:41] Step 1: Sorting GPX files chronologically
+[02:03:41] Step 2: Creating combined route
+[02:03:41] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:03:42] Step 4: Caching map images for unique bounding boxes
+[02:03:43] Step 5: Generating video frames
+[02:04:15] 🎬 Total rendering time: 34.12 seconds
+[02:04:15] Step 6: Uploading video and thumbnail to storage box
+[02:04:15] Starting video upload to storage box...
+[02:04:15] Video file validated: 2364506 bytes
+[02:04:15] Uploading video file: HR_video.mp4
+[02:04:16] Video file uploaded successfully: 2364506 bytes
+[02:04:16] Uploading thumbnail file: thumbnail.png
+[02:04:16] Thumbnail uploaded successfully: 272328 bytes
+[02:04:16] Video upload completed successfully
+[02:04:16] ✅ Video upload completed successfully
+[02:04:17] Job #383 completed successfully
+[02:04:17] Job completed. Requesting next job...
+[02:04:18] Processing job #384 (type: video)
+[02:04:18] Step 1: Sorting GPX files chronologically
+[02:04:18] Step 2: Creating combined route
+[02:04:18] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:04:19] Step 4: Caching map images for unique bounding boxes
+[02:04:20] Step 5: Generating video frames
+[02:04:52] 🎬 Total rendering time: 33.74 seconds
+[02:04:52] Step 6: Uploading video and thumbnail to storage box
+[02:04:52] Starting video upload to storage box...
+[02:04:52] Video file validated: 2216812 bytes
+[02:04:52] Uploading video file: HR_video.mp4
+[02:04:53] Video file uploaded successfully: 2216812 bytes
+[02:04:53] Uploading thumbnail file: thumbnail.png
+[02:04:53] Thumbnail uploaded successfully: 272229 bytes
+[02:04:53] Video upload completed successfully
+[02:04:53] ✅ Video upload completed successfully
+[02:04:54] Job #384 completed successfully
+[02:04:54] Job completed. Requesting next job...
+[02:06:55] Processing job #385 (type: video)
+[02:06:55] Step 1: Sorting GPX files chronologically
+[02:06:55] Step 2: Creating combined route
+[02:06:55] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:07:05] Step 4: Caching map images for unique bounding boxes
+[02:07:34] Step 5: Generating video frames
+[02:09:03] 🎬 Total rendering time: 1 minute 59.82 seconds
+[02:09:03] Step 6: Uploading video and thumbnail to storage box
+[02:09:03] Starting video upload to storage box...
+[02:09:03] Video file validated: 40478692 bytes
+[02:09:04] Uploading video file: Huonokuntoista raahautumista.mp4
+[02:09:15] Video file uploaded successfully: 40478692 bytes
+[02:09:15] Uploading thumbnail file: thumbnail.png
+[02:09:16] Thumbnail uploaded successfully: 293661 bytes
+[02:09:16] Video upload completed successfully
+[02:09:16] ✅ Video upload completed successfully
+[02:09:17] Job #385 completed successfully
+[02:09:17] Job completed. Requesting next job...
+[02:11:38] Processing job #386 (type: video)
+[02:11:38] Step 1: Sorting GPX files chronologically
+[02:11:38] Step 2: Creating combined route
+[02:11:38] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:11:40] Step 4: Caching map images for unique bounding boxes
+[02:12:09] Step 5: Generating video frames
+[02:13:43] 🎬 Total rendering time: 2 minutes 3.53 seconds
+[02:13:43] Step 6: Uploading video and thumbnail to storage box
+[02:13:43] Starting video upload to storage box...
+[02:13:43] Video file validated: 40622456 bytes
+[02:13:43] Uploading video file: Huonokuntoista raahautumista.mp4
+[02:13:52] Video file uploaded successfully: 40622456 bytes
+[02:13:52] Uploading thumbnail file: thumbnail.png
+[02:13:52] Thumbnail uploaded successfully: 293642 bytes
+[02:13:52] Video upload completed successfully
+[02:13:52] ✅ Video upload completed successfully
+[02:13:53] Job #386 completed successfully
+[02:13:53] Job completed. Requesting next job...
+[02:32:47] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[02:32:47] Using 6 threads (default: max-2, min 1)
+[02:32:47] Debug logging: disabled (from config.txt)
+[02:32:47] Configuration loaded
+[02:32:47] Terminal-only mode enabled
+[02:32:47] GPU rendering enabled
+[02:32:47] ------------------------------------------
+[02:32:47] Starting up Route Squiggler render client.
+[02:32:47] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[02:32:47] Testing connection to web server
+[02:32:47] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-02T00:32:47.260548+00:00", "accepted_version": "0.10"}
+[02:32:47] Storage box connection successful.
+[02:32:47] Syncing map tile cache
+[02:32:47] Running map tile cache sweep.
+[02:32:47] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[02:32:47] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[02:32:47] Found 47007 .npy files to process
+[02:32:56] Total tiles processed: 47007
+[02:32:56] Good tiles (kept): 47007
+[02:32:56] Blank/erroneous tiles (deleted): 0
+[02:32:56] 
+Operation completed in: 9s
+[02:32:56] Cache cleaning completed
+[02:32:56] Starting map tile cache sync...
+[02:32:57] Found 1200 files in StadiaLight/CustomStadiaTiles
+[02:32:57] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[02:32:57] Found 3036 files in StadiaToner/CustomStadiaTiles
+[02:32:57] Found 14389 files in OSM/OSM
+[02:32:57] Found 11168 files in StadiaDark/CustomStadiaTiles
+[02:32:57] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[02:32:57] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[02:33:00] Found 47007 local files and 46913 remote files
+[02:33:12] Files to upload: 94, Files to download: 0
+[02:33:12] Using 10 parallel threads for syncing
+[02:33:12] Starting parallel upload...
+[02:33:19] Map tile cache sync completed. Uploaded: 94, downloaded: 0
+[02:33:19] Bootup completed successfully
+[02:33:19] Starting job processing mode...
+[02:33:19] Starting job processing loop. Press Ctrl+C to stop.
+[02:41:50] Processing job #387 (type: video)
+[02:41:51] Step 1: Sorting GPX files chronologically
+[02:41:51] Step 2: Creating combined route
+[02:41:51] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:41:53] Step 4: Caching map images for unique bounding boxes
+[02:42:22] Step 5: Generating video frames
+[02:44:14] 🎬 Total rendering time: 2 minutes 21.31 seconds
+[02:44:14] Step 6: Uploading video and thumbnail to storage box
+[02:44:14] Starting video upload to storage box...
+[02:44:14] Video file validated: 40789522 bytes
+[02:44:14] Uploading video file: Huonokuntoista raahautumista.mp4
+[02:44:23] Video file uploaded successfully: 40789522 bytes
+[02:44:23] Uploading thumbnail file: thumbnail.png
+[02:44:23] Thumbnail uploaded successfully: 293597 bytes
+[02:44:23] Video upload completed successfully
+[02:44:23] ✅ Video upload completed successfully
+[02:44:24] Job #387 completed successfully
+[02:44:24] Job completed. Requesting next job...
+[20:34:21] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[20:34:21] Using 6 threads (default: max-2, min 1)
+[20:34:21] Debug logging: disabled (from config.txt)
+[20:34:21] Configuration loaded
+[20:34:21] Terminal-only mode enabled
+[20:34:21] GPU rendering enabled
+[20:34:21] ------------------------------------------
+[20:34:21] Starting up Route Squiggler render client.
+[20:34:21] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[20:34:21] Testing connection to web server
+[20:34:22] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-02T18:34:22.226262+00:00", "accepted_version": "0.10"}
+[20:34:22] Storage box connection successful.
+[20:34:22] Syncing map tile cache
+[20:34:22] Running map tile cache sweep.
+[20:34:22] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:34:22] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:34:22] Found 47007 .npy files to process
+[20:35:09] Total tiles processed: 47007
+[20:35:09] Good tiles (kept): 47007
+[20:35:09] Blank/erroneous tiles (deleted): 0
+[20:35:09] 
+Operation completed in: 46s
+[20:35:09] Cache cleaning completed
+[20:35:09] Starting map tile cache sync...
+[20:35:09] Found 14483 files in OSM/OSM
+[20:35:10] Found 1200 files in StadiaLight/CustomStadiaTiles
+[20:35:10] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[20:35:11] Found 3036 files in StadiaToner/CustomStadiaTiles
+[20:35:11] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[20:35:11] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[20:35:11] Found 11168 files in StadiaDark/CustomStadiaTiles
+[20:35:14] Found 47007 local files and 47007 remote files
+[20:35:27] Files to upload: 0, Files to download: 0
+[20:35:27] Using 1 parallel threads for syncing
+[20:35:27] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[20:35:27] Bootup completed successfully
+[20:35:27] Starting job processing mode...
+[20:35:27] Starting job processing loop. Press Ctrl+C to stop.
+[20:35:28] Processing job #388 (type: video)
+[20:35:28] Step 1: Sorting GPX files chronologically
+[20:35:28] Step 2: Creating combined route
+[20:35:28] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:35:31] Step 4: Caching map images for unique bounding boxes
+[20:36:01] Step 5: Generating video frames
+[20:37:58] 🎬 Total rendering time: 2 minutes 28.63 seconds
+[20:37:58] Step 6: Uploading video and thumbnail to storage box
+[20:37:58] Starting video upload to storage box...
+[20:37:58] Video file validated: 40762051 bytes
+[20:37:59] Uploading video file: Huonokuntoista raahautumista.mp4
+[20:38:20] Video file uploaded successfully: 40762051 bytes
+[20:38:20] Uploading thumbnail file: thumbnail.png
+[20:38:20] Thumbnail uploaded successfully: 293606 bytes
+[20:38:20] Video upload completed successfully
+[20:38:21] ✅ Video upload completed successfully
+[20:38:22] Job #388 completed successfully
+[20:38:22] Job completed. Requesting next job...
+[20:38:25] Processing job #390 (type: image)
+[20:38:25] Starting image generation.
+[20:38:39] Image generation completed in 14 seconds.
+[20:38:39] Job #390 completed successfully
+[20:38:39] Job completed. Requesting next job...
+[20:38:40] Processing job #391 (type: image)
+[20:38:40] Starting image generation.
+[20:38:46] Image generation completed in 6 seconds.
+[20:38:46] Job #391 completed successfully
+[20:38:46] Job completed. Requesting next job...
+[20:38:47] Processing job #389 (type: video)
+[20:38:47] Step 1: Sorting GPX files chronologically
+[20:38:47] Step 2: Creating combined route
+[20:38:47] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:38:48] Step 4: Caching map images for unique bounding boxes
+[20:38:50] Step 5: Generating video frames
+[20:40:40] 🎬 Total rendering time: 1 minute 52.18 seconds
+[20:40:40] Step 6: Uploading video and thumbnail to storage box
+[20:40:40] Starting video upload to storage box...
+[20:40:40] Video file validated: 8142599 bytes
+[20:40:40] Uploading video file: Haltiala comparison video.mp4
+[20:40:44] Video file uploaded successfully: 8142599 bytes
+[20:40:44] Uploading thumbnail file: thumbnail.png
+[20:40:44] Thumbnail uploaded successfully: 320981 bytes
+[20:40:44] Video upload completed successfully
+[20:40:44] ✅ Video upload completed successfully
+[20:40:45] Job #389 completed successfully
+[20:40:45] Job completed. Requesting next job...
+[20:58:10] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[20:58:10] Using 6 threads (default: max-2, min 1)
+[20:58:10] Debug logging: disabled (from config.txt)
+[20:58:10] Configuration loaded
+[20:58:10] Terminal-only mode enabled
+[20:58:10] GPU rendering enabled
+[20:58:10] ------------------------------------------
+[20:58:10] Starting up Route Squiggler render client.
+[20:58:10] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[20:58:10] Testing connection to web server
+[20:58:11] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-02T18:58:11.292046+00:00", "accepted_version": "0.10"}
+[20:58:11] Storage box connection successful.
+[20:58:11] Syncing map tile cache
+[20:58:11] Running map tile cache sweep.
+[20:58:11] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:58:11] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:58:11] Found 47007 .npy files to process
+[20:58:20] Total tiles processed: 47007
+[20:58:20] Good tiles (kept): 47007
+[20:58:20] Blank/erroneous tiles (deleted): 0
+[20:58:20] 
+Operation completed in: 9s
+[20:58:20] Cache cleaning completed
+[20:58:20] Starting map tile cache sync...
+[20:58:21] Found 1200 files in StadiaLight/CustomStadiaTiles
+[20:58:21] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[20:58:21] Found 3036 files in StadiaToner/CustomStadiaTiles
+[20:58:21] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[20:58:21] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[20:58:21] Found 14483 files in OSM/OSM
+[20:58:21] Found 11168 files in StadiaDark/CustomStadiaTiles
+[20:58:24] Found 47007 local files and 47007 remote files
+[20:58:37] Files to upload: 0, Files to download: 0
+[20:58:37] Using 1 parallel threads for syncing
+[20:58:37] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[20:58:37] Bootup completed successfully
+[20:58:37] Starting job processing mode...
+[20:58:37] Starting job processing loop. Press Ctrl+C to stop.
+[20:58:57] Processing job #392 (type: video)
+[20:58:57] Step 1: Sorting GPX files chronologically
+[20:58:57] Step 2: Creating combined route
+[20:58:57] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:59:00] Step 4: Caching map images for unique bounding boxes
+[20:59:28] Step 5: Generating video frames
+[21:01:19] 🎬 Total rendering time: 2 minutes 19.85 seconds
+[21:01:19] Step 6: Uploading video and thumbnail to storage box
+[21:01:19] Starting video upload to storage box...
+[21:01:19] Video file validated: 40848897 bytes
+[21:01:19] Uploading video file: Huonokuntoista raahautumista.mp4
+[21:01:47] Video file uploaded successfully: 40848897 bytes
+[21:01:47] Uploading thumbnail file: thumbnail.png
+[21:01:47] Thumbnail uploaded successfully: 293637 bytes
+[21:01:47] Video upload completed successfully
+[21:01:47] ✅ Video upload completed successfully
+[21:01:48] Job #392 completed successfully
+[21:01:48] Job completed. Requesting next job...

@@ -84,7 +84,7 @@ class ImageGeneratorWorker(QObject):
             if statistics_setting in ['light', 'dark'] and self.json_data.get('job_type') == 'image':
                 try:
                     self.debug_message.emit("Calculating statistics from GPX files...")
-                    statistics_data = processor.calculate_statistics_from_gpx_files(self.gpx_files_info, track_lookup)
+                    statistics_data = processor.calculate_statistics_from_gpx_files(self.gpx_files_info, track_lookup, self.json_data)
                     if statistics_data:
                         self.debug_message.emit("Statistics calculated successfully")
                         # Log calculated values for debugging
@@ -93,6 +93,9 @@ class ImageGeneratorWorker(QObject):
                         self.debug_message.emit(f"  Elapsed time: {statistics_data.get('elapsed_time', 'N/A')}")
                         self.debug_message.emit(f"  Distance: {statistics_data.get('distance', 'N/A')} km")
                         self.debug_message.emit(f"  Average speed: {statistics_data.get('average_speed', 'N/A')} km/h")
+                        avg_hr = statistics_data.get('average_hr', '0')
+                        if avg_hr and avg_hr != '0':
+                            self.debug_message.emit(f"  Average HR: {avg_hr} bpm")
                     else:
                         self.log_message.emit("Warning: Could not calculate statistics (no timestamps found)")
                 except Exception as e:

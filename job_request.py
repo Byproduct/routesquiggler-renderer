@@ -12,6 +12,34 @@ from PySide6.QtCore import QObject, Signal, QThread, QTimer, QMetaObject, Qt
 from image_generator_utils import harmonize_gpx_times
 
 
+def apply_vertical_video_swap(json_data, log_callback=None):
+    """
+    Swap video resolution dimensions if vertical_video is True.
+    
+    Args:
+        json_data (dict): The job data dictionary
+        log_callback (callable, optional): Function to call for logging messages
+        
+    Returns:
+        dict: The modified json_data with swapped video resolution if applicable
+    """
+    vertical_video = json_data.get('vertical_video', False)
+    
+    if not vertical_video:
+        return json_data
+    
+    # Swap video resolution if present
+    if 'video_resolution_x' in json_data and 'video_resolution_y' in json_data:
+        original_x = json_data['video_resolution_x']
+        original_y = json_data['video_resolution_y']
+        json_data['video_resolution_x'] = original_y
+        json_data['video_resolution_y'] = original_x
+        if log_callback:
+            log_callback(f"vertical_video enabled: Swapped video resolution from {original_x}x{original_y} to {original_y}x{original_x}")
+    
+    return json_data
+
+
 def update_job_status(api_url, user, hardware_id, app_version, job_id, status, log_callback=None):
     """Update job status via API call.
     
@@ -583,6 +611,9 @@ class JobRequestManager:
                     with outer_zip.open('data.json') as data_file:
                         json_data = json.loads(data_file.read().decode('utf-8'))
                     self.main_window.log_widget.add_log("data.json parsed successfully")
+                    
+                    # Apply vertical_video resolution swap if enabled
+                    json_data = apply_vertical_video_swap(json_data, self.main_window.log_widget.add_log)
                 except Exception as e:
                     self.main_window.log_widget.add_log(f"Error reading data.json: {str(e)}")
                     self.on_job_request_error("Failed to read data.json")

@@ -7,8 +7,209 @@ based on track names from track_objects.
 
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import NamedTuple, Optional
 import gpxpy
 from image_generator_utils import calculate_haversine_distance
+
+
+class RoutePoint(NamedTuple):
+    """
+    Named tuple representing a single point in a route.
+    
+    This structure is used throughout the video generator pipeline for storing
+    GPS coordinates along with associated metadata like timing and statistics.
+    
+    The smoothed fields (heart_rate_smoothed, current_speed_smoothed) are calculated
+    after the route is fully created, using a 0.5 video-second smoothing window.
+    These pre-calculated values avoid per-frame recalculation during video rendering.
+    """
+    route_index: int                    # Unique index for each track/route
+    lat: float                          # Latitude
+    lon: float                          # Longitude
+    timestamp: Optional[datetime]       # Timestamp (rounded to nearest second)
+    accumulated_time: float             # Accumulated time in seconds from route start
+    accumulated_distance: float         # Accumulated distance in meters from route start
+    new_route_flag: bool                # True if this is the first point in a new route segment
+    filename: str                       # Filename without extension (for color mapping)
+    elevation: Optional[float]          # Elevation in meters (if available)
+    heart_rate: int                     # Heart rate in BPM (0 if not available)
+    # Pre-calculated smoothed values (populated after route creation if statistics are enabled)
+    heart_rate_smoothed: Optional[int] = None      # Smoothed HR over 0.5 video-second window
+    current_speed_smoothed: Optional[int] = None   # Smoothed speed (km/h) over 0.5 video-second window
+
+
+def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_time, video_fps, calculate_hr=False, calculate_speed=False):
+    """
+    Calculate smoothed heart rate and speed for all points in a route.
+    
+    Uses a 0.5 video-second smoothing window, converted to route time using gpx_time_per_video_time.
+    This pre-calculation avoids per-frame recalculation during video rendering.
+    
+    Args:
+        route_points (list): List of RoutePoint objects for a single route
+        gpx_time_per_video_time (float): Ratio of route time to video time
+        video_fps (float): Video frames per second
+        calculate_hr (bool): Whether to calculate smoothed heart rate
+        calculate_speed (bool): Whether to calculate smoothed speed
+    
+    Returns:
+        list: New list of RoutePoint objects with smoothed values populated
+    """
+    if not route_points or (not calculate_hr and not calculate_speed):
+        return route_points
+    
+    # Calculate the smoothing window in route time (0.5 video seconds)
+    video_seconds_to_check = 0.5
+    route_time_threshold = video_seconds_to_check * gpx_time_per_video_time
+    
+    updated_points = []
+    
+    for i, point in enumerate(route_points):
+        smoothed_hr = None
+        smoothed_speed = None
+        
+        # Calculate target time for comparison (0.5 video seconds back from this point)
+        target_time = point.accumulated_time - route_time_threshold
+        
+        if calculate_hr and point.heart_rate > 0:
+            # Collect all HR values within the smoothing window
+            hr_values = []
+            for j in range(i, -1, -1):  # Search backwards from current point
+                prev_point = route_points[j]
+                if prev_point.accumulated_time < target_time:
+                    break  # We've gone past the window
+                if prev_point.heart_rate > 0:
+                    hr_values.append(prev_point.heart_rate)
+            
+            if hr_values:
+                smoothed_hr = round(sum(hr_values) / len(hr_values))
+        
+        if calculate_speed:
+            # Find comparison point that is approximately 0.5 video seconds back
+            comparison_point = None
+            for j in range(i - 1, -1, -1):  # Search backwards
+                prev_point = route_points[j]
+                if prev_point.accumulated_time <= target_time:
+                    comparison_point = prev_point
+                    break
+            
+            if comparison_point:
+                time_diff = point.accumulated_time - comparison_point.accumulated_time
+                distance_diff = point.accumulated_distance - comparison_point.accumulated_distance
+                
+                if time_diff > 0:
+                    # Calculate speed in km/h and round to integer
+                    speed_kmh = (distance_diff / 1000.0 * 3600) / time_diff
+                    smoothed_speed = round(speed_kmh)
+            else:
+                # Fallback: use first point if no comparison point found
+                if i > 0:
+                    first_point = route_points[0]
+                    time_diff = point.accumulated_time - first_point.accumulated_time
+                    distance_diff = point.accumulated_distance - first_point.accumulated_distance
+                    
+                    if time_diff > 0:
+                        speed_kmh = (distance_diff / 1000.0 * 3600) / time_diff
+                        smoothed_speed = round(speed_kmh)
+                    else:
+                        smoothed_speed = 0
+                else:
+                    smoothed_speed = 0
+        
+        # Create new point with smoothed values
+        updated_point = point._replace(
+            heart_rate_smoothed=smoothed_hr,
+            current_speed_smoothed=smoothed_speed
+        )
+        updated_points.append(updated_point)
+    
+    return updated_points
+
+
+def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, json_data, debug_callback=None):
+    """
+    Apply smoothed statistics calculation to all routes.
+    
+    Args:
+        all_routes (list): List of route data dictionaries
+        gpx_time_per_video_time (float): Ratio of route time to video time
+        json_data (dict): Job data containing statistics configuration
+        debug_callback (callable, optional): Function for debug logging
+    
+    Returns:
+        list: Updated routes with smoothed statistics calculated
+    """
+    # Check if we need to calculate any smoothed values
+    calculate_hr = json_data.get('statistics_current_hr', False) if json_data else False
+    calculate_speed = json_data.get('statistics_current_speed', False) if json_data else False
+    
+    if not calculate_hr and not calculate_speed:
+        if debug_callback:
+            debug_callback("Smoothed statistics calculation skipped (not enabled in job settings)")
+        return all_routes
+    
+    video_fps = float(json_data.get('video_fps', 30)) if json_data else 30.0
+    
+    if debug_callback:
+        enabled_stats = []
+        if calculate_hr:
+            enabled_stats.append("heart_rate")
+        if calculate_speed:
+            enabled_stats.append("current_speed")
+        debug_callback(f"Calculating smoothed statistics for: {', '.join(enabled_stats)}")
+    
+    for route in all_routes:
+        route_points = route.get('combined_route', [])
+        if route_points:
+            updated_points = _calculate_smoothed_statistics_for_route(
+                route_points, 
+                gpx_time_per_video_time, 
+                video_fps,
+                calculate_hr=calculate_hr,
+                calculate_speed=calculate_speed
+            )
+            route['combined_route'] = updated_points
+            route['total_points'] = len(updated_points)
+    
+    if debug_callback:
+        total_points = sum(len(route.get('combined_route', [])) for route in all_routes)
+        debug_callback(f"Smoothed statistics applied to {total_points} points across {len(all_routes)} routes")
+    
+    return all_routes
+
+
+def _extract_heart_rate_from_gpxpy_point(point) -> int:
+    """
+    Extract heart rate value from a gpxpy trackpoint's extensions.
+    
+    Supports the common Garmin TrackPointExtension format:
+    <extensions>
+        <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>76</gpxtpx:hr>
+        </gpxtpx:TrackPointExtension>
+    </extensions>
+    
+    Args:
+        point: gpxpy GPXTrackPoint object
+    
+    Returns:
+        Heart rate as integer, or 0 if not found
+    """
+    if not hasattr(point, 'extensions') or not point.extensions:
+        return 0
+    
+    # gpxpy stores extensions as a list of XML elements
+    for extension in point.extensions:
+        # Search recursively for hr element
+        for elem in extension.iter():
+            if elem.tag.endswith('}hr') or elem.tag == 'hr':
+                if elem.text:
+                    try:
+                        return int(elem.text)
+                    except ValueError:
+                        pass
+    
+    return 0
 
 
 def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=None, log_callback=None, debug_callback=None):
@@ -174,26 +375,25 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
                 first_point = combined_route[0]
                 last_point = combined_route[-1]
                 
-                if len(first_point) >= 4 and len(last_point) >= 5:
-                    route_start_timestamp = first_point[3]  # timestamp at index 3
-                    route_duration = last_point[4]  # accumulated_time at index 4
+                route_start_timestamp = first_point.timestamp
+                route_duration = last_point.accumulated_time
+                
+                if route_start_timestamp:
+                    # Calculate when this route ends (start + duration)
+                    route_end_timestamp = route_start_timestamp + timedelta(seconds=route_duration)
                     
-                    if route_start_timestamp:
-                        # Calculate when this route ends (start + duration)
-                        route_end_timestamp = route_start_timestamp + timedelta(seconds=route_duration)
-                        
-                        if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                            earliest_start_time = route_start_timestamp
-                        
-                        if latest_end_time is None or route_end_timestamp > latest_end_time:
-                            latest_end_time = route_end_timestamp
+                    if earliest_start_time is None or route_start_timestamp < earliest_start_time:
+                        earliest_start_time = route_start_timestamp
+                    
+                    if latest_end_time is None or route_end_timestamp > latest_end_time:
+                        latest_end_time = route_end_timestamp
         
         # Calculate total accumulated time based on mode
         if is_single_route_mode:
             # For single route mode, use the accumulated time from the last point
             if all_routes and all_routes[0].get('combined_route'):
                 last_point = all_routes[0]['combined_route'][-1]
-                total_accumulated_time = last_point[4] if len(last_point) > 4 else 0  # accumulated_time at index 4
+                total_accumulated_time = last_point.accumulated_time
                 if debug_callback:
                     debug_callback(f"Single route mode: Using sequential time accumulation: {total_accumulated_time:.1f}s")
             else:
@@ -246,13 +446,14 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         debug_file_path = Path("temporary files/route") / "debug_tuple.txt"
         try:
             with open(debug_file_path, 'w', encoding='utf-8') as f:
-                f.write("Route_Index, Latitude, Longitude, Timestamp, Accumulated time (s), Accumulated Distance (m), New Route, Filename, Elevation\n")
+                f.write("Route_Index, Latitude, Longitude, Timestamp, Accumulated time (s), Accumulated Distance (m), New Route, Filename, Elevation, Heart Rate\n")
                 for route in all_routes:
                     combined_route = route.get('combined_route', [])
-                    for route_index, lat, lon, timestamp, accumulated_time, distance, new_route, filename, elevation in combined_route:
-                        timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S') if timestamp else "None"
-                        elevation_str = str(elevation) if elevation is not None else ""
-                        f.write(f"{route_index}, {lat}, {lon}, {timestamp_str}, {accumulated_time:.0f}, {distance:.2f}, {new_route}, {filename}, {elevation_str}\n")
+                    for point in combined_route:
+                        timestamp_str = point.timestamp.strftime('%Y-%m-%d %H:%M:%S') if point.timestamp else "None"
+                        elevation_str = str(point.elevation) if point.elevation is not None else ""
+                        heart_rate_str = str(point.heart_rate) if point.heart_rate else ""
+                        f.write(f"{point.route_index}, {point.lat}, {point.lon}, {timestamp_str}, {point.accumulated_time:.0f}, {point.accumulated_distance:.2f}, {point.new_route_flag}, {point.filename}, {elevation_str}, {heart_rate_str}\n")
             
             if debug_callback:
                 debug_callback(f"Wrote debug_tuple.txt successfully to {debug_file_path}")
@@ -267,6 +468,10 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # Add gpx_time_per_video_time to all routes BEFORE saving
         for route in all_routes:
             route['gpx_time_per_video_time'] = gpx_time_per_video_time
+        
+        # Calculate smoothed statistics for all routes (if enabled in job settings)
+        # This pre-calculates smoothed HR and speed values to avoid per-frame recalculation
+        all_routes = _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, json_data, debug_callback)
               
         # Final progress update
         if progress_callback:
@@ -308,6 +513,11 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
         # Previous timestamp for time calculation within each file
         prev_timestamp = None
         
+        # Check if heart rate extraction is needed (optimization: skip if not requested)
+        extract_heart_rate = False
+        if json_data:
+            extract_heart_rate = json_data.get('statistics_average_hr', False) or json_data.get('statistics_current_hr', False)
+        
         # Process each file in chronological order
         for file_index, gpx_info in enumerate(track_files):
             filename = gpx_info.get('filename', f'file_{file_index}')
@@ -345,6 +555,11 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                                     except (ValueError, TypeError):
                                         elevation = None
                             
+                            # Extract heart rate if enabled
+                            heart_rate = 0
+                            if extract_heart_rate:
+                                heart_rate = _extract_heart_rate_from_gpxpy_point(point)
+                            
                             # Calculate distance from previous point
                             point_distance = 0.0
                             if prev_lat is not None and prev_lon is not None and not first_point_in_file:
@@ -358,17 +573,18 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                                 if time_increment >= 0:  # Only add positive time increments
                                     accumulated_time += time_increment
                             
-                            # Add to combined route with structure: route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename, elevation
-                            combined_route.append((
-                                route_index,             # Route index (unique for each track)
-                                lat,                    # Latitude
-                                lon,                    # Longitude
-                                timestamp.replace(microsecond=0) if timestamp else None,  # Timestamp rounded to nearest second
-                                accumulated_time,       # Accumulated time in seconds
-                                accumulated_distance,   # Accumulated distance in meters
-                                first_point_in_file,    # New route flag
-                                filename_without_ext,   # Filename without extension
-                                elevation               # Elevation
+                            # Add to combined route using RoutePoint named tuple
+                            combined_route.append(RoutePoint(
+                                route_index=route_index,
+                                lat=lat,
+                                lon=lon,
+                                timestamp=timestamp.replace(microsecond=0) if timestamp else None,
+                                accumulated_time=accumulated_time,
+                                accumulated_distance=accumulated_distance,
+                                new_route_flag=first_point_in_file,
+                                filename=filename_without_ext,
+                                elevation=elevation,
+                                heart_rate=heart_rate
                             ))
                             
                             # Update previous point and timestamp for next iteration
@@ -532,11 +748,10 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
             return combined_route_data
         
         # Collect points with time information
-        # Combined route structure: (route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename, elevation)
+        # Using RoutePoint named tuple for clarity
         points_with_time = []
         for i, point in enumerate(combined_route):
-            route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename, elevation = point
-            points_with_time.append((i, point, timestamp))
+            points_with_time.append((i, point, point.timestamp))
         
         # Determine which points to keep
         indices_to_keep = []
@@ -591,36 +806,35 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
         prev_timestamp = None
         
         for i, point in enumerate(pruned_route):
-            route_index, lat, lon, timestamp, old_accumulated_time, old_distance, new_route_flag, filename, elevation = point
-            
             # Calculate distance from previous point (skip for first point or new route start)
-            if prev_lat is not None and prev_lon is not None and not new_route_flag:
-                point_distance = calculate_haversine_distance(prev_lat, prev_lon, lat, lon)
+            if prev_lat is not None and prev_lon is not None and not point.new_route_flag:
+                point_distance = calculate_haversine_distance(prev_lat, prev_lon, point.lat, point.lon)
                 accumulated_distance += point_distance
             
             # Calculate time increment from previous point (skip for first point or new route start)
-            if timestamp is not None and prev_timestamp is not None and not new_route_flag:
-                time_increment = (timestamp - prev_timestamp).total_seconds()
+            if point.timestamp is not None and prev_timestamp is not None and not point.new_route_flag:
+                time_increment = (point.timestamp - prev_timestamp).total_seconds()
                 if time_increment >= 0:  # Only add positive time increments
                     accumulated_time += time_increment
             
             # Add point with recalculated accumulated time and distance
-            recalculated_route.append((
-                route_index,
-                lat,
-                lon,
-                timestamp,
-                accumulated_time,
-                accumulated_distance,
-                new_route_flag,
-                filename,
-                elevation
+            recalculated_route.append(RoutePoint(
+                route_index=point.route_index,
+                lat=point.lat,
+                lon=point.lon,
+                timestamp=point.timestamp,
+                accumulated_time=accumulated_time,
+                accumulated_distance=accumulated_distance,
+                new_route_flag=point.new_route_flag,
+                filename=point.filename,
+                elevation=point.elevation,
+                heart_rate=point.heart_rate
             ))
             
             # Update previous point and timestamp for next iteration
-            prev_lat = lat
-            prev_lon = lon
-            prev_timestamp = timestamp
+            prev_lat = point.lat
+            prev_lon = point.lon
+            prev_timestamp = point.timestamp
         
         # Create pruned route data
         pruned_route_data = {
@@ -665,17 +879,13 @@ def interpolate_route_by_interval(route_points, interpolation_interval_seconds, 
             new_points.append(current_point)
             
             # Skip interpolation across new route boundaries
-            next_is_new_route = False
-            if len(next_point) >= 7:
-                next_is_new_route = bool(next_point[6])
-            
-            if next_is_new_route:
+            if next_point.new_route_flag:
                 i += 1
                 continue
             
-            # Accumulated time indices (index 4)
-            current_time = current_point[4]
-            next_time = next_point[4]
+            # Use named attributes for accumulated_time
+            current_time = current_point.accumulated_time
+            next_time = next_point.accumulated_time
             
             # If times invalid or not increasing, move on safely
             try:
@@ -687,28 +897,25 @@ def interpolate_route_by_interval(route_points, interpolation_interval_seconds, 
             while time_gap > float(interpolation_interval_seconds):
                 # Build a new point copying everything from current_point but with advanced accumulated_time
                 new_accumulated_time = float(current_time) + float(interpolation_interval_seconds)
-                route_index, lat, lon, timestamp, _, accumulated_distance, _, filename, elevation = (
-                    current_point[0], current_point[1], current_point[2], current_point[3], current_point[4],
-                    current_point[5], current_point[6] if len(current_point) > 6 else False, current_point[7] if len(current_point) > 7 else None,
-                    current_point[8] if len(current_point) > 8 else None
-                )
-                # new_route_flag should be False for interpolated points
-                new_point = (
-                    route_index,
-                    lat,
-                    lon,
-                    timestamp,
-                    new_accumulated_time,
-                    accumulated_distance,
-                    False,
-                    filename,
-                    elevation,
+                
+                # Create interpolated point - new_route_flag should be False for interpolated points
+                new_point = RoutePoint(
+                    route_index=current_point.route_index,
+                    lat=current_point.lat,
+                    lon=current_point.lon,
+                    timestamp=current_point.timestamp,
+                    accumulated_time=new_accumulated_time,
+                    accumulated_distance=current_point.accumulated_distance,
+                    new_route_flag=False,
+                    filename=current_point.filename,
+                    elevation=current_point.elevation,
+                    heart_rate=current_point.heart_rate,
                 )
                 new_points.append(new_point)
                 # Advance current for next iteration relative to the same next_point
                 current_point = new_point
                 current_time = new_accumulated_time
-                time_gap = float(next_point[4]) - float(current_time)
+                time_gap = float(next_point.accumulated_time) - float(current_time)
             
             i += 1
         
@@ -743,35 +950,34 @@ def _reset_track_accumulated_values(track_points):
     prev_timestamp = None
     
     for point in track_points:
-        route_index, lat, lon, timestamp, old_accumulated_time, old_distance, new_route_flag, filename, elevation = point
-        
         # Calculate distance from previous point (skip for first point or new route start)
-        if prev_lat is not None and prev_lon is not None and not new_route_flag:
-            point_distance = calculate_haversine_distance(prev_lat, prev_lon, lat, lon)
+        if prev_lat is not None and prev_lon is not None and not point.new_route_flag:
+            point_distance = calculate_haversine_distance(prev_lat, prev_lon, point.lat, point.lon)
             accumulated_distance += point_distance
         
         # Calculate time increment from previous point (skip for first point or new route start)
-        if timestamp is not None and prev_timestamp is not None and not new_route_flag:
-            time_increment = (timestamp - prev_timestamp).total_seconds()
+        if point.timestamp is not None and prev_timestamp is not None and not point.new_route_flag:
+            time_increment = (point.timestamp - prev_timestamp).total_seconds()
             if time_increment >= 0:  # Only add positive time increments
                 accumulated_time += time_increment
         
         # Add point with recalculated accumulated time and distance
-        recalculated_track.append((
-            route_index,
-            lat,
-            lon,
-            timestamp,
-            accumulated_time,
-            accumulated_distance,
-            new_route_flag,
-            filename,
-            elevation
+        recalculated_track.append(RoutePoint(
+            route_index=point.route_index,
+            lat=point.lat,
+            lon=point.lon,
+            timestamp=point.timestamp,
+            accumulated_time=accumulated_time,
+            accumulated_distance=accumulated_distance,
+            new_route_flag=point.new_route_flag,
+            filename=point.filename,
+            elevation=point.elevation,
+            heart_rate=point.heart_rate
         ))
         
         # Update previous point and timestamp for next iteration
-        prev_lat = lat
-        prev_lon = lon
-        prev_timestamp = timestamp
+        prev_lat = point.lat
+        prev_lon = point.lon
+        prev_timestamp = point.timestamp
     
     return recalculated_track

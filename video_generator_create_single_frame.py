@@ -12,11 +12,12 @@ matplotlib.use('Agg')  # Use non-interactive backend for video frame generation
 import matplotlib.pyplot as plt
 import matplotlib.patheffects
 import math
-from video_generator_route_statistics import _calculate_video_statistics, _draw_current_speed_at_point, _draw_current_elevation_at_point, _draw_video_statistics
+from video_generator_route_statistics import _calculate_video_statistics, _draw_current_speed_at_point, _draw_current_elevation_at_point, _draw_current_hr_at_point, _draw_video_statistics
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
 from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes, _get_resolution_scale_factor)
+from video_generator_create_combined_route import RoutePoint
 
 
 
@@ -68,7 +69,7 @@ def _find_track_boundaries(route_points):
     where k is the number of tracks and n is the number of points.
     
     Args:
-        route_points (list): List of route points with filenames at index 7
+        route_points (list): List of RoutePoint objects
     
     Returns:
         list: List of (start_index, end_index) tuples for each track segment
@@ -87,19 +88,15 @@ def _find_track_boundaries(route_points):
         while left <= right:
             mid = (left + right) // 2
             
-            # Get filename at mid position
-            if len(route_points[mid]) >= 8:
-                mid_filename = route_points[mid][7]  # filename at index 7
-                
-                if mid_filename == target_filename:
-                    # Same filename, look for transition further right
-                    left = mid + 1
-                else:
-                    # Different filename found, could be our transition point
-                    result = mid
-                    right = mid - 1
+            # Get filename at mid position using named attribute
+            mid_filename = route_points[mid].filename
+            
+            if mid_filename == target_filename:
+                # Same filename, look for transition further right
+                left = mid + 1
             else:
-                # Point doesn't have filename, skip it
+                # Different filename found, could be our transition point
+                result = mid
                 right = mid - 1
         
         return result
@@ -108,13 +105,8 @@ def _find_track_boundaries(route_points):
     current_start = 0
     
     while current_start < len(route_points):
-        # Get the filename for the current segment
-        if len(route_points[current_start]) >= 8:
-            current_filename = route_points[current_start][7]
-        else:
-            # Skip points without proper structure
-            current_start += 1
-            continue
+        # Get the filename for the current segment using named attribute
+        current_filename = route_points[current_start].filename
         
         # Binary search to find where this filename ends
         filename_end = _binary_search_filename_end(current_start, len(route_points), current_filename)
@@ -140,7 +132,7 @@ def _binary_search_tail_start_index(route_points, tail_start_time):
     This allows for efficient tail point collection by finding the exact start of the tail window.
     
     Args:
-        route_points (list): List of route points, chronologically ordered by accumulated_time
+        route_points (list): List of RoutePoint objects, chronologically ordered by accumulated_time
         tail_start_time (float): Start time of the tail window
     
     Returns:
@@ -155,19 +147,15 @@ def _binary_search_tail_start_index(route_points, tail_start_time):
     while left <= right:
         mid = (left + right) // 2
         
-        # Check if this point has the minimum required length and extract accumulated_time
-        if len(route_points[mid]) >= 5:
-            accumulated_time = route_points[mid][4]  # accumulated_time at index 4
-            
-            if accumulated_time >= tail_start_time:
-                # This point should be included in tail, look for earlier start point
-                result = mid
-                right = mid - 1
-            else:
-                # This point is too early for tail, look for later points
-                left = mid + 1
+        # Use named attribute for accumulated_time
+        accumulated_time = route_points[mid].accumulated_time
+        
+        if accumulated_time >= tail_start_time:
+            # This point should be included in tail, look for earlier start point
+            result = mid
+            right = mid - 1
         else:
-            # Point doesn't have enough elements, skip it
+            # This point is too early for tail, look for later points
             left = mid + 1
     
     return result
@@ -219,8 +207,8 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
     
     # OPTIMIZED: Since tail_points are chronologically ordered, directly access first and last points
     # instead of iterating through the entire list to find min/max
-    time_min = tail_points[0][4]   # First point has earliest time
-    time_max = tail_points[-1][4]  # Last point has latest time
+    time_min = tail_points[0].accumulated_time   # First point has earliest time
+    time_max = tail_points[-1].accumulated_time  # Last point has latest time
     time_range = time_max - time_min
     
     if time_range <= 0:
@@ -249,16 +237,15 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
     unique_filenames = set()
     
     for point in tail_points:
-        point_filename = point[7] if len(point) > 7 else None
-        if point_filename:
-            unique_filenames.add(point_filename)
+        if point.filename:
+            unique_filenames.add(point.filename)
        
     # Reset for processing
     current_segment = []
     current_filename = None
     
     for point in tail_points:
-        point_filename = point[7] if len(point) > 7 else None
+        point_filename = point.filename
         
         # Start new segment when route changes or on first point
         if point_filename != current_filename:
@@ -300,10 +287,10 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
             route_color_rgba = (route_color_rgba[0], route_color_rgba[1], route_color_rgba[2], route_color_rgba[3] * fade_out_alpha)
             tail_rgba_color = (tail_rgba_color[0], tail_rgba_color[1], tail_rgba_color[2], tail_rgba_color[3] * fade_out_alpha)
             
-            # Extract coordinates and times for this segment
-            segment_lats = [point[1] for point in segment_points]
-            segment_lons = [point[2] for point in segment_points]
-            segment_times = [point[4] for point in segment_points]
+            # Extract coordinates and times for this segment using named attributes
+            segment_lats = [point.lat for point in segment_points]
+            segment_lons = [point.lon for point in segment_points]
+            segment_times = [point.accumulated_time for point in segment_points]
             
             # Draw tail segments for this route portion
             for j in range(len(segment_points) - 1):
@@ -311,7 +298,7 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
                 next_point = segment_points[j + 1]
                 
                 # Skip segments that cross track boundaries (new_route_flag)
-                if (len(current_point) >= 7 and current_point[6]) or (len(next_point) >= 7 and next_point[6]):
+                if current_point.new_route_flag or next_point.new_route_flag:
                     continue
                 
                 # Calculate interpolation factor based on overall tail time range
@@ -368,10 +355,10 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
             route_color_rgba = (route_color_rgba[0], route_color_rgba[1], route_color_rgba[2], route_color_rgba[3] * fade_out_alpha)
             tail_rgba_color = (tail_rgba_color[0], tail_rgba_color[1], tail_rgba_color[2], tail_rgba_color[3] * fade_out_alpha)
             
-            # Extract coordinates and times for this segment
-            segment_lats = [point[1] for point in segment_points]
-            segment_lons = [point[2] for point in segment_points]
-            segment_times = [point[4] for point in segment_points]
+            # Extract coordinates and times for this segment using named attributes
+            segment_lats = [point.lat for point in segment_points]
+            segment_lons = [point.lon for point in segment_points]
+            segment_times = [point.accumulated_time for point in segment_points]
             
             # Draw tail segments for this route portion
             for j in range(len(segment_points) - 1):
@@ -379,7 +366,7 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
                 next_point = segment_points[j + 1]
                 
                 # Skip segments that cross track boundaries (new_route_flag)
-                if (len(current_point) >= 7 and current_point[6]) or (len(next_point) >= 7 and next_point[6]):
+                if current_point.new_route_flag or next_point.new_route_flag:
                     continue
                 
                 # Calculate interpolation factor based on overall tail time range
@@ -428,9 +415,9 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
     if len(tail_points) <= 1:
         return
     
-    # Pre-extract all coordinates for better performance (keep this for the actual coordinate extraction)
-    tail_lats = [point[1] for point in tail_points]
-    tail_lons = [point[2] for point in tail_points]
+    # Pre-extract all coordinates for better performance using named attributes
+    tail_lats = [point.lat for point in tail_points]
+    tail_lons = [point.lon for point in tail_points]
     
     # SIMULTANEOUS MODE TAIL FIX: Apply fade-out effect if fade_out_progress is provided
     if fade_out_progress is not None:
@@ -452,15 +439,15 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
     # Calculate time range for gradient calculation
     if effective_leading_time is not None:
         # TAIL-ONLY FIX: Use virtual leading time for proper gradient calculation
-        time_min = tail_points[0][4]   # First point has earliest time
+        time_min = tail_points[0].accumulated_time   # First point has earliest time
         time_max = effective_leading_time  # Use virtual leading time
         time_range = time_max - time_min
     else:
         # Normal operation: use actual point times
         # OPTIMIZED: Since tail_points are chronologically ordered, directly access first and last points
         # instead of iterating through the entire list to find min/max
-        time_min = tail_points[0][4]   # First point has earliest time  
-        time_max = tail_points[-1][4]  # Last point has latest time
+        time_min = tail_points[0].accumulated_time   # First point has earliest time  
+        time_max = tail_points[-1].accumulated_time  # Last point has latest time
     time_range = time_max - time_min
     
     if time_range > 0:
@@ -479,18 +466,18 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 next_point = tail_points[j + 1]
                 
                 # Skip segments that cross track boundaries
-                if (len(current_point) >= 7 and current_point[6]) or (len(next_point) >= 7 and next_point[6]):
+                if current_point.new_route_flag or next_point.new_route_flag:
                     continue
                 
                 # Calculate interpolation factor using the effective time range
-                segment_time = (tail_points[j][4] + tail_points[j + 1][4]) / 2  # Use accumulated_time directly from points
+                segment_time = (current_point.accumulated_time + next_point.accumulated_time) / 2
                 interp_factor = (segment_time - time_min) / time_range
                 
                 # Clamp interpolation factor to valid range (important for virtual leading time)
                 interp_factor = max(0.0, min(1.0, interp_factor))
                 
                 # Get base color for this segment
-                segment_filename = current_point[7] if len(current_point) > 7 else None
+                segment_filename = current_point.filename
                 if segment_filename and filename_to_rgba and segment_filename in filename_to_rgba:
                     base_rgba_color = filename_to_rgba[segment_filename]
                     # SIMULTANEOUS MODE TAIL FIX: Apply fade-out alpha to base color
@@ -536,18 +523,18 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 next_point = tail_points[j + 1]
                 
                 # Skip segments that cross track boundaries
-                if (len(current_point) >= 7 and current_point[6]) or (len(next_point) >= 7 and next_point[6]):
+                if current_point.new_route_flag or next_point.new_route_flag:
                     continue
                 
                 # Calculate interpolation factor using the effective time range
-                segment_time = (tail_points[j][4] + tail_points[j + 1][4]) / 2  # Use accumulated_time directly from points
+                segment_time = (current_point.accumulated_time + next_point.accumulated_time) / 2
                 interp_factor = (segment_time - time_min) / time_range
                 
                 # Clamp interpolation factor to valid range (important for virtual leading time)
                 interp_factor = max(0.0, min(1.0, interp_factor))
                 
                 # Get base color for this segment
-                segment_filename = current_point[7] if len(current_point) > 7 else None
+                segment_filename = current_point.filename
                 if segment_filename and filename_to_rgba and segment_filename in filename_to_rgba:
                     base_rgba_color = filename_to_rgba[segment_filename]
                     # SIMULTANEOUS MODE TAIL FIX: Apply fade-out alpha to base color
@@ -710,6 +697,11 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
     # Check zoom mode
     zoom_mode = json_data.get('zoom_mode', 'dynamic')
     
+    # Calculate target aspect ratio from video resolution
+    video_resolution_x = float(json_data.get('video_resolution_x', 1920))
+    video_resolution_y = float(json_data.get('video_resolution_y', 1080))
+    target_aspect_ratio = video_resolution_x / video_resolution_y
+    
     if zoom_mode == 'final':
         # Use the pre-calculated final bounding box for all frames
         final_bbox = load_final_bounding_box()
@@ -730,7 +722,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             return None
         
         # Use the shared bounding box calculation function for consistency
-        bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1)
+        bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1, target_aspect_ratio=target_aspect_ratio)
         
         if bbox is None:
             print(f"Error: Could not calculate bounding box for frame {frame_number}")
@@ -797,7 +789,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 continue
             
             # Get route_index from first point
-            route_index = route_points[0][0] if len(route_points) > 0 and len(route_points[0]) > 0 else 0
+            route_index = route_points[0].route_index if len(route_points) > 0 else 0
             
             if route_index not in route_tracks:
                 route_tracks[route_index] = []
@@ -807,11 +799,10 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             current_track = []
             
             for point in route_points:
-                if len(point) >= 7:  # Check for minimum length
-                    new_route_flag = point[6]  # New route flag at index 6
-                    if new_route_flag and current_track:  # If new_route is True and we have points
-                        tracks_for_route.append(current_track)
-                        current_track = []
+                # Check for new route flag using named attribute
+                if point.new_route_flag and current_track:  # If new_route is True and we have points
+                    tracks_for_route.append(current_track)
+                    current_track = []
                 current_track.append(point)
             
             # Add the last track if not empty
@@ -840,12 +831,12 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         for track_info in active_tracks:
             route_index, track_index, track = track_info
             
-            # Draw the main track line
-            track_lats = [point[1] for point in track]  # Latitude at index 1
-            track_lons = [point[2] for point in track]  # Longitude at index 2
+            # Draw the main track line using named attributes
+            track_lats = [point.lat for point in track]
+            track_lons = [point.lon for point in track]
 
-            # Get filename from first point of the track (index 7)
-            filename = track[0][7] if len(track[0]) > 7 else None
+            # Get filename from first point of the track
+            filename = track[0].filename if track else None
                       
             # Look up pre-computed RGBA color for this filename
             if filename and filename_to_rgba:
@@ -907,11 +898,11 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                     continue
                 
                 for point in route_points:
-                    if len(point) >= 8:  # Ensure we have route_index
-                        route_index = point[0]  # route_index at index 0
-                        if route_index not in route_groups:
-                            route_groups[route_index] = []
-                        route_groups[route_index].append(point)
+                    # Use named attribute for route_index
+                    route_idx = point.route_index
+                    if route_idx not in route_groups:
+                        route_groups[route_idx] = []
+                    route_groups[route_idx].append(point)
             
             # Draw independent tail for each route_index
             for route_index, route_points in route_groups.items():
@@ -930,14 +921,14 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                     else:
                         # For normal frames, use the actual leading point time
                         leading_point = route_points[-1]
-                        effective_leading_time = leading_point[4]  # accumulated_time
+                        effective_leading_time = leading_point.accumulated_time
                 elif virtual_leading_time is not None:
                     # Fallback to global virtual leading time (for sequential mode)
                     effective_leading_time = virtual_leading_time
                 else:
                     # Normal operation: use actual leading point time
                     leading_point = route_points[-1]
-                    effective_leading_time = leading_point[4]  # accumulated_time
+                    effective_leading_time = leading_point.accumulated_time
                 
                 # Calculate tail start time (backwards from effective leading time)
                 tail_start_time = effective_leading_time - tail_duration_route
@@ -949,8 +940,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 
                 # Draw tail if we have enough points
                 if len(tail_points) > 1:
-                    # Get route color
-                    route_filename = tail_points[0][7] if len(tail_points[0]) > 7 else None
+                    # Get route color using named attribute
+                    route_filename = tail_points[0].filename if tail_points else None
                     if route_filename and filename_to_rgba and route_filename in filename_to_rgba:
                         route_color_rgba = filename_to_rgba[route_filename]
                     else:
@@ -1048,32 +1039,40 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 original_route_end_frame  # Pass pre-calculated end frame
             )
             if statistics_data:
-                # Check if current speed should be displayed separately at the point
+                # Check which current stats should be displayed at the point
                 current_speed_enabled = json_data.get('statistics_current_speed', False)
                 current_speed_value = statistics_data.get('current_speed')
-                
-                # Check if current elevation should be displayed separately at the point
                 current_elevation_enabled = json_data.get('statistics_current_elevation', False)
                 current_elevation_value = statistics_data.get('current_elevation')
+                current_hr_enabled = json_data.get('statistics_current_hr', False)
+                current_hr_value = statistics_data.get('current_hr')
                 
-                # Determine if we're at the end of the route (suppress current speed/elevation display)
+                # Determine if we're at the end of the route (suppress current stats display)
                 at_end_of_route = False
                 if frame_number is not None and original_route_end_frame is not None:
-                    # Suppress current speed/elevation display during:
+                    # Suppress current stats display during:
                     # 1. Last frame of original route
                     # 2. Tail-only phase (after original route ends)  
                     # 3. Cloned frames (handled by tail-only logic)
                     at_end_of_route = frame_number >= original_route_end_frame
                 
+                # Build list of current stats to display at point with dynamic vertical stacking
+                # Position 0 = top (at point level), Position 1 = below that, etc.
+                vertical_position = 0
+                
                 # Only show current speed if enabled, available, and not at end of route
                 if current_speed_enabled and current_speed_value and not at_end_of_route:
-                    # Draw current speed near the latest point
-                    _draw_current_speed_at_point(ax, points_for_frame, current_speed_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale)
+                    _draw_current_speed_at_point(ax, points_for_frame, current_speed_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale, vertical_position=vertical_position)
+                    vertical_position += 1
                 
                 # Only show current elevation if enabled, available, and not at end of route
                 if current_elevation_enabled and current_elevation_value and not at_end_of_route:
-                    # Draw current elevation near the latest point (below current speed)
-                    _draw_current_elevation_at_point(ax, points_for_frame, current_elevation_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale)
+                    _draw_current_elevation_at_point(ax, points_for_frame, current_elevation_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale, vertical_position=vertical_position)
+                    vertical_position += 1
+                
+                # Only show current HR if enabled, available, and not at end of route
+                if current_hr_enabled and current_hr_value and not at_end_of_route:
+                    _draw_current_hr_at_point(ax, points_for_frame, current_hr_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale, vertical_position=vertical_position)
                 
                 # Draw other statistics in top-right corner
                 # Exclude current speed if we're at end of route, otherwise include it normally

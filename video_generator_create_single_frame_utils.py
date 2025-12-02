@@ -3,6 +3,8 @@ Utility functions for video generation single frame creation.
 This module contains helper functions for color manipulation, name tags, and resolution scaling.
 """
 
+from video_generator_create_combined_route import RoutePoint
+
 
 def hex_to_rgba(hex_color):
     """Convert hex color to RGBA tuple"""
@@ -114,19 +116,16 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, effective_line_widt
     
     Args:
         ax (matplotlib.axes.Axes): Matplotlib axes for drawing
-        point (tuple): Point data (route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename)
+        point (RoutePoint): RoutePoint named tuple with route data
         runner_name (str): Name of the runner to display
         filename_to_rgba (dict): Filename to RGBA color mapping
         effective_line_width (float): Base line width for scaling
         theme (str): Theme for the name tag ('light' or 'dark')
     """
-    if len(point) < 8:
-        return
-    
-    # Extract coordinates
-    lat = point[1]
-    lon = point[2]
-    filename = point[7]
+    # Extract coordinates using named attributes
+    lat = point.lat
+    lon = point.lon
+    filename = point.filename
     
     # Get color for this route
     if filename and filename_to_rgba and filename in filename_to_rgba:
@@ -218,7 +217,7 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, ef
             
             # Get the most recent point (last point in the route)
             most_recent_point = route_points[-1]
-            filename = most_recent_point[7] if len(most_recent_point) > 7 else None
+            filename = most_recent_point.filename
             
             if filename and filename in filename_to_name:
                 runner_name = filename_to_name[filename]
@@ -230,7 +229,7 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, ef
         
         # Get the most recent point (last point in the route)
         most_recent_point = points_for_frame[-1]
-        filename = most_recent_point[7] if len(most_recent_point) > 7 else None
+        filename = most_recent_point.filename
         
         if filename and filename in filename_to_name:
             runner_name = filename_to_name[filename]

@@ -127,6 +127,59 @@ def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: fl
     
     return distance
 
+
+def _extract_heart_rate_from_trkpt(trkpt) -> Optional[int]:
+    """
+    Extract heart rate value from a GPX trackpoint's extensions.
+    
+    Supports the common Garmin TrackPointExtension format:
+    <extensions>
+        <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>76</gpxtpx:hr>
+        </gpxtpx:TrackPointExtension>
+    </extensions>
+    
+    Args:
+        trkpt: XML element representing a trackpoint
+    
+    Returns:
+        Heart rate as integer, or None if not found
+    """
+    # Common namespaces for heart rate extensions
+    hr_namespaces = [
+        'http://www.garmin.com/xmlschemas/TrackPointExtension/v1',
+        'http://www.garmin.com/xmlschemas/TrackPointExtension/v2',
+    ]
+    
+    # Try to find extensions element
+    extensions = trkpt.find('extensions') or trkpt.find('{http://www.topografix.com/GPX/1/1}extensions')
+    if extensions is None:
+        return None
+    
+    # Try each known namespace for heart rate
+    for ns in hr_namespaces:
+        # Try to find TrackPointExtension
+        tpe = extensions.find(f'{{{ns}}}TrackPointExtension')
+        if tpe is not None:
+            hr_elem = tpe.find(f'{{{ns}}}hr')
+            if hr_elem is not None and hr_elem.text:
+                try:
+                    return int(hr_elem.text)
+                except ValueError:
+                    pass
+    
+    # Fallback: search for any element named 'hr' in extensions (handles various formats)
+    for elem in extensions.iter():
+        if elem.tag.endswith('}hr') or elem.tag == 'hr':
+            if elem.text:
+                try:
+                    return int(elem.text)
+                except ValueError:
+                    pass
+    
+    return None
+
+
 class GPXProcessor:
     """Handles loading and processing of GPX files."""
 
@@ -190,13 +243,14 @@ class GPXProcessor:
         return lats, lons
 
     @staticmethod
-    def calculate_statistics_from_gpx_files(gpx_files_info: List[Dict], track_lookup: Dict) -> Optional[Dict]:
+    def calculate_statistics_from_gpx_files(gpx_files_info: List[Dict], track_lookup: Dict, json_data: Optional[Dict] = None) -> Optional[Dict]:
         """
-        Calculate statistics from multiple GPX files including timestamps, distance, and speed.
+        Calculate statistics from multiple GPX files including timestamps, distance, speed, and heart rate.
         
         Args:
             gpx_files_info: List of GPX file information dictionaries
             track_lookup: Dictionary mapping filenames to track metadata
+            json_data: Optional job configuration to check which statistics are enabled
         
         Returns:
             Dictionary containing calculated statistics or None if calculation fails
@@ -204,6 +258,10 @@ class GPXProcessor:
         all_timestamps = []
         all_coordinates = []
         total_distance = 0.0
+        
+        # Check if heart rate extraction is needed (optimization: skip if not requested)
+        extract_heart_rate = json_data.get('statistics_average_hr', False) if json_data else False
+        all_heart_rates = []
         
         # Process each GPX file
         for gpx_info in gpx_files_info:
@@ -257,6 +315,13 @@ class GPXProcessor:
                                     
                                     file_points.append((lat, lon, timestamp))
                                     all_timestamps.append(timestamp)
+                                    
+                                    # Extract heart rate if enabled
+                                    if extract_heart_rate:
+                                        hr_value = _extract_heart_rate_from_trkpt(trkpt)
+                                        if hr_value is not None:
+                                            all_heart_rates.append(hr_value)
+                                    
                                 except ValueError as parse_error:
                                     print(f"Warning: Could not parse timestamp '{timestamp_str}' in {filename}: {parse_error}")
                                     continue
@@ -297,6 +362,13 @@ class GPXProcessor:
                                     
                                     file_points.append((lat, lon, timestamp))
                                     all_timestamps.append(timestamp)
+                                    
+                                    # Extract heart rate if enabled
+                                    if extract_heart_rate:
+                                        hr_value = _extract_heart_rate_from_trkpt(trkpt)
+                                        if hr_value is not None:
+                                            all_heart_rates.append(hr_value)
+                                    
                                 except ValueError as parse_error:
                                     print(f"Warning: Could not parse timestamp '{timestamp_str}' in {filename}: {parse_error}")
                                     continue
@@ -462,12 +534,19 @@ class GPXProcessor:
         else:
             avg_speed_kmh = 0.0
         
+        # Calculate average heart rate if we collected HR data
+        if all_heart_rates:
+            avg_hr = sum(all_heart_rates) / len(all_heart_rates)
+        else:
+            avg_hr = 0
+        
         return {
             'starting_time': start_time_str,
             'ending_time': end_time_str,
             'elapsed_time': elapsed_time_str,
             'distance': f"{distance_km:.1f}",
-            'average_speed': f"{avg_speed_kmh:.1f}"
+            'average_speed': f"{avg_speed_kmh:.1f}",
+            'average_hr': f"{round(avg_hr)}"
         }
 
 

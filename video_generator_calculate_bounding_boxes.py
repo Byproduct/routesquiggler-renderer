@@ -9,6 +9,7 @@ import pickle
 from pathlib import Path
 from datetime import timedelta
 from write_log import write_log, write_debug_log
+from video_generator_create_combined_route import RoutePoint
 
 
 def split_coordinates_at_longitude_wrap(lats, lons):
@@ -70,7 +71,7 @@ def split_coordinates_at_longitude_wrap(lats, lons):
     return segments
 
 
-def calculate_bounding_box_for_wrapped_coordinates(lats, lons, padding_percent=0.1):
+def calculate_bounding_box_for_wrapped_coordinates(lats, lons, padding_percent=0.1, target_aspect_ratio=None):
     """
     Calculate bounding box for coordinates that may wrap around the globe.
     
@@ -78,10 +79,14 @@ def calculate_bounding_box_for_wrapped_coordinates(lats, lons, padding_percent=0
         lats: List of latitude coordinates
         lons: List of longitude coordinates
         padding_percent: Padding percentage
+        target_aspect_ratio: Target width/height ratio (default 16/9 for backward compatibility)
         
     Returns:
         tuple: (lon_min, lon_max, lat_min, lat_max) in GPS coordinates
     """
+    # Default to 16:9 aspect ratio for backward compatibility
+    if target_aspect_ratio is None:
+        target_aspect_ratio = 16 / 9
     if not lats or not lons:
         return None
     
@@ -183,8 +188,7 @@ def calculate_bounding_box_for_wrapped_coordinates(lats, lons, padding_percent=0
         # Calculate the effective aspect ratio of the padded route (accounting for latitude distortion)
         route_aspect_ratio = (lon_span_padded * cos_factor) / lat_span_padded
         
-        # Target aspect ratio for 1920x1080 frame
-        target_aspect_ratio = 16 / 9  # Standard video aspect ratio (1920/1080)
+        # Use the target_aspect_ratio parameter (already set at function start with default 16/9)
         
         # If route is more vertical than our target aspect ratio, expand horizontally
         if route_aspect_ratio < target_aspect_ratio:
@@ -233,7 +237,7 @@ def _binary_search_cutoff_index(route_points, target_time):
     This allows for efficient list slicing: route_points[:cutoff_index] gives all valid points.
     
     Args:
-        route_points (list): List of route points, chronologically ordered by accumulated_time
+        route_points (list): List of RoutePoint objects, chronologically ordered by accumulated_time
         target_time (float): Target accumulated_time threshold
     
     Returns:
@@ -248,19 +252,14 @@ def _binary_search_cutoff_index(route_points, target_time):
     while left <= right:
         mid = (left + right) // 2
         
-        # Check if this point has the minimum required length and extract accumulated_time
-        if len(route_points[mid]) >= 5:
-            accumulated_time = route_points[mid][4]  # accumulated_time at index 4
-            
-            if accumulated_time <= target_time:
-                # This point should be included, look for later cutoff point
-                left = mid + 1
-            else:
-                # This point should be excluded, it might be our cutoff point
-                result = mid
-                right = mid - 1
+        # Use named attribute for accumulated_time
+        accumulated_time = route_points[mid].accumulated_time
+        
+        if accumulated_time <= target_time:
+            # This point should be included, look for later cutoff point
+            left = mid + 1
         else:
-            # Point doesn't have enough elements, exclude it
+            # This point should be excluded, it might be our cutoff point
             result = mid
             right = mid - 1
     
@@ -374,9 +373,7 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
             route_points = route_data.get('combined_route', [])
             if route_points:
                 first_point = route_points[0]
-                if len(first_point) >= 1:
-                    route_index = first_point[0]  # route_index at index 0
-                    route_indices.add(route_index)
+                route_indices.add(first_point.route_index)
         
         has_multiple_route_groups = len(route_indices) > 1
         
@@ -393,30 +390,28 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
             for i, route_data in enumerate(all_routes):
                 route_points = route_data.get('combined_route', [])
                 if route_points and len(route_points) > 0:
-                    # Get start and end times for this route
+                    # Get start and end times for this route using named attributes
                     first_point = route_points[0]
                     last_point = route_points[-1]
                     
-                    if len(first_point) >= 4 and len(last_point) >= 5:
-                        # Route start time (timestamp)
-                        route_start_timestamp = first_point[3]  # timestamp at index 3
-                        # Route duration (accumulated_time from last point)
-                        route_duration = last_point[4]  # accumulated_time at index 4
+                    # Route start time (timestamp) and duration (accumulated_time from last point)
+                    route_start_timestamp = first_point.timestamp
+                    route_duration = last_point.accumulated_time
+                    
+                    if route_start_timestamp:
+                        # Calculate when this route ends (start + duration)
+                        route_end_timestamp = route_start_timestamp + timedelta(seconds=route_duration)
                         
-                        if route_start_timestamp:
-                            # Calculate when this route ends (start + duration)
-                            route_end_timestamp = route_start_timestamp + timedelta(seconds=route_duration)
-                            
-                            # Track earliest start and latest end
-                            if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                                earliest_start_time = route_start_timestamp
-                            
-                            if latest_end_time is None or route_end_timestamp > latest_end_time:
-                                latest_end_time = route_end_timestamp
-                            
-                            if debug_callback:
-                                track_name = route_data.get('track_name', f'Route {i}')
-                                debug_callback(f"  Route '{track_name}': starts at {route_start_timestamp.strftime('%H:%M:%S')}, duration {route_duration:.1f}s, ends at {route_end_timestamp.strftime('%H:%M:%S')}")
+                        # Track earliest start and latest end
+                        if earliest_start_time is None or route_start_timestamp < earliest_start_time:
+                            earliest_start_time = route_start_timestamp
+                        
+                        if latest_end_time is None or route_end_timestamp > latest_end_time:
+                            latest_end_time = route_end_timestamp
+                        
+                        if debug_callback:
+                            track_name = route_data.get('track_name', f'Route {i}')
+                            debug_callback(f"  Route '{track_name}': starts at {route_start_timestamp.strftime('%H:%M:%S')}, duration {route_duration:.1f}s, ends at {route_end_timestamp.strftime('%H:%M:%S')}")
             
             # SIMULTANEOUS MODE FIX: Ensure all routes can complete within the specified video duration
             # The issue is that we need to ensure the latest-starting route has enough time to complete
@@ -435,14 +430,13 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
                         first_point = route_points[0]
                         last_point = route_points[-1]
                         
-                        if len(first_point) >= 4 and len(last_point) >= 5:
-                            route_start_timestamp = first_point[3]
-                            route_duration = last_point[4]
-                            
-                            if route_start_timestamp:
-                                if latest_start_time is None or route_start_timestamp > latest_start_time:
-                                    latest_start_time = route_start_timestamp
-                                    max_route_duration = route_duration
+                        route_start_timestamp = first_point.timestamp
+                        route_duration = last_point.accumulated_time
+                        
+                        if route_start_timestamp:
+                            if latest_start_time is None or route_start_timestamp > latest_start_time:
+                                latest_start_time = route_start_timestamp
+                                max_route_duration = route_duration
                 
                 # Calculate the minimum video duration needed for all routes to complete
                 if latest_start_time:
@@ -482,8 +476,7 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
                     route_points = route_data.get('combined_route', [])
                     if route_points:
                         last_point = route_points[-1]
-                    if len(last_point) >= 5:
-                        route_time = last_point[4]  # accumulated_time at index 4
+                        route_time = last_point.accumulated_time
                         total_route_time = max(total_route_time, route_time)
                         
                         if log_callback:
@@ -503,9 +496,8 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
                     route_points = route_data.get('combined_route', [])
                     if route_points:
                         last_point = route_points[-1]
-                        if len(last_point) >= 5:
-                            route_time = last_point[4]  # accumulated_time at index 4
-                            total_route_time = max(total_route_time, route_time)  # Take the longest track
+                        route_time = last_point.accumulated_time
+                        total_route_time = max(total_route_time, route_time)  # Take the longest track
                 
                 # Set combined_route for later code compatibility
                 combined_route = []
@@ -522,9 +514,8 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         # Calculate total_route_time for original single route mode only
         if not all_routes and combined_route:
             # Get total route time from the last point (only for original single route mode)
-            # Route structure: (route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename)
             last_point = combined_route[-1]
-            total_route_time = last_point[4]  # accumulated_time is at index 4
+            total_route_time = last_point.accumulated_time
             
             if debug_callback:
                 debug_callback(f"Original single route mode: Total route time: {total_route_time:.1f} seconds ({total_route_time/60:.1f} minutes)")
@@ -558,14 +549,15 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         return None
 
 
-def calculate_bounding_box_for_points(points, padding_percent=0.1):
+def calculate_bounding_box_for_points(points, padding_percent=0.1, target_aspect_ratio=None):
     """
     Calculate a bounding box for a set of points with consistent padding and aspect ratio adjustment.
     This function ensures that both the caching phase and video frame generation use exactly the same logic.
     
     Args:
-        points (list): List of route points with (route_index, lat, lon, timestamp, ...) structure
+        points (list): List of RoutePoint objects
         padding_percent (float): Padding percentage (default 0.1 = 10%)
+        target_aspect_ratio (float): Target width/height ratio (default 16/9 for backward compatibility)
     
     Returns:
         tuple: (lon_min, lon_max, lat_min, lat_max) in GPS coordinates, rounded to 6 decimal places
@@ -573,15 +565,15 @@ def calculate_bounding_box_for_points(points, padding_percent=0.1):
     if not points:
         return None
     
-    # Extract coordinates from points
-    all_lats = [point[1] for point in points if len(point) >= 3]  # lat is at index 1
-    all_lons = [point[2] for point in points if len(point) >= 3]  # lon is at index 2
+    # Extract coordinates from points using named attributes
+    all_lats = [point.lat for point in points]
+    all_lons = [point.lon for point in points]
     
     if not all_lats or not all_lons:
         return None
     
     # Use the new wrapped coordinate handling function
-    return calculate_bounding_box_for_wrapped_coordinates(all_lats, all_lons, padding_percent)
+    return calculate_bounding_box_for_wrapped_coordinates(all_lats, all_lons, padding_percent, target_aspect_ratio)
 
 
 def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback=None, max_workers=None, combined_route_data=None, debug_callback=None):
@@ -603,6 +595,14 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
         # Get video parameters and ensure they are numeric
         video_length = json_data.get('video_length')
         video_fps = json_data.get('video_fps')
+        
+        # Calculate target aspect ratio from video resolution
+        video_resolution_x = float(json_data.get('video_resolution_x', 1920))
+        video_resolution_y = float(json_data.get('video_resolution_y', 1080))
+        target_aspect_ratio = video_resolution_x / video_resolution_y
+        
+        if debug_callback:
+            debug_callback(f"Using video aspect ratio: {video_resolution_x}x{video_resolution_y} = {target_aspect_ratio:.4f}")
         
         if video_length is None or video_fps is None:
             if log_callback:
@@ -653,7 +653,7 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                     combined_route.extend(route_points)
                 
                 # Sort all points by accumulated_time to ensure chronological order
-                combined_route.sort(key=lambda point: point[4] if len(point) > 4 else 0)  # accumulated_time at index 4
+                combined_route.sort(key=lambda point: point.accumulated_time)
                 
                 if debug_callback:
                     debug_callback(f"Final zoom mode: Total points from all routes: {len(combined_route)}")
@@ -666,9 +666,9 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                     log_callback("Error: No route data found")
                 return None
             
-            # Calculate bounding box for the entire route
-            all_lats = [point[1] for point in combined_route]  # lat is at index 1
-            all_lons = [point[2] for point in combined_route]  # lon is at index 2
+            # Calculate bounding box for the entire route using named attributes
+            all_lats = [point.lat for point in combined_route]
+            all_lons = [point.lon for point in combined_route]
             
             # Calculate the data extent
             lon_min, lon_max = min(all_lons), max(all_lons)
@@ -736,8 +736,7 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 # Calculate the effective aspect ratio of the padded route (accounting for latitude distortion)
                 route_aspect_ratio = (lon_span_padded * cos_factor) / lat_span_padded
                 
-                # Target aspect ratio for 1920x1080 frame
-                target_aspect_ratio = 16 / 9  # Standard video aspect ratio (1920/1080)
+                # Use target_aspect_ratio calculated from video resolution at function start
                 
                 # If route is more vertical than our target aspect ratio, expand horizontally
                 if route_aspect_ratio < target_aspect_ratio:
@@ -815,7 +814,8 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                         json_data,
                         route_time_per_frame,
                         start_frame,
-                        end_frame
+                        end_frame,
+                        target_aspect_ratio
                     ))
                 
                 # Execute workers in parallel
@@ -844,7 +844,7 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
         return None
 
 
-def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, start_frame, end_frame):
+def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, start_frame, end_frame, target_aspect_ratio=None):
     """
     Worker function to process a chunk of frames and return bounding boxes.
     Supports both single route and multiple routes modes.
@@ -855,10 +855,16 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
         route_time_per_frame (float): Route time per frame in seconds
         start_frame (int): Starting frame number (inclusive)
         end_frame (int): Ending frame number (exclusive)
+        target_aspect_ratio (float): Target width/height ratio (default from json_data or 16/9)
     
     Returns:
         list: List of bounding boxes as tuples (lon_min, lon_max, lat_min, lat_max)
     """
+    # Calculate target aspect ratio from json_data if not provided
+    if target_aspect_ratio is None:
+        video_resolution_x = float(json_data.get('video_resolution_x', 1920))
+        video_resolution_y = float(json_data.get('video_resolution_y', 1080))
+        target_aspect_ratio = video_resolution_x / video_resolution_y
     try:
         # Extract video parameters from json_data for consistent time calculation
         video_fps = float(json_data.get('video_fps', 30))
@@ -883,8 +889,8 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
             
             for route_data in all_routes:
                 route_points = route_data.get('combined_route', [])
-                if route_points and len(route_points[0]) >= 4:  # Check for timestamp at index 3
-                    route_start_timestamp = route_points[0][3]  # timestamp at index 3
+                if route_points:
+                    route_start_timestamp = route_points[0].timestamp
                     if route_start_timestamp:
                         route_start_times[id(route_data)] = route_start_timestamp
                         if earliest_start_time is None or route_start_timestamp < earliest_start_time:
@@ -932,7 +938,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
                             all_points.extend(route_points)
                     
                     # Use the shared bounding box calculation function for consistency
-                    bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1)
+                    bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1, target_aspect_ratio=target_aspect_ratio)
                     
                     if bbox is not None:
                         bounding_boxes.append(bbox)
@@ -967,14 +973,14 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
             target_time = target_time_video * gpx_time_per_video_time  # Route time in seconds
             
             # Collect points up to the target time for this frame
-            # Route structure: (route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename)
+            # Route structure: (route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename, elevation, heart_rate)
             # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
             cutoff_index = _binary_search_cutoff_index(combined_route, target_time)
             points_for_frame = combined_route[:cutoff_index]
             
             if points_for_frame:
                 # Use the shared bounding box calculation function for consistency
-                bbox = calculate_bounding_box_for_points(points_for_frame, padding_percent=0.1)
+                bbox = calculate_bounding_box_for_points(points_for_frame, padding_percent=0.1, target_aspect_ratio=target_aspect_ratio)
                 
                 if bbox is not None:
                     bounding_boxes.append(bbox)
@@ -993,8 +999,8 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
         if frames_without_points > 0:
             first_frame_target_time = start_frame * route_time_per_frame
             last_frame_target_time = (end_frame - 1) * route_time_per_frame
-            first_route_time = combined_route[0][4] if combined_route else "N/A"  # accumulated_time at index 4
-            last_route_time = combined_route[-1][4] if combined_route else "N/A"  # accumulated_time at index 4
+            first_route_time = combined_route[0].accumulated_time if combined_route else "N/A"
+            last_route_time = combined_route[-1].accumulated_time if combined_route else "N/A"
             write_debug_log(f"  Debug: Chunk target times {first_frame_target_time:.2f}-{last_frame_target_time:.2f}s, route times {first_route_time}-{last_route_time}s")
         
         return bounding_boxes
