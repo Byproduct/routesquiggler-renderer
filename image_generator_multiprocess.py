@@ -628,11 +628,16 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     if json_data.get('statistics_elapsed_time', False):
         stats_lines.append(f"{statistics_data.get('elapsed_time', 'N/A')}")
     
+    # Determine units based on imperial_units setting
+    imperial_units = json_data and json_data.get('imperial_units', False) is True
+    distance_unit = "miles" if imperial_units else "km"
+    speed_unit = "mph" if imperial_units else "km/h"
+    
     if json_data.get('statistics_distance', False):
-        stats_lines.append(f"{statistics_data.get('distance', 'N/A')} km")
+        stats_lines.append(f"{statistics_data.get('distance', 'N/A')} {distance_unit}")
     
     if json_data.get('statistics_average_speed', False):
-        stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} km/h")
+        stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} {speed_unit}")
     
     if json_data.get('statistics_average_hr', False):
         avg_hr = statistics_data.get('average_hr', '0')

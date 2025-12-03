@@ -87,12 +87,16 @@ class ImageGeneratorWorker(QObject):
                     statistics_data = processor.calculate_statistics_from_gpx_files(self.gpx_files_info, track_lookup, self.json_data)
                     if statistics_data:
                         self.debug_message.emit("Statistics calculated successfully")
+                        # Determine units based on imperial_units setting
+                        imperial_units = self.json_data and self.json_data.get('imperial_units', False) is True
+                        distance_unit = "miles" if imperial_units else "km"
+                        speed_unit = "mph" if imperial_units else "km/h"
                         # Log calculated values for debugging
                         self.debug_message.emit(f"  Starting time: {statistics_data.get('starting_time', 'N/A')}")
                         self.debug_message.emit(f"  Ending time: {statistics_data.get('ending_time', 'N/A')}")
                         self.debug_message.emit(f"  Elapsed time: {statistics_data.get('elapsed_time', 'N/A')}")
-                        self.debug_message.emit(f"  Distance: {statistics_data.get('distance', 'N/A')} km")
-                        self.debug_message.emit(f"  Average speed: {statistics_data.get('average_speed', 'N/A')} km/h")
+                        self.debug_message.emit(f"  Distance: {statistics_data.get('distance', 'N/A')} {distance_unit}")
+                        self.debug_message.emit(f"  Average speed: {statistics_data.get('average_speed', 'N/A')} {speed_unit}")
                         avg_hr = statistics_data.get('average_hr', '0')
                         if avg_hr and avg_hr != '0':
                             self.debug_message.emit(f"  Average HR: {avg_hr} bpm")

@@ -8,6 +8,11 @@ import math
 from video_generator_create_combined_route import RoutePoint
 
 
+def _is_imperial_units(json_data):
+    """Returns true if imperial_units is True in json_data."""
+    return json_data and json_data.get('imperial_units', False) is True
+
+
 def _get_resolution_scale_factor(json_data):
     """
     Get font size scale factor based on vertical video resolution.
@@ -125,10 +130,16 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         
         statistics_data['elapsed_time'] = elapsed_time_str
     
-    # Statistics: Distance (accumulated distance converted to km with 1 decimal)
+    # Statistics: Distance (accumulated distance converted to km or miles with 1 decimal)
     if json_data.get('statistics_distance', False):
-        distance_km = accumulated_distance / 1000.0
-        statistics_data['distance'] = f"{distance_km:.1f}"
+        imperial_units = _is_imperial_units(json_data)
+        if imperial_units:
+            # accumulated_distance is already in miles
+            distance_value = accumulated_distance
+        else:
+            # accumulated_distance is in meters, convert to km
+            distance_value = accumulated_distance / 1000.0
+        statistics_data['distance'] = f"{distance_value:.1f}"
     
     # Statistics: Speed handling (different logic for normal vs tail mode)
     current_speed_requested = json_data.get('statistics_current_speed', False)
@@ -141,8 +152,14 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         # Tail mode: hide current speed, show average speed if either speed stat is requested
         if current_speed_requested or average_speed_requested:
             if accumulated_time > 0:
-                avg_speed_kmh = (accumulated_distance / 1000.0 * 3600) / accumulated_time
-                statistics_data['average_speed'] = f"{avg_speed_kmh:.1f}"
+                imperial_units = _is_imperial_units(json_data)
+                if imperial_units:
+                    # accumulated_distance is in miles, calculate mph
+                    avg_speed = (accumulated_distance * 3600) / accumulated_time
+                else:
+                    # accumulated_distance is in meters, calculate km/h
+                    avg_speed = (accumulated_distance / 1000.0 * 3600) / accumulated_time
+                statistics_data['average_speed'] = f"{avg_speed:.1f}"
             else:
                 statistics_data['average_speed'] = "0.0"
         
@@ -172,8 +189,14 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         # Average speed calculation
         if average_speed_requested:
             if accumulated_time > 0:
-                avg_speed_kmh = (accumulated_distance / 1000.0 * 3600) / accumulated_time
-                statistics_data['average_speed'] = f"{avg_speed_kmh:.1f}"
+                imperial_units = _is_imperial_units(json_data)
+                if imperial_units:
+                    # accumulated_distance is in miles, calculate mph
+                    avg_speed = (accumulated_distance * 3600) / accumulated_time
+                else:
+                    # accumulated_distance is in meters, calculate km/h
+                    avg_speed = (accumulated_distance / 1000.0 * 3600) / accumulated_time
+                statistics_data['average_speed'] = f"{avg_speed:.1f}"
             else:
                 statistics_data['average_speed'] = "0.0"
         
@@ -376,9 +399,13 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     base_font_size = 13  # Hardcoded base size for 1080p 
     font_size = base_font_size * resolution_scale
     
+    # Determine speed unit based on imperial_units setting
+    imperial_units = _is_imperial_units(json_data)
+    speed_unit = "mph" if imperial_units else "km/h"
+    
     # Add the current speed text
     ax.text(
-        speed_x, speed_y, f"{current_speed} km/h",
+        speed_x, speed_y, f"{current_speed} {speed_unit}",
         color=text_color,
         fontsize=font_size,
         fontweight='bold',
@@ -652,16 +679,21 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     if 'elapsed_time' in statistics_data:
         stats_lines.append(statistics_data['elapsed_time'])
     
+    # Determine units based on imperial_units setting
+    imperial_units = _is_imperial_units(json_data)
+    distance_unit = "miles" if imperial_units else "km"
+    speed_unit = "mph" if imperial_units else "km/h"
+    
     if 'distance' in statistics_data:
-        stats_lines.append(f"{statistics_data['distance']} km")
+        stats_lines.append(f"{statistics_data['distance']} {distance_unit}")
     
     # Include current speed only if not excluded and not being displayed at point
     current_speed_at_point = json_data.get('statistics_current_speed', False)
     if not exclude_current_speed and 'current_speed' in statistics_data and not current_speed_at_point:
-        stats_lines.append(f"{statistics_data['current_speed']} km/h")
+        stats_lines.append(f"{statistics_data['current_speed']} {speed_unit}")
     
     if 'average_speed' in statistics_data:
-        stats_lines.append(f"{statistics_data['average_speed']} km/h")
+        stats_lines.append(f"{statistics_data['average_speed']} {speed_unit}")
     
     # Include current elevation only if not excluded and not being displayed at point
     current_elevation_at_point = json_data.get('statistics_current_elevation', False)

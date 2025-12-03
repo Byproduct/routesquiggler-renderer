@@ -99,6 +99,11 @@ def load_gpx_files_from_zip(zip_path: str, log_callback=None) -> List[Dict]:
     return gpx_files_info
 
 
+def _is_imperial_units(json_data):
+    """Returns true if imperial_units is True in json_data."""
+    return json_data and json_data.get('imperial_units', False) is True
+
+
 def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate the great circle distance between two points on Earth using the Haversine formula.
@@ -525,14 +530,25 @@ class GPXProcessor:
         else:
             elapsed_time_str = f"{seconds}s"
         
-        # Convert distance to kilometers
-        distance_km = total_distance / 1000.0
-        
-        # Calculate average speed (km/h) using the corrected elapsed time
-        if total_elapsed_seconds > 0:
-            avg_speed_kmh = (distance_km * 3600) / total_elapsed_seconds
+        # Convert distance based on imperial_units setting
+        imperial_units = _is_imperial_units(json_data)
+        if imperial_units:
+            # Convert meters to miles
+            distance_value = total_distance * 0.000621371
         else:
-            avg_speed_kmh = 0.0
+            # Convert meters to kilometers
+            distance_value = total_distance / 1000.0
+        
+        # Calculate average speed using the corrected elapsed time
+        if total_elapsed_seconds > 0:
+            if imperial_units:
+                # Distance is in miles, calculate mph
+                avg_speed = (distance_value * 3600) / total_elapsed_seconds
+            else:
+                # Distance is in km, calculate km/h
+                avg_speed = (distance_value * 3600) / total_elapsed_seconds
+        else:
+            avg_speed = 0.0
         
         # Calculate average heart rate if we collected HR data
         if all_heart_rates:
@@ -544,8 +560,8 @@ class GPXProcessor:
             'starting_time': start_time_str,
             'ending_time': end_time_str,
             'elapsed_time': elapsed_time_str,
-            'distance': f"{distance_km:.1f}",
-            'average_speed': f"{avg_speed_kmh:.1f}",
+            'distance': f"{distance_value:.1f}",
+            'average_speed': f"{avg_speed:.1f}",
             'average_hr': f"{round(avg_hr)}"
         }
 

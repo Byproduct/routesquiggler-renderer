@@ -11,6 +11,10 @@ from typing import NamedTuple, Optional
 import gpxpy
 from image_generator_utils import calculate_haversine_distance
 
+# Conversion constants for imperial units
+METERS_TO_MILES = 0.000621371
+KMH_TO_MPH = 0.621371
+
 
 class RoutePoint(NamedTuple):
     """
@@ -22,23 +26,26 @@ class RoutePoint(NamedTuple):
     The smoothed fields (heart_rate_smoothed, current_speed_smoothed) are calculated
     after the route is fully created, using a 0.5 video-second smoothing window.
     These pre-calculated values avoid per-frame recalculation during video rendering.
+    
+    Accumulated_distance and current_speed_smoothed are stored in metric units
+    (meters/km/h) or imperial units (miles/mph) based on the imperial_units setting.
     """
     route_index: int                    # Unique index for each track/route
     lat: float                          # Latitude
     lon: float                          # Longitude
     timestamp: Optional[datetime]       # Timestamp (rounded to nearest second)
     accumulated_time: float             # Accumulated time in seconds from route start
-    accumulated_distance: float         # Accumulated distance in meters from route start
+    accumulated_distance: float         # Accumulated distance (meters or miles based on imperial_units)
     new_route_flag: bool                # True if this is the first point in a new route segment
     filename: str                       # Filename without extension (for color mapping)
     elevation: Optional[float]          # Elevation in meters (if available)
     heart_rate: int                     # Heart rate in BPM (0 if not available)
     # Pre-calculated smoothed values (populated after route creation if statistics are enabled)
     heart_rate_smoothed: Optional[int] = None      # Smoothed HR over 0.5 video-second window
-    current_speed_smoothed: Optional[int] = None   # Smoothed speed (km/h) over 0.5 video-second window
+    current_speed_smoothed: Optional[int] = None   # Smoothed speed (km/h or mph based on imperial_units)
 
 
-def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_time, video_fps, calculate_hr=False, calculate_speed=False):
+def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_time, video_fps, calculate_hr=False, calculate_speed=False, imperial_units=False):
     """
     Calculate smoothed heart rate and speed for all points in a route.
     
@@ -51,6 +58,7 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
         video_fps (float): Video frames per second
         calculate_hr (bool): Whether to calculate smoothed heart rate
         calculate_speed (bool): Whether to calculate smoothed speed
+        imperial_units (bool): If True, convert speed to mph instead of km/h
     
     Returns:
         list: New list of RoutePoint objects with smoothed values populated
@@ -98,9 +106,14 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
                 distance_diff = point.accumulated_distance - comparison_point.accumulated_distance
                 
                 if time_diff > 0:
-                    # Calculate speed in km/h and round to integer
-                    speed_kmh = (distance_diff / 1000.0 * 3600) / time_diff
-                    smoothed_speed = round(speed_kmh)
+                    if imperial_units:
+                        # Distance is in miles, convert to mph
+                        speed_mph = (distance_diff * 3600) / time_diff
+                        smoothed_speed = round(speed_mph)
+                    else:
+                        # Distance is in meters, convert to km/h
+                        speed_kmh = (distance_diff / 1000.0 * 3600) / time_diff
+                        smoothed_speed = round(speed_kmh)
             else:
                 # Fallback: use first point if no comparison point found
                 if i > 0:
@@ -109,8 +122,14 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
                     distance_diff = point.accumulated_distance - first_point.accumulated_distance
                     
                     if time_diff > 0:
-                        speed_kmh = (distance_diff / 1000.0 * 3600) / time_diff
-                        smoothed_speed = round(speed_kmh)
+                        if imperial_units:
+                            # Distance is in miles, convert to mph
+                            speed_mph = (distance_diff * 3600) / time_diff
+                            smoothed_speed = round(speed_mph)
+                        else:
+                            # Distance is in meters, convert to km/h
+                            speed_kmh = (distance_diff / 1000.0 * 3600) / time_diff
+                            smoothed_speed = round(speed_kmh)
                     else:
                         smoothed_speed = 0
                 else:
@@ -174,18 +193,23 @@ def _update_speed_based_color_range(all_routes, json_data, debug_callback=None):
     calculated_max = max(all_speeds)
     
     # Update json_data if needed
+    # Note: speed_based_color_min/max are already in the correct units (mph if imperial_units, km/h otherwise)
+    # and should NOT be converted
+    imperial_units = _is_imperial_units(json_data)
+    speed_unit = "mph" if imperial_units else "km/h"
+    
     if need_min:
         json_data['speed_based_color_min'] = calculated_min
         if debug_callback:
-            debug_callback(f"Auto-calculated speed_based_color_min: {calculated_min} km/h")
+            debug_callback(f"Auto-calculated speed_based_color_min: {calculated_min} {speed_unit}")
     
     if need_max:
         json_data['speed_based_color_max'] = calculated_max
         if debug_callback:
-            debug_callback(f"Auto-calculated speed_based_color_max: {calculated_max} km/h")
+            debug_callback(f"Auto-calculated speed_based_color_max: {calculated_max} {speed_unit}")
     
     if debug_callback and (need_min or need_max):
-        debug_callback(f"Speed-based color range: {json_data.get('speed_based_color_min')} - {json_data.get('speed_based_color_max')} km/h")
+        debug_callback(f"Speed-based color range: {json_data.get('speed_based_color_min')} - {json_data.get('speed_based_color_max')} {speed_unit}")
 
 
 def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, json_data, debug_callback=None):
@@ -220,6 +244,8 @@ def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, js
             enabled_stats.append("current_speed")
         debug_callback(f"Calculating smoothed statistics for: {', '.join(enabled_stats)}")
     
+    imperial_units = _is_imperial_units(json_data)
+    
     for route in all_routes:
         route_points = route.get('combined_route', [])
         if route_points:
@@ -228,7 +254,8 @@ def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, js
                 gpx_time_per_video_time, 
                 video_fps,
                 calculate_hr=calculate_hr,
-                calculate_speed=calculate_speed
+                calculate_speed=calculate_speed,
+                imperial_units=imperial_units
             )
             route['combined_route'] = updated_points
             route['total_points'] = len(updated_points)
@@ -272,6 +299,13 @@ def _extract_heart_rate_from_gpxpy_point(point) -> int:
                         pass
     
     return 0
+
+
+def _is_imperial_units(json_data):
+    """
+    Returns true if imperial_units is True in json_data.
+    """
+    return json_data and json_data.get('imperial_units', False) is True
 
 
 def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=None, log_callback=None, debug_callback=None):
@@ -495,20 +529,26 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # Calculate gpx_time_per_video_time using the same method as caching phase
         gpx_time_per_video_time = route_time_per_frame * video_fps
         
+        imperial_units = _is_imperial_units(json_data)
+        distance_unit = "miles" if imperial_units else "meters"
+        distance_unit_short = "mi" if imperial_units else "m"
+        
         if debug_callback:
             debug_callback(f"Created {len(all_routes)} routes:")
             for i, route in enumerate(all_routes):
                 route_name = route.get('track_name', f'Route {i}')
                 points = route.get('total_points', 0)
                 distance = route.get('total_distance', 0)
-                debug_callback(f"  Route {i}: '{route_name}' - {points} points, {distance:.2f}m")
-            debug_callback(f"Total across all routes: {total_points} points, {total_distance:.2f}m")
+                debug_callback(f"  Route {i}: '{route_name}' - {points} points, {distance:.2f} {distance_unit_short}")
+            debug_callback(f"Total across all routes: {total_points} points, {total_distance:.2f} {distance_unit_short}")
         
         # Write debug file for all routes
         debug_file_path = Path("temporary files/route") / "debug_tuple.txt"
         try:
+            imperial_units = _is_imperial_units(json_data)
+            distance_unit_label = "miles" if imperial_units else "meters"
             with open(debug_file_path, 'w', encoding='utf-8') as f:
-                f.write("Route_Index, Latitude, Longitude, Timestamp, Accumulated time (s), Accumulated Distance (m), New Route, Filename, Elevation, Heart Rate\n")
+                f.write(f"Route_Index, Latitude, Longitude, Timestamp, Accumulated time (s), Accumulated Distance ({distance_unit_label}), New Route, Filename, Elevation, Heart Rate\n")
                 for route in all_routes:
                     combined_route = route.get('combined_route', [])
                     for point in combined_route:
@@ -584,13 +624,21 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
         if json_data:
             extract_heart_rate = json_data.get('statistics_average_hr', False) or json_data.get('statistics_current_hr', False)
         
+        # Check if imperial units should be used
+        imperial_units = _is_imperial_units(json_data)
+        distance_unit = "miles" if imperial_units else "meters"
+        distance_unit_short = "mi" if imperial_units else "m"
+        
         # Process each file in chronological order
         for file_index, gpx_info in enumerate(track_files):
             filename = gpx_info.get('filename', f'file_{file_index}')
             content = gpx_info.get('content', '')
             
+            # Convert accumulated_distance for display
+            display_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
+            
             if debug_callback:
-                debug_callback(f"  Processing {filename}, accumulated distance: {accumulated_distance:.2f} meters, accumulated time: {accumulated_time:.1f} seconds")
+                debug_callback(f"  Processing {filename}, accumulated distance: {display_distance:.2f} {distance_unit_short}, accumulated time: {accumulated_time:.1f} seconds")
             
             # Always extract filename without extension for color mapping
             # This is needed for route colors even if name_tags and legend are disabled
@@ -639,6 +687,9 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                                 if time_increment >= 0:  # Only add positive time increments
                                     accumulated_time += time_increment
                             
+                            # Convert accumulated_distance to miles if imperial_units is True
+                            stored_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
+                            
                             # Add to combined route using RoutePoint named tuple
                             combined_route.append(RoutePoint(
                                 route_index=route_index,
@@ -646,7 +697,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                                 lon=lon,
                                 timestamp=timestamp.replace(microsecond=0) if timestamp else None,
                                 accumulated_time=accumulated_time,
-                                accumulated_distance=accumulated_distance,
+                                accumulated_distance=stored_distance,
                                 new_route_flag=first_point_in_file,
                                 filename=filename_without_ext,
                                 elevation=elevation,
@@ -667,9 +718,15 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                     log_callback(f"  Error processing file {filename}: {str(e)}")
                 continue
         
+        # Convert accumulated_distance for display
+        display_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
+        
         if debug_callback:
             debug_callback(f"  Completed track '{track_name}'. Total points: {len(combined_route)}")
-            debug_callback(f"  Total distance: {accumulated_distance:.2f} meters ({accumulated_distance/1000:.2f} km)")
+            if imperial_units:
+                debug_callback(f"  Total distance: {display_distance:.2f} miles")
+            else:
+                debug_callback(f"  Total distance: {display_distance:.2f} meters ({display_distance/1000:.2f} km)")
             debug_callback(f"  Total time: {accumulated_time:.1f} seconds ({accumulated_time/60:.1f} minutes)")
         
         # Apply pruning if json_data is provided
@@ -683,9 +740,11 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                 # Pruning disabled by job parameters (route_accuracy = 'maximum')
                 if debug_callback:
                     debug_callback(f"  Route pruning skipped for track '{track_name}' as per job parameters (route_accuracy = 'maximum').")
+                # Convert total_distance to miles if imperial_units is True
+                stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
                 final_route_data = {
                     'combined_route': combined_route,
-                    'total_distance': accumulated_distance,
+                    'total_distance': stored_total_distance,
                     'total_points': len(combined_route),
                     'total_files': len(track_files),
                     'track_name': track_name,
@@ -727,17 +786,19 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                     )
                 
                 # Create temporary route data for pruning
+                # Note: combined_route already has distances in miles if imperial_units is True
+                stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
                 temp_route_data = {
                     'combined_route': combined_route,
-                    'total_distance': accumulated_distance,
+                    'total_distance': stored_total_distance,
                     'total_points': len(combined_route),
                     'total_files': len(track_files),
                     'track_name': track_name,
                     'route_index': route_index
                 }
                 
-                # Apply pruning
-                final_route_data = prune_route_by_interval(temp_route_data, pruning_interval, log_callback, debug_callback)
+                # Apply pruning (pass imperial_units flag)
+                final_route_data = prune_route_by_interval(temp_route_data, pruning_interval, json_data, log_callback, debug_callback)
                 
                 if not final_route_data:
                     if log_callback:
@@ -765,9 +826,11 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
 
         else:
             # No json_data provided, create route data without pruning
+            # Convert total_distance to miles if imperial_units is True (but json_data is None, so use metric)
+            stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
             final_route_data = {
                 'combined_route': combined_route,
-                'total_distance': accumulated_distance,
+                'total_distance': stored_total_distance,
                 'total_points': len(combined_route),
                 'total_files': len(track_files),
                 'track_name': track_name,
@@ -782,7 +845,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
         return None
 
 
-def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=None, debug_callback=None):
+def prune_route_by_interval(combined_route_data, interval_seconds, json_data=None, log_callback=None, debug_callback=None):
     """
     Prune route points by time interval, keeping points that are at least 
     interval_seconds apart in time.
@@ -790,6 +853,7 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
     Args:
         combined_route_data (dict): Combined route data with 'combined_route' key
         interval_seconds (int): Minimum time interval in seconds between kept points
+        json_data (dict, optional): Job data for checking imperial_units setting
         log_callback (callable, optional): Function to call for logging messages
         debug_callback (callable, optional): Function to call for debug logging messages
     
@@ -863,6 +927,9 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
         for i in indices_to_keep:
             pruned_route.append(combined_route[i])
         
+        # Check if imperial units should be used
+        imperial_units = _is_imperial_units(json_data)
+        
         # Recalculate accumulated distances and times for pruned route
         recalculated_route = []
         accumulated_distance = 0.0
@@ -883,6 +950,9 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
                 if time_increment >= 0:  # Only add positive time increments
                     accumulated_time += time_increment
             
+            # Convert accumulated_distance to miles if imperial_units is True
+            stored_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
+            
             # Add point with recalculated accumulated time and distance
             recalculated_route.append(RoutePoint(
                 route_index=point.route_index,
@@ -890,7 +960,7 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
                 lon=point.lon,
                 timestamp=point.timestamp,
                 accumulated_time=accumulated_time,
-                accumulated_distance=accumulated_distance,
+                accumulated_distance=stored_distance,
                 new_route_flag=point.new_route_flag,
                 filename=point.filename,
                 elevation=point.elevation,
@@ -902,10 +972,13 @@ def prune_route_by_interval(combined_route_data, interval_seconds, log_callback=
             prev_lon = point.lon
             prev_timestamp = point.timestamp
         
+        # Convert total_distance to miles if imperial_units is True
+        stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
+        
         # Create pruned route data
         pruned_route_data = {
             'combined_route': recalculated_route,
-            'total_distance': accumulated_distance,
+            'total_distance': stored_total_distance,
             'total_points': len(recalculated_route),
             'total_files': combined_route_data.get('total_files', 0),
             'pruning_stats': {
@@ -998,15 +1071,22 @@ def interpolate_route_by_interval(route_points, interpolation_interval_seconds, 
         return route_points
 
 
-def _reset_track_accumulated_values(track_points):
+def _reset_track_accumulated_values(track_points, json_data=None):
     """
     Resets accumulated_time and accumulated_distance for a single track's points.
     This is necessary because when splitting tracks, we want each track's accumulated
     values to start from 0, but we need to preserve the original accumulated values
     for the final combined_route.
+    
+    Args:
+        track_points (list): List of RoutePoint objects
+        json_data (dict, optional): Job data for checking imperial_units setting
     """
     if not track_points:
         return []
+    
+    # Check if imperial units should be used
+    imperial_units = _is_imperial_units(json_data)
     
     recalculated_track = []
     accumulated_distance = 0.0
@@ -1027,6 +1107,9 @@ def _reset_track_accumulated_values(track_points):
             if time_increment >= 0:  # Only add positive time increments
                 accumulated_time += time_increment
         
+        # Convert accumulated_distance to miles if imperial_units is True
+        stored_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
+        
         # Add point with recalculated accumulated time and distance
         recalculated_track.append(RoutePoint(
             route_index=point.route_index,
@@ -1034,7 +1117,7 @@ def _reset_track_accumulated_values(track_points):
             lon=point.lon,
             timestamp=point.timestamp,
             accumulated_time=accumulated_time,
-            accumulated_distance=accumulated_distance,
+            accumulated_distance=stored_distance,
             new_route_flag=point.new_route_flag,
             filename=point.filename,
             elevation=point.elevation,

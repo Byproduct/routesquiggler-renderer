@@ -303,10 +303,22 @@ class VideoGeneratorWorker(QObject):
             
             # Log summary
             total_points = self.combined_route_data.get('total_points', 0)
-            total_distance_km = self.combined_route_data.get('total_distance', 0) / 1000
+            total_distance = self.combined_route_data.get('total_distance', 0)
+            
+            # Check if imperial units should be used
+            imperial_units = self.json_data and self.json_data.get('imperial_units', False) is True
+            if imperial_units:
+                # total_distance is already in miles
+                distance_value = total_distance
+                distance_unit = "miles"
+            else:
+                # total_distance is in meters, convert to km
+                distance_value = total_distance / 1000.0
+                distance_unit = "km"
+            
             self.debug_message.emit(f"Combined route created successfully:")
             self.debug_message.emit(f"  - Total points: {total_points:,}")
-            self.debug_message.emit(f"  - Total distance: {total_distance_km:.2f} km")
+            self.debug_message.emit(f"  - Total distance: {distance_value:.2f} {distance_unit}")
             self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
             
             # Step 3: Calculate unique bounding boxes and cache map tiles

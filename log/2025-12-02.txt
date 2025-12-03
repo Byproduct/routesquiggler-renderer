@@ -3768,3 +3768,60 @@ Operation completed in: 8s
 [22:46:42] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
 [22:46:42] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
 [22:46:42] Found 47007 .npy files to process
+[22:46:51] Total tiles processed: 47007
+[22:46:51] Good tiles (kept): 47007
+[22:46:51] Blank/erroneous tiles (deleted): 0
+[22:46:51] 
+Operation completed in: 9s
+[22:46:51] Cache cleaning completed
+[22:46:51] Starting map tile cache sync...
+[22:46:52] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[22:46:52] Found 1200 files in StadiaLight/CustomStadiaTiles
+[22:46:52] Found 3036 files in StadiaToner/CustomStadiaTiles
+[22:46:52] Found 11168 files in StadiaDark/CustomStadiaTiles
+[22:46:52] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[22:46:52] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[22:46:52] Found 14483 files in OSM/OSM
+[22:46:55] Found 47007 local files and 47007 remote files
+[22:47:07] Files to upload: 0, Files to download: 0
+[22:47:07] Using 1 parallel threads for syncing
+[22:47:07] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[22:47:07] Bootup completed successfully
+[22:47:07] Starting job processing mode...
+[22:47:07] Starting job processing loop. Press Ctrl+C to stop.
+[22:47:08] Processing job #394 (type: video)
+[22:47:08] Step 1: Sorting GPX files chronologically
+[22:47:08] Step 2: Creating combined route
+[22:47:08] Step 3: Calculating unique bounding boxes and caching map tiles
+[22:47:09] Step 4: Caching map images for unique bounding boxes
+[22:47:10] Step 5: Generating video frames
+[22:50:29] 🎬 Total rendering time: 3 minutes 21.54 seconds
+[22:50:29] Step 6: Uploading video and thumbnail to storage box
+[22:50:29] Starting video upload to storage box...
+[22:50:29] Video file validated: 4246939 bytes
+[22:50:30] Uploading video file: Random eskate.mp4
+[22:50:32] Video file uploaded successfully: 4246939 bytes
+[22:50:32] Uploading thumbnail file: thumbnail.png
+[22:50:32] Thumbnail uploaded successfully: 210194 bytes
+[22:50:32] Video upload completed successfully
+[22:50:32] ✅ Video upload completed successfully
+[22:50:33] Job #394 completed successfully
+[22:50:33] Job completed. Requesting next job...
+[23:25:11] Processing job #395 (type: video)
+[23:25:11] Step 1: Sorting GPX files chronologically
+[23:25:11] Step 2: Creating combined route
+[23:25:11] Step 3: Calculating unique bounding boxes and caching map tiles
+[23:25:13] Step 4: Caching map images for unique bounding boxes
+[23:25:58] Step 5: Generating video frames
+[23:29:51] 🎬 Total rendering time: 4 minutes 38.53 seconds
+[23:29:51] Step 6: Uploading video and thumbnail to storage box
+[23:29:51] Starting video upload to storage box...
+[23:29:51] Video file validated: 28182736 bytes
+[23:29:51] Uploading video file: Random eskate.mp4
+[23:30:03] Video file uploaded successfully: 28182736 bytes
+[23:30:03] Uploading thumbnail file: thumbnail.png
+[23:30:03] Thumbnail uploaded successfully: 210417 bytes
+[23:30:03] Video upload completed successfully
+[23:30:03] ✅ Video upload completed successfully
+[23:30:04] Job #395 completed successfully
+[23:30:04] Job completed. Requesting next job...
