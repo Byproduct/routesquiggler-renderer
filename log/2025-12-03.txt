@@ -178,3 +178,9 @@ Operation completed in: 9s
 [18:53:40] ✅ Video upload completed successfully
 [18:53:42] Job #401 completed successfully
 [18:53:42] Job completed. Requesting next job...
+[19:12:36] Processing job #402 (type: image)
+[19:12:36] Starting image generation.
+[19:12:44] Image generation completed in 7 seconds.
+[19:12:44] Job #402 completed successfully
+[19:12:44] Job completed. Requesting next job...
+[19:24:09] No response received from server

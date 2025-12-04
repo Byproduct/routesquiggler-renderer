@@ -398,6 +398,171 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
                 )
 
 
+def _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effective_line_width, ax, effective_leading_time=None, fade_out_progress=None, fluffy_tail=False):
+    """
+    Draw tail segments using speed-based coloring instead of route-to-tail color interpolation.
+    Mimics the width behavior of regular tails but uses speed-based colors.
+    All lines are always fully opaque (no alpha transparency).
+    
+    Args:
+        tail_points (list): List of points for tail drawing
+        speed_min (float): Minimum speed for color normalization
+        speed_max (float): Maximum speed for color normalization
+        tail_width (float): Tail width multiplier
+        effective_line_width (float): Base line width
+        ax (matplotlib.axes.Axes): Matplotlib axes for drawing
+        effective_leading_time (float, optional): Override leading time for tail gradient calculation
+        fade_out_progress (float, optional): Ignored - kept for API compatibility
+        fluffy_tail (bool): If True, use LineCollection for "fluffy" tail effect; if False, use individual plots
+    """
+    if len(tail_points) <= 1:
+        return
+    
+    speed_range = speed_max - speed_min
+    if speed_range <= 0:
+        return  # Invalid speed range
+    
+    # Pre-extract all coordinates for better performance using named attributes
+    tail_lats = [point.lat for point in tail_points]
+    tail_lons = [point.lon for point in tail_points]
+    
+    # Calculate time range for width gradient calculation
+    if effective_leading_time is not None:
+        # Use virtual leading time for proper gradient calculation
+        time_min = tail_points[0].accumulated_time   # First point has earliest time
+        time_max = effective_leading_time  # Use virtual leading time
+        time_range = time_max - time_min
+    else:
+        # Normal operation: use actual point times
+        time_min = tail_points[0].accumulated_time   # First point has earliest time  
+        time_max = tail_points[-1].accumulated_time  # Last point has latest time
+        time_range = time_max - time_min
+    
+    if time_range <= 0:
+        return
+    
+    # All lines are always fully opaque (alpha = 1.0)
+    # No color interpolation - each segment uses its speed-based color directly
+    
+    if fluffy_tail:
+        # FLUFFY TAIL EFFECT: Use LineCollection for the "fluffy" appearance
+        from matplotlib.collections import LineCollection
+        
+        # Collect all line segments and their properties for LineCollection
+        line_segments = []
+        line_colors = []
+        line_widths = []
+        
+        # Draw tail segments individually
+        for j in range(len(tail_points) - 1):
+            current_point = tail_points[j]
+            next_point = tail_points[j + 1]
+            
+            # Skip segments that cross track boundaries
+            if current_point.new_route_flag or next_point.new_route_flag:
+                continue
+            
+            # Calculate interpolation factor for width using the effective time range
+            segment_time = (current_point.accumulated_time + next_point.accumulated_time) / 2
+            interp_factor = (segment_time - time_min) / time_range
+            
+            # Clamp interpolation factor to valid range (important for virtual leading time)
+            interp_factor = max(0.0, min(1.0, interp_factor))
+            
+            # Calculate width interpolation (thin at start, thick at end)
+            segment_width = effective_line_width + (effective_line_width * tail_width - effective_line_width) * interp_factor
+            
+            # Get speed from current point for color
+            speed_value = current_point.current_speed_smoothed
+            
+            if speed_value is None:
+                # If no speed data, use default color (red) - fully opaque
+                segment_color = (1.0, 0.0, 0.0, 1.0)
+            else:
+                # Normalize speed to 0-1 range
+                normalized_speed = (speed_value - speed_min) / speed_range
+                normalized_speed = max(0.0, min(1.0, normalized_speed))  # Clamp to 0-1
+                
+                # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
+                rgb = speed_based_color(normalized_speed)
+                
+                # Use directly as matplotlib color - always fully opaque
+                segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
+            
+            # Create line segment for this tail portion (convert GPS to Web Mercator coordinates)
+            lon1, lat1 = tail_lons[j], tail_lats[j]
+            lon2, lat2 = tail_lons[j + 1], tail_lats[j + 1]
+            x1, y1 = _gps_to_web_mercator(lon1, lat1)
+            x2, y2 = _gps_to_web_mercator(lon2, lat2)
+            
+            # Add to LineCollection data
+            line_segments.append([(x1, y1), (x2, y2)])
+            line_colors.append(segment_color)
+            line_widths.append(segment_width)
+        
+        # Create and add LineCollection if we have any tail segments
+        if line_segments:
+            line_collection = LineCollection(
+                line_segments,
+                colors=line_colors,
+                linewidths=line_widths,
+                zorder=30  # Top layer for tails (above active routes)
+            )
+            ax.add_collection(line_collection)
+    
+    else:
+        # STANDARD TAILS: Use individual ax.plot() calls for crisp, individual segments
+        # Draw tail segments individually
+        for j in range(len(tail_points) - 1):
+            current_point = tail_points[j]
+            next_point = tail_points[j + 1]
+            
+            # Skip segments that cross track boundaries
+            if current_point.new_route_flag or next_point.new_route_flag:
+                continue
+            
+            # Calculate interpolation factor for width using the effective time range
+            segment_time = (current_point.accumulated_time + next_point.accumulated_time) / 2
+            interp_factor = (segment_time - time_min) / time_range
+            
+            # Clamp interpolation factor to valid range (important for virtual leading time)
+            interp_factor = max(0.0, min(1.0, interp_factor))
+            
+            # Calculate width interpolation (thin at start, thick at end)
+            segment_width = effective_line_width + (effective_line_width * tail_width - effective_line_width) * interp_factor
+            
+            # Get speed from current point for color
+            speed_value = current_point.current_speed_smoothed
+            
+            if speed_value is None:
+                # If no speed data, use default color (red) - fully opaque
+                segment_color = (1.0, 0.0, 0.0, 1.0)
+            else:
+                # Normalize speed to 0-1 range
+                normalized_speed = (speed_value - speed_min) / speed_range
+                normalized_speed = max(0.0, min(1.0, normalized_speed))  # Clamp to 0-1
+                
+                # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
+                rgb = speed_based_color(normalized_speed)
+                
+                # Use directly as matplotlib color - always fully opaque
+                segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
+            
+            # Draw this segment individually (convert GPS to Web Mercator coordinates)
+            lon1, lat1 = tail_lons[j], tail_lats[j]
+            lon2, lat2 = tail_lons[j + 1], tail_lats[j + 1]
+            x1, y1 = _gps_to_web_mercator(lon1, lat1)
+            x2, y2 = _gps_to_web_mercator(lon2, lat2)
+            
+            ax.plot(
+                [x1, x2], 
+                [y1, y2], 
+                color=segment_color, 
+                linewidth=segment_width,
+                zorder=30  # Top layer for tails (above active routes)
+            )
+
+
 def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_width, filename_to_rgba, ax, effective_leading_time=None, fade_out_progress=None, fluffy_tail=False):
     """
     Draw tail segments for a route with color and width interpolation.
@@ -957,85 +1122,167 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             tail_width = float(json_data.get('tail_width', 2))
             tail_color_setting = json_data.get('tail_color', 'light')
             
-            # NEW APPROACH: Group all points by route_index to identify independent routes
-            route_groups = {}  # {route_index: [points]}
+            # Check if speed-based coloring is enabled for tails
+            use_speed_based_color = json_data.get('speed_based_color', False)
             
-            for route_points in points_for_frame:
-                if not route_points:
-                    continue
+            if use_speed_based_color:
+                # SPEED-BASED COLORED TAILS: Use speed-based coloring instead of route-to-tail color interpolation
+                speed_min = float(json_data.get('speed_based_color_min', 5))
+                speed_max = float(json_data.get('speed_based_color_max', 35))
+                speed_range = speed_max - speed_min
                 
-                for point in route_points:
-                    # Use named attribute for route_index
-                    route_idx = point.route_index
-                    if route_idx not in route_groups:
-                        route_groups[route_idx] = []
-                    route_groups[route_idx].append(point)
-            
-            # Draw independent tail for each route_index
-            for route_index, route_points in route_groups.items():
-                if len(route_points) < 2:  # Need at least 2 points for a tail
-                    continue
-                              
-                # Determine the effective leading time (virtual or actual)
-                effective_leading_time = None
-                
-                # SIMULTANEOUS MODE TAIL FIX: Use route-specific virtual leading time if available
-                if route_specific_tail_info and route_index in route_specific_tail_info:
-                    route_info = route_specific_tail_info[route_index]
-                    # Check if virtual_leading_time exists (only for tail-only frames)
-                    if 'virtual_leading_time' in route_info:
-                        effective_leading_time = route_info['virtual_leading_time']
-                    else:
-                        # For normal frames, use the actual leading point time
-                        leading_point = route_points[-1]
-                        effective_leading_time = leading_point.accumulated_time
-                elif virtual_leading_time is not None:
-                    # Fallback to global virtual leading time (for sequential mode)
-                    effective_leading_time = virtual_leading_time
-                else:
-                    # Normal operation: use actual leading point time
-                    leading_point = route_points[-1]
-                    effective_leading_time = leading_point.accumulated_time
-                
-                # Calculate tail start time (backwards from effective leading time)
-                tail_start_time = effective_leading_time - tail_duration_route
-                
-                # OPTIMIZED: Use binary search + slicing instead of reverse iteration + individual appends
-                # Since points are chronological, we can find the exact cutoff point and slice efficiently
-                cutoff_index = _binary_search_tail_start_index(route_points, tail_start_time)
-                tail_points = route_points[cutoff_index:]  # All points from cutoff to end (already in chronological order)
-                
-                # Draw tail if we have enough points
-                if len(tail_points) > 1:
-                    # Get route color using named attribute
-                    route_filename = tail_points[0].filename if tail_points else None
-                    if route_filename and filename_to_rgba and route_filename in filename_to_rgba:
-                        route_color_rgba = filename_to_rgba[route_filename]
-                    else:
-                        route_color_rgba = (1.0, 0.0, 0.0, 1.0)
+                # Validate speed range to prevent division by zero
+                if speed_range > 0:
+                    # NEW APPROACH: Group all points by route_index to identify independent routes
+                    route_groups = {}  # {route_index: [points]}
                     
-                    # Get tail color
-                    tail_rgba_color = get_tail_color_for_route(tail_color_setting, route_color_rgba)
+                    for route_points in points_for_frame:
+                        if not route_points:
+                            continue
+                        
+                        for point in route_points:
+                            # Use named attribute for route_index
+                            route_idx = point.route_index
+                            if route_idx not in route_groups:
+                                route_groups[route_idx] = []
+                            route_groups[route_idx].append(point)
                     
-                    # SIMULTANEOUS MODE TAIL FIX: Calculate fade-out progress for this route
-                    fade_out_progress = None
+                    # Draw independent tail for each route_index (sequential mode only for speed-based tails)
+                    for route_index, route_points in route_groups.items():
+                        if len(route_points) < 2:  # Need at least 2 points for a tail
+                            continue
+                                  
+                        # Determine the effective leading time (virtual or actual)
+                        effective_leading_time = None
+                        
+                        # Use route-specific virtual leading time if available (for tail-only frames)
+                        if route_specific_tail_info and route_index in route_specific_tail_info:
+                            route_info = route_specific_tail_info[route_index]
+                            # Check if virtual_leading_time exists (only for tail-only frames)
+                            if 'virtual_leading_time' in route_info:
+                                effective_leading_time = route_info['virtual_leading_time']
+                            else:
+                                # For normal frames, use the actual leading point time
+                                leading_point = route_points[-1]
+                                effective_leading_time = leading_point.accumulated_time
+                        elif virtual_leading_time is not None:
+                            # Fallback to global virtual leading time (for sequential mode)
+                            effective_leading_time = virtual_leading_time
+                        else:
+                            # Normal operation: use actual leading point time
+                            leading_point = route_points[-1]
+                            effective_leading_time = leading_point.accumulated_time
+                        
+                        # Calculate tail start time (backwards from effective leading time)
+                        tail_start_time = effective_leading_time - tail_duration_route
+                        
+                        # OPTIMIZED: Use binary search + slicing instead of reverse iteration + individual appends
+                        # Since points are chronological, we can find the exact cutoff point and slice efficiently
+                        cutoff_index = _binary_search_tail_start_index(route_points, tail_start_time)
+                        tail_points = route_points[cutoff_index:]  # All points from cutoff to end (already in chronological order)
+                        
+                        # Draw tail if we have enough points
+                        if len(tail_points) > 1:
+                            # SIMULTANEOUS MODE TAIL FIX: Calculate fade-out progress for this route
+                            fade_out_progress = None
+                            if route_specific_tail_info and route_index in route_specific_tail_info:
+                                route_info = route_specific_tail_info[route_index]
+                                route_end_time = route_info['route_end_time']
+                                route_delay_seconds = route_info['route_delay_seconds']
+                                
+                                # Calculate how much time has passed since this route ended
+                                current_route_time = target_time * gpx_time_per_video_time if target_time and gpx_time_per_video_time else 0
+                                time_since_route_end = current_route_time - route_end_time
+                                
+                                # Calculate fade-out progress (0.0 = just ended, 1.0 = fully faded)
+                                tail_duration_route = gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
+                                if tail_duration_route > 0:
+                                    fade_out_progress = time_since_route_end / tail_duration_route
+                                    fade_out_progress = max(0.0, min(1.0, fade_out_progress))  # Clamp to valid range
+                            
+                            # Draw the speed-based colored tail (zorder=30 - above routes but below labels)
+                            _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effective_line_width, ax, effective_leading_time, fade_out_progress, fluffy_tail=json_data.get('fluffy_tail', False))
+            else:
+                # STANDARD TAILS: Use route-to-tail color interpolation (original behavior)
+                # NEW APPROACH: Group all points by route_index to identify independent routes
+                route_groups = {}  # {route_index: [points]}
+                
+                for route_points in points_for_frame:
+                    if not route_points:
+                        continue
+                    
+                    for point in route_points:
+                        # Use named attribute for route_index
+                        route_idx = point.route_index
+                        if route_idx not in route_groups:
+                            route_groups[route_idx] = []
+                        route_groups[route_idx].append(point)
+                
+                # Draw independent tail for each route_index
+                for route_index, route_points in route_groups.items():
+                    if len(route_points) < 2:  # Need at least 2 points for a tail
+                        continue
+                                  
+                    # Determine the effective leading time (virtual or actual)
+                    effective_leading_time = None
+                    
+                    # SIMULTANEOUS MODE TAIL FIX: Use route-specific virtual leading time if available
                     if route_specific_tail_info and route_index in route_specific_tail_info:
                         route_info = route_specific_tail_info[route_index]
-                        route_end_time = route_info['route_end_time']
-                        route_delay_seconds = route_info['route_delay_seconds']
-                        
-                        # Calculate how much time has passed since this route ended
-                        current_route_time = target_time * gpx_time_per_video_time if target_time and gpx_time_per_video_time else 0
-                        time_since_route_end = current_route_time - route_end_time
-                        
-                        # Calculate fade-out progress (0.0 = just ended, 1.0 = fully faded)
-                        tail_duration_route = gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
-                        if tail_duration_route > 0:
-                            fade_out_progress = time_since_route_end / tail_duration_route
-                            fade_out_progress = max(0.0, min(1.0, fade_out_progress))  # Clamp to valid range
+                        # Check if virtual_leading_time exists (only for tail-only frames)
+                        if 'virtual_leading_time' in route_info:
+                            effective_leading_time = route_info['virtual_leading_time']
+                        else:
+                            # For normal frames, use the actual leading point time
+                            leading_point = route_points[-1]
+                            effective_leading_time = leading_point.accumulated_time
+                    elif virtual_leading_time is not None:
+                        # Fallback to global virtual leading time (for sequential mode)
+                        effective_leading_time = virtual_leading_time
+                    else:
+                        # Normal operation: use actual leading point time
+                        leading_point = route_points[-1]
+                        effective_leading_time = leading_point.accumulated_time
                     
-                    # Draw the tail with fade-out progress (zorder=30 - above routes but below labels)
-                    _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effective_line_width, filename_to_rgba, ax, fade_out_progress, fluffy_tail=json_data.get('fluffy_tail', False))
+                    # Calculate tail start time (backwards from effective leading time)
+                    tail_start_time = effective_leading_time - tail_duration_route
+                    
+                    # OPTIMIZED: Use binary search + slicing instead of reverse iteration + individual appends
+                    # Since points are chronological, we can find the exact cutoff point and slice efficiently
+                    cutoff_index = _binary_search_tail_start_index(route_points, tail_start_time)
+                    tail_points = route_points[cutoff_index:]  # All points from cutoff to end (already in chronological order)
+                    
+                    # Draw tail if we have enough points
+                    if len(tail_points) > 1:
+                        # Get route color using named attribute
+                        route_filename = tail_points[0].filename if tail_points else None
+                        if route_filename and filename_to_rgba and route_filename in filename_to_rgba:
+                            route_color_rgba = filename_to_rgba[route_filename]
+                        else:
+                            route_color_rgba = (1.0, 0.0, 0.0, 1.0)
+                        
+                        # Get tail color
+                        tail_rgba_color = get_tail_color_for_route(tail_color_setting, route_color_rgba)
+                        
+                        # SIMULTANEOUS MODE TAIL FIX: Calculate fade-out progress for this route
+                        fade_out_progress = None
+                        if route_specific_tail_info and route_index in route_specific_tail_info:
+                            route_info = route_specific_tail_info[route_index]
+                            route_end_time = route_info['route_end_time']
+                            route_delay_seconds = route_info['route_delay_seconds']
+                            
+                            # Calculate how much time has passed since this route ended
+                            current_route_time = target_time * gpx_time_per_video_time if target_time and gpx_time_per_video_time else 0
+                            time_since_route_end = current_route_time - route_end_time
+                            
+                            # Calculate fade-out progress (0.0 = just ended, 1.0 = fully faded)
+                            tail_duration_route = gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
+                            if tail_duration_route > 0:
+                                fade_out_progress = time_since_route_end / tail_duration_route
+                                fade_out_progress = max(0.0, min(1.0, fade_out_progress))  # Clamp to valid range
+                        
+                        # Draw the tail with fade-out progress (zorder=30 - above routes but below labels)
+                        _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effective_line_width, filename_to_rgba, ax, fade_out_progress, fluffy_tail=json_data.get('fluffy_tail', False))
         
         name_tags_setting = json_data.get('name_tags')
         if name_tags_setting in ['light', 'dark']:
@@ -1197,6 +1444,45 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                     frame_array[y_start:y_end, x_start:x_end] = stamp_array
             else:
                 print(f"Warning: Stamp does not fit within frame bounds for frame {frame_number}")
+        
+        # Add speed-based color label if enabled
+        if json_data and json_data.get('speed_based_color_label', False):
+            label_array = json_data.get('_speed_based_color_label_image')
+            if label_array is not None:
+                height = int(json_data.get('video_resolution_y', 1080))
+                width = int(json_data.get('video_resolution_x', 1920))
+                
+                # Get label dimensions
+                label_height, label_width = label_array.shape[:2]
+                
+                # Calculate position: horizontally centered, bottom edge 20 pixels above image bottom
+                padding_bottom = 20
+                y_end = height - padding_bottom
+                y_start = y_end - label_height
+                x_start = (width - label_width) // 2
+                x_end = x_start + label_width
+                
+                # Ensure label fits within frame bounds
+                if y_start >= 0 and x_start >= 0 and y_end <= height and x_end <= width:
+                    # Check if label has alpha channel (RGBA)
+                    if label_array.shape[2] == 4:
+                        # RGBA label - apply alpha blending
+                        alpha = label_array[:, :, 3:4] / 255.0  # Normalize alpha to 0-1
+                        rgb_label = label_array[:, :, :3] / 255.0  # Normalize RGB to 0-1
+                        
+                        # Extract the region where label will be placed
+                        frame_region = frame_array[y_start:y_end, x_start:x_end].astype(np.float32) / 255.0
+                        
+                        # Alpha blend: result = alpha * label + (1 - alpha) * background
+                        blended = alpha * rgb_label + (1 - alpha) * frame_region
+                        
+                        # Convert back to uint8 and place in frame
+                        frame_array[y_start:y_end, x_start:x_end] = (blended * 255).astype(np.uint8)
+                    else:
+                        # RGB label - direct replacement (no transparency)
+                        frame_array[y_start:y_end, x_start:x_end] = label_array[:, :, :3]
+                else:
+                    print(f"Warning: Speed-based color label does not fit within frame bounds for frame {frame_number}")
         
         # Clean up matplotlib figure to prevent memory leaks
         plt.close(fig)

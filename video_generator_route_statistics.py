@@ -202,7 +202,7 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         
         # Current speed - use pre-calculated smoothed value from route creation
         if current_speed_requested:
-            # Use pre-calculated smoothed speed (calculated during route creation with 0.5 video-second window)
+            # Use pre-calculated smoothed speed (calculated during route creation with 0.3 video-second window)
             if last_point.current_speed_smoothed is not None:
                 statistics_data['current_speed'] = f"{last_point.current_speed_smoothed}"
             else:
@@ -270,7 +270,7 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         
         # Current heart rate - use pre-calculated smoothed value from route creation
         if current_hr_requested:
-            # Use pre-calculated smoothed heart rate (calculated during route creation with 0.5 video-second window)
+            # Use pre-calculated smoothed heart rate (calculated during route creation with 0.3 video-second window)
             if last_point.heart_rate_smoothed is not None:
                 statistics_data['current_hr'] = f"{last_point.heart_rate_smoothed}"
             else:

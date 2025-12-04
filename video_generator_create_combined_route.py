@@ -9,7 +9,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import NamedTuple, Optional
 import gpxpy
+import numpy as np
+from PIL import Image
 from image_generator_utils import calculate_haversine_distance
+from speed_based_color import update_speed_based_color_range, create_speed_based_color_label
 
 # Conversion constants for imperial units
 METERS_TO_MILES = 0.000621371
@@ -24,7 +27,7 @@ class RoutePoint(NamedTuple):
     GPS coordinates along with associated metadata like timing and statistics.
     
     The smoothed fields (heart_rate_smoothed, current_speed_smoothed) are calculated
-    after the route is fully created, using a 0.5 video-second smoothing window.
+    after the route is fully created, using a 0.3 video-second smoothing window.
     These pre-calculated values avoid per-frame recalculation during video rendering.
     
     Accumulated_distance and current_speed_smoothed are stored in metric units
@@ -41,7 +44,7 @@ class RoutePoint(NamedTuple):
     elevation: Optional[float]          # Elevation in meters (if available)
     heart_rate: int                     # Heart rate in BPM (0 if not available)
     # Pre-calculated smoothed values (populated after route creation if statistics are enabled)
-    heart_rate_smoothed: Optional[int] = None      # Smoothed HR over 0.5 video-second window
+    heart_rate_smoothed: Optional[int] = None      # Smoothed HR over 0.3 video-second window
     current_speed_smoothed: Optional[int] = None   # Smoothed speed (km/h or mph based on imperial_units)
 
 
@@ -49,7 +52,7 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
     """
     Calculate smoothed heart rate and speed for all points in a route.
     
-    Uses a 0.5 video-second smoothing window, converted to route time using gpx_time_per_video_time.
+    Uses a 0.3 video-second smoothing window, converted to route time using gpx_time_per_video_time.
     This pre-calculation avoids per-frame recalculation during video rendering.
     
     Args:
@@ -66,8 +69,8 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
     if not route_points or (not calculate_hr and not calculate_speed):
         return route_points
     
-    # Calculate the smoothing window in route time (0.5 video seconds)
-    video_seconds_to_check = 0.5
+    # Calculate the smoothing window in route time (0.3 video seconds)
+    video_seconds_to_check = 0.3
     route_time_threshold = video_seconds_to_check * gpx_time_per_video_time
     
     updated_points = []
@@ -76,7 +79,7 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
         smoothed_hr = None
         smoothed_speed = None
         
-        # Calculate target time for comparison (0.5 video seconds back from this point)
+        # Calculate target time for comparison (0.3 video seconds back from this point)
         target_time = point.accumulated_time - route_time_threshold
         
         if calculate_hr and point.heart_rate > 0:
@@ -93,7 +96,7 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
                 smoothed_hr = round(sum(hr_values) / len(hr_values))
         
         if calculate_speed:
-            # Find comparison point that is approximately 0.5 video seconds back
+            # Find comparison point that is approximately 0.3 video seconds back
             comparison_point = None
             for j in range(i - 1, -1, -1):  # Search backwards
                 prev_point = route_points[j]
@@ -143,73 +146,6 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
         updated_points.append(updated_point)
     
     return updated_points
-
-
-def _update_speed_based_color_range(all_routes, json_data, debug_callback=None):
-    """
-    Update speed_based_color_min and speed_based_color_max in json_data based on actual data.
-    
-    If either value is -1, it will be calculated from the minimum/maximum current_speed_smoothed
-    values across all routes. If values are already set (not -1), they are left unchanged.
-    
-    Args:
-        all_routes (list): List of route data dictionaries
-        json_data (dict): Job data dictionary (will be modified in place)
-        debug_callback (callable, optional): Function for debug logging
-    
-    Returns:
-        None (modifies json_data in place)
-    """
-    if not json_data:
-        return
-    
-    speed_min_setting = json_data.get('speed_based_color_min', -1)
-    speed_max_setting = json_data.get('speed_based_color_max', -1)
-    
-    # Check if we need to calculate either value
-    need_min = speed_min_setting == -1
-    need_max = speed_max_setting == -1
-    
-    if not need_min and not need_max:
-        if debug_callback:
-            debug_callback("Speed-based color range already set, skipping auto-calculation")
-        return
-    
-    # Collect all current_speed_smoothed values from all routes
-    all_speeds = []
-    for route in all_routes:
-        route_points = route.get('combined_route', [])
-        for point in route_points:
-            if point.current_speed_smoothed is not None:
-                all_speeds.append(point.current_speed_smoothed)
-    
-    if not all_speeds:
-        if debug_callback:
-            debug_callback("No smoothed speed data available for color range calculation")
-        return
-    
-    # Calculate min/max from actual data
-    calculated_min = min(all_speeds)
-    calculated_max = max(all_speeds)
-    
-    # Update json_data if needed
-    # Note: speed_based_color_min/max are already in the correct units (mph if imperial_units, km/h otherwise)
-    # and should NOT be converted
-    imperial_units = _is_imperial_units(json_data)
-    speed_unit = "mph" if imperial_units else "km/h"
-    
-    if need_min:
-        json_data['speed_based_color_min'] = calculated_min
-        if debug_callback:
-            debug_callback(f"Auto-calculated speed_based_color_min: {calculated_min} {speed_unit}")
-    
-    if need_max:
-        json_data['speed_based_color_max'] = calculated_max
-        if debug_callback:
-            debug_callback(f"Auto-calculated speed_based_color_max: {calculated_max} {speed_unit}")
-    
-    if debug_callback and (need_min or need_max):
-        debug_callback(f"Speed-based color range: {json_data.get('speed_based_color_min')} - {json_data.get('speed_based_color_max')} {speed_unit}")
 
 
 def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, json_data, debug_callback=None):
@@ -577,7 +513,25 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         
         # Auto-calculate speed-based color range if needed (if speed_based_color_min/max are -1)
         # This must be done after smoothed statistics are calculated
-        _update_speed_based_color_range(all_routes, json_data, debug_callback)
+        update_speed_based_color_range(all_routes, json_data, debug_callback)
+        
+        # Create speed-based color label if enabled
+        if json_data and json_data.get('speed_based_color_label', False):
+            speed_min = json_data.get('speed_based_color_min', 5)
+            speed_max = json_data.get('speed_based_color_max', 35)
+            imperial_units = _is_imperial_units(json_data)
+            
+            try:
+                label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units)
+                # Convert PIL Image to numpy array (RGBA) for storage
+                label_array = np.array(label_image)
+                # Store in json_data for use during frame generation
+                json_data['_speed_based_color_label_image'] = label_array
+                if debug_callback:
+                    debug_callback(f"Created speed-based color label image ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
+            except Exception as e:
+                if log_callback:
+                    log_callback(f"Error creating speed-based color label: {str(e)}")
               
         # Final progress update
         if progress_callback:
