@@ -360,3 +360,15 @@ Operation completed in: 9s
 [20:23:26] Step 3: Calculating unique bounding boxes and caching map tiles
 [20:23:29] Step 4: Caching map images for unique bounding boxes
 [20:24:12] Step 5: Generating video frames
+[20:28:32] 🎬 Total rendering time: 5 minutes 4.32 seconds
+[20:28:32] Step 6: Uploading video and thumbnail to storage box
+[20:28:32] Starting video upload to storage box...
+[20:28:32] Video file validated: 28395325 bytes
+[20:28:32] Uploading video file: Random eskate with speed-based tail.mp4
+[20:28:41] Video file uploaded successfully: 28395325 bytes
+[20:28:41] Uploading thumbnail file: thumbnail.png
+[20:28:41] Thumbnail uploaded successfully: 212408 bytes
+[20:28:41] Video upload completed successfully
+[20:28:41] ✅ Video upload completed successfully
+[20:28:43] Job #416 completed successfully
+[20:28:43] Job completed. Requesting next job...

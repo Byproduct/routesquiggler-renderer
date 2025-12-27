@@ -1,0 +1,689 @@
+[01:25:23] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[01:25:23] Using 6 threads (default: max-2, min 1)
+[01:25:23] Debug logging: disabled (from config.txt)
+[01:25:23] Configuration loaded
+[01:25:23] Terminal-only mode enabled
+[01:25:23] GPU rendering enabled
+[01:25:23] ------------------------------------------
+[01:25:23] Starting up Route Squiggler render client.
+[01:25:23] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[01:25:23] Testing connection to web server
+[01:25:23] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-08T23:25:23.803353+00:00", "accepted_version": "0.10"}
+[01:25:24] Storage box connection successful.
+[01:25:24] Syncing map tile cache
+[01:25:24] Running map tile cache sweep.
+[01:25:24] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:25:24] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:25:24] Found 47616 .npy files to process
+[01:26:11] Total tiles processed: 47616
+[01:26:11] Good tiles (kept): 47616
+[01:26:11] Blank/erroneous tiles (deleted): 0
+[01:26:11] 
+Operation completed in: 47s
+[01:26:11] Cache cleaning completed
+[01:26:11] Starting map tile cache sync...
+[01:26:12] Found 1200 files in StadiaLight/CustomStadiaTiles
+[01:26:12] Found 3036 files in StadiaToner/CustomStadiaTiles
+[01:26:12] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[01:26:12] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[01:26:12] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[01:26:12] Found 14537 files in OSM/OSM
+[01:26:12] Found 11419 files in StadiaDark/CustomStadiaTiles
+[01:26:15] Found 47616 local files and 47312 remote files
+[01:26:29] Files to upload: 307, Files to download: 3
+[01:26:29] Using 10 parallel threads for syncing
+[01:26:29] Starting parallel upload...
+[01:26:45] Uploaded 100/307 files
+[01:27:02] Uploaded 200/307 files
+[01:27:09] Uploaded 300/307 files
+[01:27:10] Map tile cache sync completed. Uploaded: 307, downloaded: 3
+[01:27:10] Bootup completed successfully
+[01:27:10] Starting job processing mode...
+[01:27:10] Starting job processing loop. Press Ctrl+C to stop.
+[01:30:11] Processing job #443 (type: video)
+[01:30:11] Step 1: Sorting GPX files chronologically
+[01:30:11] Step 2: Creating combined route
+[01:30:11] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:30:14] Step 4: Caching map images for unique bounding boxes
+[01:30:15] Step 5: Generating video frames
+[01:30:27] 🎬 Total rendering time: 14.29 seconds
+[01:30:27] Step 6: Uploading video and thumbnail to storage box
+[01:30:27] Starting video upload to storage box...
+[01:30:27] Video file validated: 319346 bytes
+[01:30:27] Uploading video file: Stairs_speed.mp4
+[01:30:27] Video file uploaded successfully: 319346 bytes
+[01:30:27] Uploading thumbnail file: thumbnail.png
+[01:30:28] Thumbnail uploaded successfully: 185794 bytes
+[01:30:28] Video upload completed successfully
+[01:30:28] ✅ Video upload completed successfully
+[01:30:29] Job #443 completed successfully
+[01:30:29] Job completed. Requesting next job...
+[01:30:29] Processing job #444 (type: video)
+[01:30:29] Step 1: Sorting GPX files chronologically
+[01:30:29] Step 2: Creating combined route
+[01:30:29] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:30:30] Step 4: Caching map images for unique bounding boxes
+[01:30:32] Step 5: Generating video frames
+[01:30:41] 🎬 Total rendering time: 11.66 seconds
+[01:30:41] Step 6: Uploading video and thumbnail to storage box
+[01:30:41] Starting video upload to storage box...
+[01:30:41] Video file validated: 283237 bytes
+[01:30:41] Uploading video file: Stairs_hr_auto_nolabel.mp4
+[01:30:42] Video file uploaded successfully: 283237 bytes
+[01:30:42] Uploading thumbnail file: thumbnail.png
+[01:30:42] Thumbnail uploaded successfully: 180633 bytes
+[01:30:42] Video upload completed successfully
+[01:30:42] ✅ Video upload completed successfully
+[01:30:43] Job #444 completed successfully
+[01:30:43] Job completed. Requesting next job...
+[01:31:04] Processing job #445 (type: video)
+[01:31:04] Step 1: Sorting GPX files chronologically
+[01:31:04] Step 2: Creating combined route
+[01:31:04] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:31:05] Step 4: Caching map images for unique bounding boxes
+[01:31:06] Step 5: Generating video frames
+[01:31:18] 🎬 Total rendering time: 13.85 seconds
+[01:31:18] Step 6: Uploading video and thumbnail to storage box
+[01:31:18] Starting video upload to storage box...
+[01:31:18] Video file validated: 291616 bytes
+[01:31:18] Uploading video file: Stairs_hr_manual_nolabel.mp4
+[01:31:18] Video file uploaded successfully: 291616 bytes
+[01:31:18] Uploading thumbnail file: thumbnail.png
+[01:31:18] Thumbnail uploaded successfully: 183910 bytes
+[01:31:18] Video upload completed successfully
+[01:31:18] ✅ Video upload completed successfully
+[01:31:19] Job #445 completed successfully
+[01:31:19] Job completed. Requesting next job...
+[01:31:30] Processing job #446 (type: video)
+[01:31:30] Step 1: Sorting GPX files chronologically
+[01:31:30] Step 2: Creating combined route
+[01:31:30] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:31:31] Step 4: Caching map images for unique bounding boxes
+[01:31:33] Step 5: Generating video frames
+[01:31:44] 🎬 Total rendering time: 14.07 seconds
+[01:31:44] Step 6: Uploading video and thumbnail to storage box
+[01:31:44] Starting video upload to storage box...
+[01:31:44] Video file validated: 294026 bytes
+[01:31:44] Uploading video file: Stairs_hr_manual_yeslabel.mp4
+[01:31:45] Video file uploaded successfully: 294026 bytes
+[01:31:45] Uploading thumbnail file: thumbnail.png
+[01:31:45] Thumbnail uploaded successfully: 185779 bytes
+[01:31:45] Video upload completed successfully
+[01:31:45] ✅ Video upload completed successfully
+[01:31:46] Job #446 completed successfully
+[01:31:46] Job completed. Requesting next job...
+[01:33:17] Processing job #447 (type: video)
+[01:33:17] Step 1: Sorting GPX files chronologically
+[01:33:17] Step 2: Creating combined route
+[01:33:17] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:33:18] Step 4: Caching map images for unique bounding boxes
+[01:33:19] Step 5: Generating video frames
+[01:33:32] 🎬 Total rendering time: 14.75 seconds
+[01:33:32] Step 6: Uploading video and thumbnail to storage box
+[01:33:32] Starting video upload to storage box...
+[01:33:32] Video file validated: 442678 bytes
+[01:33:32] Uploading video file: Stairs_hr_manual_yeslabel_stats.mp4
+[01:33:32] Video file uploaded successfully: 442678 bytes
+[01:33:32] Uploading thumbnail file: thumbnail.png
+[01:33:33] Thumbnail uploaded successfully: 186525 bytes
+[01:33:33] Video upload completed successfully
+[01:33:33] ✅ Video upload completed successfully
+[01:33:34] Job #447 completed successfully
+[01:33:34] Job completed. Requesting next job...
+[01:35:05] Processing job #448 (type: video)
+[01:35:05] Step 1: Sorting GPX files chronologically
+[01:35:05] Step 2: Creating combined route
+[01:35:05] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:35:06] Step 4: Caching map images for unique bounding boxes
+[01:35:07] Step 5: Generating video frames
+[01:35:35] 🎬 Total rendering time: 29.86 seconds
+[01:35:35] Step 6: Uploading video and thumbnail to storage box
+[01:35:35] Starting video upload to storage box...
+[01:35:35] Video file validated: 864925 bytes
+[01:35:35] Uploading video file: Stairs_hr_manual_yeslabel_stats.mp4
+[01:35:35] Video file uploaded successfully: 864925 bytes
+[01:35:35] Uploading thumbnail file: thumbnail.png
+[01:35:36] Thumbnail uploaded successfully: 187027 bytes
+[01:35:36] Video upload completed successfully
+[01:35:36] ✅ Video upload completed successfully
+[01:35:37] Job #448 completed successfully
+[01:35:37] Job completed. Requesting next job...
+[01:35:37] Processing job #449 (type: video)
+[01:35:37] Step 1: Sorting GPX files chronologically
+[01:35:37] Step 2: Creating combined route
+[01:35:38] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:35:39] Step 4: Caching map images for unique bounding boxes
+[01:35:40] Step 5: Generating video frames
+[01:36:09] 🎬 Total rendering time: 31.52 seconds
+[01:36:09] Step 6: Uploading video and thumbnail to storage box
+[01:36:09] Starting video upload to storage box...
+[01:36:09] Video file validated: 856335 bytes
+[01:36:09] Uploading video file: Stairs_hr_auto_yeslabel_stats.mp4
+[01:36:10] Video file uploaded successfully: 856335 bytes
+[01:36:10] Uploading thumbnail file: thumbnail.png
+[01:36:10] Thumbnail uploaded successfully: 186423 bytes
+[01:36:10] Video upload completed successfully
+[01:36:10] ✅ Video upload completed successfully
+[01:36:11] Job #449 completed successfully
+[01:36:11] Job completed. Requesting next job...
+[01:37:52] Processing job #450 (type: video)
+[01:37:52] Step 1: Sorting GPX files chronologically
+[01:37:52] Step 2: Creating combined route
+[01:37:52] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:37:53] Step 4: Caching map images for unique bounding boxes
+[01:37:55] Step 5: Generating video frames
+[01:38:12] 🎬 Total rendering time: 20.17 seconds
+[01:38:12] Step 6: Uploading video and thumbnail to storage box
+[01:38:12] Starting video upload to storage box...
+[01:38:12] Video file validated: 618582 bytes
+[01:38:13] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:38:13] Video file uploaded successfully: 618582 bytes
+[01:38:13] Uploading thumbnail file: thumbnail.png
+[01:38:13] Thumbnail uploaded successfully: 183383 bytes
+[01:38:13] Video upload completed successfully
+[01:38:13] ✅ Video upload completed successfully
+[01:38:14] Job #450 completed successfully
+[01:38:14] Job completed. Requesting next job...
+[01:40:25] Processing job #451 (type: video)
+[01:40:25] Step 1: Sorting GPX files chronologically
+[01:40:25] Step 2: Creating combined route
+[01:40:26] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:40:27] Step 4: Caching map images for unique bounding boxes
+[01:40:28] Step 5: Generating video frames
+[01:40:38] 🎬 Total rendering time: 12.08 seconds
+[01:40:38] Step 6: Uploading video and thumbnail to storage box
+[01:40:38] Starting video upload to storage box...
+[01:40:38] Video file validated: 294879 bytes
+[01:40:38] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:40:38] Video file uploaded successfully: 294879 bytes
+[01:40:38] Uploading thumbnail file: thumbnail.png
+[01:40:38] Thumbnail uploaded successfully: 183254 bytes
+[01:40:38] Video upload completed successfully
+[01:40:38] ✅ Video upload completed successfully
+[01:40:40] Job #451 completed successfully
+[01:40:40] Job completed. Requesting next job...
+[01:40:58] Starting Route Squiggler Render Client in GUI mode (from config.txt)
+[01:40:58] Using 6 threads (default: max-2, min 1)
+[01:40:58] Debug logging: disabled (from config.txt)
+[01:40:58] Configuration loaded
+[01:40:58] GUI mode enabled
+[01:40:58] GPU rendering enabled
+[01:41:00] Running map tile cache sweep.
+[01:41:00] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:41:00] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:41:00] Found 47625 .npy files to process
+[01:41:07] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[01:41:07] Using 6 threads (default: max-2, min 1)
+[01:41:07] Debug logging: disabled (from config.txt)
+[01:41:07] Configuration loaded
+[01:41:07] Terminal-only mode enabled
+[01:41:07] GPU rendering enabled
+[01:41:07] ------------------------------------------
+[01:41:07] Starting up Route Squiggler render client.
+[01:41:07] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[01:41:07] Testing connection to web server
+[01:41:07] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-08T23:41:07.719126+00:00", "accepted_version": "0.10"}
+[01:41:08] Storage box connection successful.
+[01:41:08] Syncing map tile cache
+[01:41:08] Running map tile cache sweep.
+[01:41:08] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:41:08] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[01:41:08] Found 47625 .npy files to process
+[01:41:17] Total tiles processed: 47625
+[01:41:17] Good tiles (kept): 47625
+[01:41:17] Blank/erroneous tiles (deleted): 0
+[01:41:17] 
+Operation completed in: 9s
+[01:41:17] Cache cleaning completed
+[01:41:17] Starting map tile cache sync...
+[01:41:17] Found 1200 files in StadiaLight/CustomStadiaTiles
+[01:41:17] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[01:41:17] Found 3036 files in StadiaToner/CustomStadiaTiles
+[01:41:17] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[01:41:17] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[01:41:17] Found 11419 files in StadiaDark/CustomStadiaTiles
+[01:41:17] Found 14844 files in OSM/OSM
+[01:41:21] Found 47625 local files and 47619 remote files
+[01:41:33] Files to upload: 6, Files to download: 0
+[01:41:33] Using 6 parallel threads for syncing
+[01:41:33] Starting parallel upload...
+[01:41:33] Map tile cache sync completed. Uploaded: 6, downloaded: 0
+[01:41:33] Bootup completed successfully
+[01:41:33] Starting job processing mode...
+[01:41:33] Starting job processing loop. Press Ctrl+C to stop.
+[01:42:03] Processing job #452 (type: video)
+[01:42:03] Step 1: Sorting GPX files chronologically
+[01:42:03] Step 2: Creating combined route
+[01:42:04] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:42:05] Step 4: Caching map images for unique bounding boxes
+[01:42:06] Step 5: Generating video frames
+[01:42:18] 🎬 Total rendering time: 14.49 seconds
+[01:42:18] Step 6: Uploading video and thumbnail to storage box
+[01:42:18] Starting video upload to storage box...
+[01:42:18] Video file validated: 310029 bytes
+[01:42:18] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:42:19] Video file uploaded successfully: 310029 bytes
+[01:42:19] Uploading thumbnail file: thumbnail.png
+[01:42:19] Thumbnail uploaded successfully: 186463 bytes
+[01:42:19] Video upload completed successfully
+[01:42:19] ✅ Video upload completed successfully
+[01:42:20] Job #452 completed successfully
+[01:42:20] Job completed. Requesting next job...
+[01:43:11] Processing job #453 (type: video)
+[01:43:11] Step 1: Sorting GPX files chronologically
+[01:43:11] Step 2: Creating combined route
+[01:43:11] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:43:12] Step 4: Caching map images for unique bounding boxes
+[01:43:13] Step 5: Generating video frames
+[01:43:25] 🎬 Total rendering time: 14.10 seconds
+[01:43:25] Step 6: Uploading video and thumbnail to storage box
+[01:43:25] Starting video upload to storage box...
+[01:43:25] Video file validated: 293522 bytes
+[01:43:25] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:43:25] Video file uploaded successfully: 293522 bytes
+[01:43:25] Uploading thumbnail file: thumbnail.png
+[01:43:26] Thumbnail uploaded successfully: 182617 bytes
+[01:43:26] Video upload completed successfully
+[01:43:26] ✅ Video upload completed successfully
+[01:43:27] Job #453 completed successfully
+[01:43:27] Job completed. Requesting next job...
+[01:43:57] Processing job #454 (type: video)
+[01:43:57] Step 1: Sorting GPX files chronologically
+[01:43:57] Step 2: Creating combined route
+[01:43:57] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:43:59] Step 4: Caching map images for unique bounding boxes
+[01:44:00] Step 5: Generating video frames
+[01:46:19] 🎬 Total rendering time: 2 minutes 21.15 seconds
+[01:46:19] Step 6: Uploading video and thumbnail to storage box
+[01:46:19] Starting video upload to storage box...
+[01:46:19] Video file validated: 3003727 bytes
+[01:46:19] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:46:20] Video file uploaded successfully: 3003727 bytes
+[01:46:20] Uploading thumbnail file: thumbnail.png
+[01:46:20] Thumbnail uploaded successfully: 184941 bytes
+[01:46:20] Video upload completed successfully
+[01:46:20] ✅ Video upload completed successfully
+[01:46:21] Job #454 completed successfully
+[01:46:21] Job completed. Requesting next job...
+[01:46:22] Processing job #455 (type: video)
+[01:46:22] Step 1: Sorting GPX files chronologically
+[01:46:22] Step 2: Creating combined route
+[01:46:22] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:46:23] Step 4: Caching map images for unique bounding boxes
+[01:46:24] Step 5: Generating video frames
+[01:49:15] 🎬 Total rendering time: 2 minutes 52.94 seconds
+[01:49:15] Step 6: Uploading video and thumbnail to storage box
+[01:49:15] Starting video upload to storage box...
+[01:49:15] Video file validated: 4021081 bytes
+[01:49:15] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:49:16] Video file uploaded successfully: 4021081 bytes
+[01:49:16] Uploading thumbnail file: thumbnail.png
+[01:49:16] Thumbnail uploaded successfully: 188595 bytes
+[01:49:16] Video upload completed successfully
+[01:49:16] ✅ Video upload completed successfully
+[01:49:18] Job #455 completed successfully
+[01:49:18] Job completed. Requesting next job...
+[01:51:19] Processing job #456 (type: video)
+[01:51:19] Step 1: Sorting GPX files chronologically
+[01:51:19] Step 2: Creating combined route
+[01:51:19] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:51:20] Step 4: Caching map images for unique bounding boxes
+[01:51:21] Step 5: Generating video frames
+[01:51:50] 🎬 Total rendering time: 31.02 seconds
+[01:51:50] Step 6: Uploading video and thumbnail to storage box
+[01:51:50] Starting video upload to storage box...
+[01:51:50] Video file validated: 1847638 bytes
+[01:51:50] Uploading video file: Stairs_hr_auto_yeslabel_nostats.mp4
+[01:51:51] Video file uploaded successfully: 1847638 bytes
+[01:51:51] Uploading thumbnail file: thumbnail.png
+[01:51:51] Thumbnail uploaded successfully: 188865 bytes
+[01:51:51] Video upload completed successfully
+[01:51:51] ✅ Video upload completed successfully
+[01:51:52] Job #456 completed successfully
+[01:51:52] Job completed. Requesting next job...
+[01:52:13] Processing job #457 (type: video)
+[01:52:13] Step 1: Sorting GPX files chronologically
+[01:52:13] Step 2: Creating combined route
+[01:52:13] Step 3: Calculating unique bounding boxes and caching map tiles
+[01:52:14] Step 4: Caching map images for unique bounding boxes
+[01:52:15] Step 5: Generating video frames
+[01:55:12] 🎬 Total rendering time: 2 minutes 59.36 seconds
+[01:55:12] Step 6: Uploading video and thumbnail to storage box
+[01:55:12] Starting video upload to storage box...
+[01:55:12] Video file validated: 3626192 bytes
+[01:55:12] Uploading video file: Stairs_hr_manual_yeslabel.mp4
+[01:55:14] Video file uploaded successfully: 3626192 bytes
+[01:55:14] Uploading thumbnail file: thumbnail.png
+[01:55:14] Thumbnail uploaded successfully: 188501 bytes
+[01:55:14] Video upload completed successfully
+[01:55:14] ✅ Video upload completed successfully
+[01:55:15] Job #457 completed successfully
+[01:55:15] Job completed. Requesting next job...
+[01:55:16] Processing job #458 (type: image)
+[01:55:16] Starting image generation.
+[01:55:21] Image generation completed in 5 seconds.
+[01:55:21] Job #458 completed successfully
+[01:55:21] Job completed. Requesting next job...
+[01:55:22] Processing job #459 (type: image)
+[01:55:22] Starting image generation.
+[01:55:22] Creating combined route for speed-based coloring...
+[01:55:29] Image generation completed in 7 seconds.
+[01:55:29] Job #459 completed successfully
+[01:55:29] Job completed. Requesting next job...
+[01:55:30] Processing job #460 (type: image)
+[01:55:30] Starting image generation.
+[01:55:35] Image generation completed in 5 seconds.
+[01:55:35] Job #460 completed successfully
+[01:55:35] Job completed. Requesting next job...
+[02:02:14] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[02:02:14] Using 6 threads (default: max-2, min 1)
+[02:02:14] Debug logging: disabled (from config.txt)
+[02:02:14] Configuration loaded
+[02:02:14] Terminal-only mode enabled
+[02:02:14] GPU rendering enabled
+[02:02:14] ------------------------------------------
+[02:02:14] Starting up Route Squiggler render client.
+[02:02:14] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[02:02:14] Testing connection to web server
+[02:02:14] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-09T00:02:14.448442+00:00", "accepted_version": "0.10"}
+[02:02:14] Storage box connection successful.
+[02:02:14] Syncing map tile cache
+[02:02:14] Running map tile cache sweep.
+[02:02:14] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[02:02:14] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[02:02:14] Found 47625 .npy files to process
+[02:02:23] Total tiles processed: 47625
+[02:02:23] Good tiles (kept): 47625
+[02:02:23] Blank/erroneous tiles (deleted): 0
+[02:02:23] 
+Operation completed in: 9s
+[02:02:23] Cache cleaning completed
+[02:02:23] Starting map tile cache sync...
+[02:02:24] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[02:02:24] Found 3036 files in StadiaToner/CustomStadiaTiles
+[02:02:24] Found 1200 files in StadiaLight/CustomStadiaTiles
+[02:02:24] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[02:02:24] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[02:02:24] Found 11425 files in StadiaDark/CustomStadiaTiles
+[02:02:24] Found 14844 files in OSM/OSM
+[02:02:27] Found 47625 local files and 47625 remote files
+[02:02:40] Files to upload: 0, Files to download: 0
+[02:02:40] Using 1 parallel threads for syncing
+[02:02:40] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[02:02:40] Bootup completed successfully
+[02:02:40] Starting job processing mode...
+[02:02:40] Starting job processing loop. Press Ctrl+C to stop.
+[02:03:20] Processing job #461 (type: image)
+[02:03:20] Starting image generation.
+[02:03:20] Creating combined route for hr-based coloring...
+[02:03:28] Image generation completed in 7 seconds.
+[02:03:28] Job #461 completed successfully
+[02:03:28] Job completed. Requesting next job...
+[02:27:03] Processing job #462 (type: image)
+[02:27:03] Starting image generation.
+[02:27:03] Creating combined route for speed-based coloring...
+[02:27:10] Image generation completed in 6 seconds.
+[02:27:10] Job #462 completed successfully
+[02:27:10] Job completed. Requesting next job...
+[02:27:20] Processing job #463 (type: video)
+[02:27:21] Step 1: Sorting GPX files chronologically
+[02:27:21] Step 2: Creating combined route
+[02:27:21] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:27:22] Step 4: Caching map images for unique bounding boxes
+[02:27:23] Step 5: Generating video frames
+[02:27:27] 🎬 Total rendering time: 6.25 seconds
+[02:27:27] Step 6: Uploading video and thumbnail to storage box
+[02:27:27] Starting video upload to storage box...
+[02:27:27] Video file validated: 230686 bytes
+[02:27:27] Uploading video file: Near-transparent vid test white.mp4
+[02:27:27] Video file uploaded successfully: 230686 bytes
+[02:27:27] Uploading thumbnail file: thumbnail.png
+[02:27:28] Thumbnail uploaded successfully: 100514 bytes
+[02:27:28] Video upload completed successfully
+[02:27:28] ✅ Video upload completed successfully
+[02:27:29] Job #463 completed successfully
+[02:27:29] Job completed. Requesting next job...
+[02:28:39] Processing job #464 (type: video)
+[02:28:39] Step 1: Sorting GPX files chronologically
+[02:28:39] Step 2: Creating combined route
+[02:28:40] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:28:41] Step 4: Caching map images for unique bounding boxes
+[02:28:42] Step 5: Generating video frames
+[02:31:21] 🎬 Total rendering time: 2 minutes 41.72 seconds
+[02:31:21] Step 6: Uploading video and thumbnail to storage box
+[02:31:21] Starting video upload to storage box...
+[02:31:21] Video file validated: 2126867 bytes
+[02:31:22] Uploading video file: Garmin speed test.mp4
+[02:31:22] Video file uploaded successfully: 2126867 bytes
+[02:31:22] Uploading thumbnail file: thumbnail.png
+[02:31:23] Thumbnail uploaded successfully: 216721 bytes
+[02:31:23] Video upload completed successfully
+[02:31:23] ✅ Video upload completed successfully
+[02:31:24] Job #464 completed successfully
+[02:31:24] Job completed. Requesting next job...
+[02:31:24] Processing job #465 (type: video)
+[02:31:24] Step 1: Sorting GPX files chronologically
+[02:31:24] Step 2: Creating combined route
+[02:31:25] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:31:26] Step 4: Caching map images for unique bounding boxes
+[02:31:27] Step 5: Generating video frames
+[02:34:10] 🎬 Total rendering time: 2 minutes 44.78 seconds
+[02:34:10] Step 6: Uploading video and thumbnail to storage box
+[02:34:10] Starting video upload to storage box...
+[02:34:10] Video file validated: 2081941 bytes
+[02:34:10] Uploading video file: Garmin hr test.mp4
+[02:34:11] Video file uploaded successfully: 2081941 bytes
+[02:34:11] Uploading thumbnail file: thumbnail.png
+[02:34:11] Thumbnail uploaded successfully: 215374 bytes
+[02:34:11] Video upload completed successfully
+[02:34:11] ✅ Video upload completed successfully
+[02:34:12] Job #465 completed successfully
+[02:34:12] Job completed. Requesting next job...
+[02:41:24] Processing job #466 (type: video)
+[02:41:24] Step 1: Sorting GPX files chronologically
+[02:41:24] Step 2: Creating combined route
+[02:41:24] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:41:25] Step 4: Caching map images for unique bounding boxes
+[02:41:27] Step 5: Generating video frames
+[02:44:13] 🎬 Total rendering time: 2 minutes 48.93 seconds
+[02:44:13] Step 6: Uploading video and thumbnail to storage box
+[02:44:13] Starting video upload to storage box...
+[02:44:13] Video file validated: 2715803 bytes
+[02:44:13] Uploading video file: Garmin speed test.mp4
+[02:44:14] Video file uploaded successfully: 2715803 bytes
+[02:44:14] Uploading thumbnail file: thumbnail.png
+[02:44:15] Thumbnail uploaded successfully: 217449 bytes
+[02:44:15] Video upload completed successfully
+[02:44:15] ✅ Video upload completed successfully
+[02:44:16] Job #466 completed successfully
+[02:44:16] Job completed. Requesting next job...
+[02:44:16] Processing job #467 (type: video)
+[02:44:16] Step 1: Sorting GPX files chronologically
+[02:44:16] Step 2: Creating combined route
+[02:44:17] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:44:18] Step 4: Caching map images for unique bounding boxes
+[02:44:19] Step 5: Generating video frames
+[02:47:11] 🎬 Total rendering time: 2 minutes 54.38 seconds
+[02:47:11] Step 6: Uploading video and thumbnail to storage box
+[02:47:11] Starting video upload to storage box...
+[02:47:11] Video file validated: 2730886 bytes
+[02:47:11] Uploading video file: Garmin hr test.mp4
+[02:47:12] Video file uploaded successfully: 2730886 bytes
+[02:47:12] Uploading thumbnail file: thumbnail.png
+[02:47:12] Thumbnail uploaded successfully: 216870 bytes
+[02:47:12] Video upload completed successfully
+[02:47:13] ✅ Video upload completed successfully
+[02:47:14] Job #467 completed successfully
+[02:47:14] Job completed. Requesting next job...
+[02:48:45] Processing job #468 (type: video)
+[02:48:45] Step 1: Sorting GPX files chronologically
+[02:48:45] Step 2: Creating combined route
+[02:48:45] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:48:46] Step 4: Caching map images for unique bounding boxes
+[02:48:47] Step 5: Generating video frames
+[02:52:46] 🎬 Total rendering time: 4 minutes 1.41 seconds
+[02:52:46] Step 6: Uploading video and thumbnail to storage box
+[02:52:46] Starting video upload to storage box...
+[02:52:46] Video file validated: 5977225 bytes
+[02:52:47] Uploading video file: Garmin hr test.mp4
+[02:52:49] Video file uploaded successfully: 5977225 bytes
+[02:52:49] Uploading thumbnail file: thumbnail.png
+[02:52:49] Thumbnail uploaded successfully: 221875 bytes
+[02:52:49] Video upload completed successfully
+[02:52:49] ✅ Video upload completed successfully
+[02:52:50] Job #468 completed successfully
+[02:52:50] Job completed. Requesting next job...
+[02:52:51] Processing job #469 (type: video)
+[02:52:51] Step 1: Sorting GPX files chronologically
+[02:52:51] Step 2: Creating combined route
+[02:52:51] Step 3: Calculating unique bounding boxes and caching map tiles
+[02:52:52] Step 4: Caching map images for unique bounding boxes
+[02:52:54] Step 5: Generating video frames
+[03:00:39] 🎬 Total rendering time: 7 minutes 47.81 seconds
+[03:00:39] Step 6: Uploading video and thumbnail to storage box
+[03:00:39] Starting video upload to storage box...
+[03:00:39] Video file validated: 11353710 bytes
+[03:00:39] Uploading video file: Garmin hr test.mp4
+[03:00:42] Video file uploaded successfully: 11353710 bytes
+[03:00:42] Uploading thumbnail file: thumbnail.png
+[03:00:42] Thumbnail uploaded successfully: 223906 bytes
+[03:00:42] Video upload completed successfully
+[03:00:42] ✅ Video upload completed successfully
+[03:00:43] Job #469 completed successfully
+[03:00:43] Job completed. Requesting next job...
+[20:27:31] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[20:27:31] Using 6 threads (default: max-2, min 1)
+[20:27:31] Debug logging: disabled (from config.txt)
+[20:27:31] Configuration loaded
+[20:27:31] Terminal-only mode enabled
+[20:27:31] GPU rendering enabled
+[20:27:31] ------------------------------------------
+[20:27:31] Starting up Route Squiggler render client.
+[20:27:31] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[20:27:31] Testing connection to web server
+[20:27:31] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-09T18:27:31.679712+00:00", "accepted_version": "0.10"}
+[20:27:32] Storage box connection successful.
+[20:27:32] Syncing map tile cache
+[20:27:32] Running map tile cache sweep.
+[20:27:32] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:27:32] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:27:32] Found 47625 .npy files to process
+[20:28:20] Total tiles processed: 47625
+[20:28:20] Good tiles (kept): 47625
+[20:28:20] Blank/erroneous tiles (deleted): 0
+[20:28:20] 
+Operation completed in: 47s
+[20:28:20] Cache cleaning completed
+[20:28:20] Starting map tile cache sync...
+[20:28:20] Found 1200 files in StadiaLight/CustomStadiaTiles
+[20:28:20] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[20:28:20] Found 3036 files in StadiaToner/CustomStadiaTiles
+[20:28:20] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[20:28:20] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[20:28:20] Found 11425 files in StadiaDark/CustomStadiaTiles
+[20:28:20] Found 14844 files in OSM/OSM
+[20:28:24] Found 47625 local files and 47625 remote files
+[20:28:36] Files to upload: 0, Files to download: 0
+[20:28:36] Using 1 parallel threads for syncing
+[20:28:36] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[20:28:36] Bootup completed successfully
+[20:28:36] Starting job processing mode...
+[20:28:36] Starting job processing loop. Press Ctrl+C to stop.
+[20:28:47] Processing job #470 (type: video)
+[20:28:47] Step 1: Sorting GPX files chronologically
+[20:28:47] Step 2: Creating combined route
+[20:28:47] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:28:48] Step 4: Caching map images for unique bounding boxes
+[20:28:50] Step 5: Generating video frames
+[20:32:52] 🎬 Total rendering time: 4 minutes 5.01 seconds
+[20:32:52] Step 6: Uploading video and thumbnail to storage box
+[20:32:52] Starting video upload to storage box...
+[20:32:52] Video file validated: 5976351 bytes
+[20:32:53] Uploading video file: Garmin hr test.mp4
+[20:32:55] Video file uploaded successfully: 5976351 bytes
+[20:32:55] Uploading thumbnail file: thumbnail.png
+[20:32:55] Thumbnail uploaded successfully: 221845 bytes
+[20:32:55] Video upload completed successfully
+[20:32:55] ✅ Video upload completed successfully
+[20:32:56] Job #470 completed successfully
+[20:32:56] Job completed. Requesting next job...
+[20:32:57] Processing job #471 (type: video)
+[20:32:57] Step 1: Sorting GPX files chronologically
+[20:32:57] Step 2: Creating combined route
+[20:32:57] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:32:58] Step 4: Caching map images for unique bounding boxes
+[20:32:59] Step 5: Generating video frames
+[20:35:52] 🎬 Total rendering time: 2 minutes 55.58 seconds
+[20:35:52] Step 6: Uploading video and thumbnail to storage box
+[20:35:52] Starting video upload to storage box...
+[20:35:52] Video file validated: 2541773 bytes
+[20:35:53] Uploading video file: Stairs_hr_manual_yeslabel.mp4
+[20:35:54] Video file uploaded successfully: 2541773 bytes
+[20:35:54] Uploading thumbnail file: thumbnail.png
+[20:35:54] Thumbnail uploaded successfully: 134624 bytes
+[20:35:54] Video upload completed successfully
+[20:35:54] ✅ Video upload completed successfully
+[20:35:55] Job #471 completed successfully
+[20:35:55] Job completed. Requesting next job...
+[20:58:23] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[20:58:23] Using 6 threads (default: max-2, min 1)
+[20:58:23] Debug logging: disabled (from config.txt)
+[20:58:23] Configuration loaded
+[20:58:23] Terminal-only mode enabled
+[20:58:23] GPU rendering enabled
+[20:58:23] ------------------------------------------
+[20:58:23] Starting up Route Squiggler render client.
+[20:58:23] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[20:58:23] Testing connection to web server
+[20:58:23] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-09T18:58:24.139680+00:00", "accepted_version": "0.10"}
+[20:58:24] Storage box connection successful.
+[20:58:24] Syncing map tile cache
+[20:58:24] Running map tile cache sweep.
+[20:58:24] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:58:24] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:58:24] Found 47625 .npy files to process
+[20:58:33] Total tiles processed: 47625
+[20:58:33] Good tiles (kept): 47625
+[20:58:33] Blank/erroneous tiles (deleted): 0
+[20:58:33] 
+Operation completed in: 9s
+[20:58:33] Cache cleaning completed
+[20:58:33] Starting map tile cache sync...
+[20:58:34] Found 1200 files in StadiaLight/CustomStadiaTiles
+[20:58:34] Found 3036 files in StadiaToner/CustomStadiaTiles
+[20:58:34] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[20:58:34] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[20:58:34] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[20:58:34] Found 11425 files in StadiaDark/CustomStadiaTiles
+[20:58:34] Found 14844 files in OSM/OSM
+[20:58:37] Found 47625 local files and 47625 remote files
+[20:58:50] Files to upload: 0, Files to download: 0
+[20:58:50] Using 1 parallel threads for syncing
+[20:58:50] Map tile cache sync completed. Uploaded: 0, downloaded: 0
+[20:58:50] Bootup completed successfully
+[20:58:50] Starting job processing mode...
+[20:58:50] Starting job processing loop. Press Ctrl+C to stop.
+[20:58:51] Processing job #472 (type: video)
+[20:58:51] Step 1: Sorting GPX files chronologically
+[20:58:51] Step 2: Creating combined route
+[20:58:51] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:58:52] Step 4: Caching map images for unique bounding boxes
+[20:58:53] Step 5: Generating video frames
+[20:59:02] 🎬 Total rendering time: 11.01 seconds
+[20:59:02] Step 6: Uploading video and thumbnail to storage box
+[20:59:02] Starting video upload to storage box...
+[20:59:02] Video file validated: 472093 bytes
+[20:59:02] Uploading video file: url update vid test.mp4
+[20:59:02] Video file uploaded successfully: 472093 bytes
+[20:59:02] Uploading thumbnail file: thumbnail.png
+[20:59:03] Thumbnail uploaded successfully: 135943 bytes
+[20:59:03] Video upload completed successfully
+[20:59:03] ✅ Video upload completed successfully
+[20:59:04] Job #472 completed successfully
+[20:59:04] Job completed. Requesting next job...
+[20:59:04] Processing job #473 (type: image)
+[20:59:04] Starting image generation.
+[20:59:04] Creating combined route for hr-based coloring...
+[20:59:10] Image generation completed in 5 seconds.
+[20:59:10] Job #473 completed successfully
+[20:59:10] Job completed. Requesting next job...

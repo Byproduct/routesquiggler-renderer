@@ -14,6 +14,8 @@ import image_generator_utils
 from image_generator_multiprocess import generate_images_parallel
 from image_generator_maptileutils import detect_zoom_level
 from job_request import update_job_status
+from video_generator_sort_files_chronologically import get_sorted_gpx_list
+from video_generator_create_combined_route import create_combined_route
 
 class ImageGeneratorWorker(QObject):
     """Worker class to handle image generation in a separate thread."""
@@ -54,29 +56,140 @@ class ImageGeneratorWorker(QObject):
                 if 'filename' in track_obj:
                     track_lookup[track_obj['filename']] = track_obj
             
-            # Process GPX files
-            processor = image_generator_utils.GPXProcessor()
-            track_coords_with_metadata = []
-            all_lats = []
-            all_lons = []
+            # Check if speed-based or HR-based coloring/width is enabled
+            use_speed_based_color = self.json_data.get('speed_based_color', False)
+            use_hr_based_color = self.json_data.get('hr_based_color', False)
+            use_hr_based_width = self.json_data.get('hr_based_width', False)
+            use_hr_based_width_label = self.json_data.get('hr_based_width_label', False)
+            # Use RoutePoint system if any of these features need HR or speed data
+            use_data_based_color = use_speed_based_color or use_hr_based_color or use_hr_based_width or use_hr_based_width_label
             
-            for gpx_info in self.gpx_files_info:
-                filename = gpx_info.get('filename')
-                if not filename:
-                    continue
+            # Initialize processor for potential fallback use
+            processor = image_generator_utils.GPXProcessor()
+            
+            # Process GPX files - use RoutePoint-based system if any data-based feature is enabled
+            route_points_data = None
+            if use_data_based_color:
+                # DATA-BASED MODE: Use RoutePoint-based system
+                if use_hr_based_color:
+                    feature_type = "HR-based coloring"
+                elif use_speed_based_color:
+                    feature_type = "Speed-based coloring"
+                elif use_hr_based_width or use_hr_based_width_label:
+                    feature_type = "HR-based width"
+                else:
+                    feature_type = "Data-based"
+                self.debug_message.emit(f"{feature_type} enabled - using RoutePoint-based system")
                 
-                lats, lons = processor.extract_coordinates_from_gpx_content(gpx_info['content'])
-                if lats and lons:
+                # Sort GPX files chronologically (required for create_combined_route)
+                sorted_gpx_files = get_sorted_gpx_list(
+                    self.gpx_files_info,
+                    log_callback=self.log_message.emit,
+                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
+                )
+                
+                if not sorted_gpx_files:
+                    self.log_message.emit(f"Warning: Could not sort GPX files chronologically for {feature_type.lower()}. Falling back to standard mode.")
+                    use_data_based_color = False
+                    use_speed_based_color = False
+                    use_hr_based_color = False
+                    use_hr_based_width = False
+                    use_hr_based_width_label = False
+                else:
+                    # Create combined route using RoutePoint system
+                    # For images, disable pruning by setting route_accuracy to 'maximum'
+                    # This ensures we get all points from the GPX files
+                    # Temporarily set route_accuracy, then restore it after route creation
+                    original_route_accuracy = self.json_data.get('route_accuracy') if self.json_data else None
+                    if self.json_data:
+                        self.json_data['route_accuracy'] = 'maximum'  # Disable pruning for images
+                    
+                    self.log_message.emit(f"Creating combined route for {feature_type.lower()}...")
+                    route_points_data = create_combined_route(
+                        sorted_gpx_files,
+                        self.json_data,  # Pass original json_data so label gets stored correctly
+                        progress_callback=None,  # No progress callback for image generation
+                        log_callback=self.log_message.emit,
+                        debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
+                    )
+                    
+                    # Restore original route_accuracy if it was set
+                    if self.json_data:
+                        if original_route_accuracy is not None:
+                            self.json_data['route_accuracy'] = original_route_accuracy
+                        elif 'route_accuracy' in self.json_data:
+                            del self.json_data['route_accuracy']
+                    
+                    if not route_points_data:
+                        self.log_message.emit(f"Warning: Could not create combined route for {feature_type.lower()}. Falling back to standard mode.")
+                        use_data_based_color = False
+                        use_speed_based_color = False
+                        use_hr_based_color = False
+                        use_hr_based_width = False
+                        use_hr_based_width_label = False
+                    else:
+                        # Extract all coordinates for bounds calculation
+                        all_routes = route_points_data.get('all_routes', [])
+                        all_lats = []
+                        all_lons = []
+                        for route in all_routes:
+                            combined_route = route.get('combined_route', [])
+                            for point in combined_route:
+                                all_lats.append(point.lat)
+                                all_lons.append(point.lon)
+                        
+                        if not all_lats or not all_lons:
+                            self.log_message.emit("Warning: No valid coordinates in combined route. Falling back to standard mode.")
+                            use_data_based_color = False
+                            use_speed_based_color = False
+                            use_hr_based_color = False
+                            use_hr_based_width = False
+                            use_hr_based_width_label = False
+            
+            if not use_data_based_color:
+                # STANDARD MODE: Use existing coordinate extraction system
+                track_coords_with_metadata = []
+                all_lats = []
+                all_lons = []
+                
+                for gpx_info in self.gpx_files_info:
+                    filename = gpx_info.get('filename')
+                    if not filename:
+                        continue
+                    
+                    lats, lons = processor.extract_coordinates_from_gpx_content(gpx_info['content'])
+                    if lats and lons:
+                        track_metadata = track_lookup.get(filename, {})
+                        color = track_metadata.get('color', '#2E8B57')
+                        name = track_metadata.get('name', 'Unknown Track')
+                        
+                        track_coords_with_metadata.append((lats, lons, color, name, filename))
+                        all_lats.extend(lats)
+                        all_lons.extend(lons)
+                
+                if not track_coords_with_metadata:
+                    raise ValueError("No valid coordinates found in any GPX file")
+            else:
+                # Speed-based mode: create track_coords_with_metadata from RoutePoint data for legends, because legends still use track_coords_with_metadata
+                # Note: this is probably unnecessary, for now legends are disabled if speed-based color is enabled, and they will likely stay that way.
+                track_coords_with_metadata = []
+                all_routes = route_points_data.get('all_routes', [])
+                for route in all_routes:
+                    combined_route = route.get('combined_route', [])
+                    if not combined_route:
+                        continue
+                    
+                    # Get filename from first point
+                    filename = combined_route[0].filename if combined_route else 'Unknown'
                     track_metadata = track_lookup.get(filename, {})
                     color = track_metadata.get('color', '#2E8B57')
                     name = track_metadata.get('name', 'Unknown Track')
                     
-                    track_coords_with_metadata.append((lats, lons, color, name, filename))
-                    all_lats.extend(lats)
-                    all_lons.extend(lons)
-            
-            if not track_coords_with_metadata:
-                raise ValueError("No valid coordinates found in any GPX file")
+                    # Extract coordinates for this route
+                    route_lats = [point.lat for point in combined_route]
+                    route_lons = [point.lon for point in combined_route]
+                    
+                    track_coords_with_metadata.append((route_lats, route_lons, color, name, filename))
             
             # Calculate statistics if enabled
             statistics_data = None
@@ -217,7 +330,8 @@ class ImageGeneratorWorker(QObject):
                 job_id=str(self.json_data.get('job_id', '')),
                 folder=self.json_data.get('folder', ''),
                 route_name=self.json_data.get('route_name', 'unknown'),
-                max_workers=self.max_workers
+                max_workers=self.max_workers,
+                route_points_data=route_points_data  # Pass RoutePoint data for speed-based coloring
             )
             
             # After all workers have completed, check if we have all results

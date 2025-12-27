@@ -465,7 +465,13 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
         
         # Process as ZIP data
         write_debug_log(f"Processing job ZIP data (size: {len(response.content)} bytes)...")
-        result = process_job_zip_terminal(response.content)
+        result = process_job_zip_terminal(
+            response.content, 
+            api_url, 
+            user, 
+            hardware_id, 
+            app_version
+        )
         write_debug_log(f"ZIP processing result: {'Success' if result[0] else 'Failed'}")
         return result
         
@@ -475,12 +481,21 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
         return None, None
 
 
-def process_job_zip_terminal(zip_data):
+def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
     """Process the ZIP file containing job data and GPX files.
+    
+    Args:
+        zip_data: The ZIP file data from the server
+        api_url: API URL for reporting errors
+        user: API user/key for reporting errors
+        hardware_id: Hardware ID for reporting errors
+        app_version: App version for reporting errors
     
     Returns:
         tuple: (json_data, gpx_files_info) if successful, or (None, None) on error
     """
+    job_id = None  # Track job_id so we can report errors if processing fails
+    
     try:
         write_debug_log("Creating ZipFile object from response data...")
         # Process the outer ZIP file which contains data.json and gpx_files.zip
@@ -492,13 +507,15 @@ def process_job_zip_terminal(zip_data):
                 write_debug_log("Reading data.json from ZIP...")
                 with outer_zip.open('data.json') as data_file:
                     json_data = json.loads(data_file.read().decode('utf-8'))
-                write_debug_log(f"data.json parsed successfully. Job ID: {json_data.get('job_id', '?')}, Type: {json_data.get('job_type', 'image')}")
+                job_id = json_data.get('job_id', '?')
+                write_debug_log(f"data.json parsed successfully. Job ID: {job_id}, Type: {json_data.get('job_type', 'image')}")
                 
                 # Apply vertical_video resolution swap if enabled
                 json_data = apply_vertical_video_swap(json_data, write_log)
             except Exception as e:
                 write_log(f"Error reading data.json: {str(e)}")
                 write_debug_log(traceback.format_exc())
+                # Can't report error to server since we don't have job_id yet
                 return None, None
             
             # Read the inner gpx_files.zip
@@ -510,6 +527,11 @@ def process_job_zip_terminal(zip_data):
             except Exception as e:
                 write_log(f"Error reading gpx_files.zip: {str(e)}")
                 write_debug_log(traceback.format_exc())
+                # Report error to server since we have job_id
+                if job_id:
+                    from job_request import update_job_status
+                    update_job_status(api_url, user, hardware_id, app_version, job_id, 'error', write_log)
+                    write_log(f"Reported error to server for job #{job_id}")
                 return None, None
             
             # Process GPX files from the inner ZIP
@@ -545,10 +567,20 @@ def process_job_zip_terminal(zip_data):
             except Exception as e:
                 write_log(f"Error processing inner gpx_files.zip: {str(e)}")
                 write_debug_log(traceback.format_exc())
+                # Report error to server since we have job_id
+                if job_id:
+                    from job_request import update_job_status
+                    update_job_status(api_url, user, hardware_id, app_version, job_id, 'error', write_log)
+                    write_log(f"Reported error to server for job #{job_id}")
                 return None, None
             
             if not gpx_files_info:
                 write_log("No valid GPX files found in the ZIP")
+                # Report error to server since we have job_id
+                if job_id:
+                    from job_request import update_job_status
+                    update_job_status(api_url, user, hardware_id, app_version, job_id, 'error', write_log)
+                    write_log(f"Reported error to server for job #{job_id}")
                 return None, None
             
             write_debug_log(f"Successfully processed {len(gpx_files_info)} GPX files")
@@ -557,10 +589,16 @@ def process_job_zip_terminal(zip_data):
     except zipfile.BadZipFile as e:
         write_log(f"Invalid ZIP file received: {str(e)}")
         write_debug_log(traceback.format_exc())
+        # Can't report error if ZIP is completely invalid (no job_id available)
         return None, None
     except Exception as e:
         write_log(f"Error processing ZIP response: {str(e)}")
         write_debug_log(traceback.format_exc())
+        # Report error to server if we have job_id
+        if job_id:
+            from job_request import update_job_status
+            update_job_status(api_url, user, hardware_id, app_version, job_id, 'error', write_log)
+            write_log(f"Reported error to server for job #{job_id}")
         return None, None
 
 
@@ -667,6 +705,26 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
     except Exception as e:
         write_log(f"Error processing job: {str(e)}")
         write_log(traceback.format_exc())
+        
+        # Report error to server if we have job_id (job was successfully requested but failed to process)
+        try:
+            if json_data:
+                job_id = json_data.get('job_id', '?')
+                if job_id and job_id != '?':
+                    from job_request import update_job_status
+                    update_job_status(
+                        bootup_manager.config.api_url,
+                        bootup_manager.config.user,
+                        bootup_manager.hardware_id,
+                        bootup_manager.config.app_version,
+                        job_id,
+                        'error',
+                        write_log
+                    )
+                    write_log(f"Reported error to server for job #{job_id}")
+        except Exception as status_error:
+            write_log(f"Warning: Failed to report error to server: {str(status_error)}")
+        
         return False
 
 

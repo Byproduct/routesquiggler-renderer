@@ -18,7 +18,10 @@ from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_
 from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
 from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes, _get_resolution_scale_factor)
 from video_generator_create_combined_route import RoutePoint
-from speed_based_color import speed_based_color
+from speed_based_color import speed_based_color, create_speed_based_color_label, create_hr_based_width_label
+from image_generator_utils import calculate_resolution_scale
+import os
+import matplotlib.image as mpimg
 
 
 
@@ -160,6 +163,35 @@ def _binary_search_tail_start_index(route_points, tail_start_time):
             left = mid + 1
     
     return result
+
+
+def _calculate_hr_based_width(hr_value, hr_min, hr_max):
+    """
+    Calculate line width based on heart rate value.
+    
+    Args:
+        hr_value: Heart rate value (or None)
+        hr_min: Minimum HR for width calculation
+        hr_max: Maximum HR for width calculation
+    
+    Returns:
+        float: Line width between 1 and 10
+    """
+    if hr_value is None:
+        return 5.0  # Default middle width if no HR data
+    
+    if hr_value <= hr_min:
+        return 1.0
+    if hr_value >= hr_max:
+        return 10.0
+    
+    # Linear interpolation between 1 and 10
+    hr_range = hr_max - hr_min
+    if hr_range <= 0:
+        return 5.0  # Default if invalid range
+    
+    normalized_hr = (hr_value - hr_min) / hr_range
+    return 1.0 + normalized_hr * 9.0
 
 
 def get_legend_theme_colors(legend_theme):
@@ -398,29 +430,30 @@ def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effectiv
                 )
 
 
-def _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effective_line_width, ax, effective_leading_time=None, fade_out_progress=None, fluffy_tail=False):
+def _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effective_line_width, ax, effective_leading_time=None, fade_out_progress=None, fluffy_tail=False, hr_mode=False):
     """
-    Draw tail segments using speed-based coloring instead of route-to-tail color interpolation.
-    Mimics the width behavior of regular tails but uses speed-based colors.
+    Draw tail segments using speed-based or HR-based coloring instead of route-to-tail color interpolation.
+    Mimics the width behavior of regular tails but uses speed-based or HR-based colors.
     All lines are always fully opaque (no alpha transparency).
     
     Args:
         tail_points (list): List of points for tail drawing
-        speed_min (float): Minimum speed for color normalization
-        speed_max (float): Maximum speed for color normalization
+        speed_min (float): Minimum speed/HR for color normalization
+        speed_max (float): Maximum speed/HR for color normalization
         tail_width (float): Tail width multiplier
         effective_line_width (float): Base line width
         ax (matplotlib.axes.Axes): Matplotlib axes for drawing
         effective_leading_time (float, optional): Override leading time for tail gradient calculation
         fade_out_progress (float, optional): Ignored - kept for API compatibility
         fluffy_tail (bool): If True, use LineCollection for "fluffy" tail effect; if False, use individual plots
+        hr_mode (bool): If True, use heart_rate_smoothed; if False, use current_speed_smoothed
     """
     if len(tail_points) <= 1:
         return
     
-    speed_range = speed_max - speed_min
-    if speed_range <= 0:
-        return  # Invalid speed range
+    value_range = speed_max - speed_min
+    if value_range <= 0:
+        return  # Invalid range
     
     # Pre-extract all coordinates for better performance using named attributes
     tail_lats = [point.lat for point in tail_points]
@@ -442,7 +475,7 @@ def _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effect
         return
     
     # All lines are always fully opaque (alpha = 1.0)
-    # No color interpolation - each segment uses its speed-based color directly
+    # No color interpolation - each segment uses its speed-based or HR-based color directly
     
     if fluffy_tail:
         # FLUFFY TAIL EFFECT: Use LineCollection for the "fluffy" appearance
@@ -472,19 +505,22 @@ def _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effect
             # Calculate width interpolation (thin at start, thick at end)
             segment_width = effective_line_width + (effective_line_width * tail_width - effective_line_width) * interp_factor
             
-            # Get speed from current point for color
-            speed_value = current_point.current_speed_smoothed
+            # Get value from current point for color (speed or HR based on mode)
+            if hr_mode:
+                value = current_point.heart_rate_smoothed
+            else:
+                value = current_point.current_speed_smoothed
             
-            if speed_value is None:
-                # If no speed data, use default color (red) - fully opaque
+            if value is None:
+                # If no data, use default color (red) - fully opaque
                 segment_color = (1.0, 0.0, 0.0, 1.0)
             else:
-                # Normalize speed to 0-1 range
-                normalized_speed = (speed_value - speed_min) / speed_range
-                normalized_speed = max(0.0, min(1.0, normalized_speed))  # Clamp to 0-1
+                # Normalize value to 0-1 range
+                normalized_value = (value - speed_min) / value_range
+                normalized_value = max(0.0, min(1.0, normalized_value))  # Clamp to 0-1
                 
                 # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
-                rgb = speed_based_color(normalized_speed)
+                rgb = speed_based_color(normalized_value)
                 
                 # Use directly as matplotlib color - always fully opaque
                 segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
@@ -531,19 +567,22 @@ def _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effect
             # Calculate width interpolation (thin at start, thick at end)
             segment_width = effective_line_width + (effective_line_width * tail_width - effective_line_width) * interp_factor
             
-            # Get speed from current point for color
-            speed_value = current_point.current_speed_smoothed
+            # Get value from current point for color (speed or HR based on mode)
+            if hr_mode:
+                value = current_point.heart_rate_smoothed
+            else:
+                value = current_point.current_speed_smoothed
             
-            if speed_value is None:
-                # If no speed data, use default color (red) - fully opaque
+            if value is None:
+                # If no data, use default color (red) - fully opaque
                 segment_color = (1.0, 0.0, 0.0, 1.0)
             else:
-                # Normalize speed to 0-1 range
-                normalized_speed = (speed_value - speed_min) / speed_range
-                normalized_speed = max(0.0, min(1.0, normalized_speed))  # Clamp to 0-1
+                # Normalize value to 0-1 range
+                normalized_value = (value - speed_min) / value_range
+                normalized_value = max(0.0, min(1.0, normalized_value))  # Clamp to 0-1
                 
                 # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
-                rgb = speed_based_color(normalized_speed)
+                rgb = speed_based_color(normalized_value)
                 
                 # Use directly as matplotlib color - always fully opaque
                 segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
@@ -824,6 +863,10 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
     # Get video parameters from json_data
     width = int(json_data.get('video_resolution_x', 1920))
     height = int(json_data.get('video_resolution_y', 1080))
+    
+    # Calculate resolution scale for scaling visual elements (stamps, labels, line widths, etc.)
+    image_scale = calculate_resolution_scale(width, height)
+    
     map_transparency = float(json_data.get('map_transparency', 0))
     map_opacity = 100 - map_transparency
     line_thickness = float(json_data.get('line_width', 3))
@@ -987,8 +1030,14 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 active_tracks.append((route_index, track_index, track))
                       
         # PHASE 2: Draw active routes and their tails (top layer)
-        # Check if speed-based coloring is enabled
+        # Check if speed-based or HR-based coloring is enabled
         use_speed_based_color = json_data.get('speed_based_color', False)
+        use_hr_based_color = json_data.get('hr_based_color', False)
+        
+        # Check if HR-based width is enabled
+        use_hr_based_width = json_data.get('hr_based_width', False)
+        hr_width_min = float(json_data.get('hr_based_width_min', 50)) if use_hr_based_width else None
+        hr_width_max = float(json_data.get('hr_based_width_max', 180)) if use_hr_based_width else None
         
         if use_speed_based_color:
             # SPEED-BASED COLORING: Draw each segment individually with speed-based colors
@@ -1040,6 +1089,12 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                             # Use directly as matplotlib color (add alpha channel)
                             segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
                         
+                        # Calculate line width (HR-based or fixed)
+                        if use_hr_based_width:
+                            segment_width = _calculate_hr_based_width(current_point.heart_rate_smoothed, hr_width_min, hr_width_max) * image_scale
+                        else:
+                            segment_width = effective_line_width
+                        
                         # Draw this segment
                         x1, y1 = mercator_coords[j]
                         x2, y2 = mercator_coords[j + 1]
@@ -1048,72 +1103,194 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                             [x1, x2],
                             [y1, y2],
                             color=segment_color,
-                            linewidth=effective_line_width,
+                            linewidth=segment_width,
                             zorder=20  # Middle layer for active routes (below tails)
                         )
         
-        if not use_speed_based_color:
-            # STANDARD COLORING: Group active routes by filename for better LineCollection performance
-            # Since all active routes have the same width, we can create separate LineCollections per filename
+        elif use_hr_based_color:
+            # HR-BASED COLORING: Draw each segment individually with HR-based colors
+            hr_min = float(json_data.get('hr_based_color_min', 50))
+            hr_max = float(json_data.get('hr_based_color_max', 180))
+            hr_range = hr_max - hr_min
+            
+            # Validate HR range to prevent division by zero
+            if hr_range <= 0:
+                print(f"WARNING: Invalid HR range ({hr_min} to {hr_max}). Disabling HR-based coloring.")
+                use_hr_based_color = False
+            
+            if use_hr_based_color:
+                # Draw each segment individually with HR-based color
+                for track_info in active_tracks:
+                    route_index, track_index, track = track_info
+                    
+                    if len(track) < 2:
+                        continue
+                    
+                    # Convert GPS coordinates to Web Mercator for plotting
+                    track_lats = [point.lat for point in track]
+                    track_lons = [point.lon for point in track]
+                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
+                    
+                    # Draw each segment between consecutive points with HR-based color
+                    for j in range(len(track) - 1):
+                        current_point = track[j]
+                        next_point = track[j + 1]
+                        
+                        # Skip segments that cross track boundaries
+                        if current_point.new_route_flag or next_point.new_route_flag:
+                            continue
+                        
+                        # Get heart rate from current point
+                        hr_value = current_point.heart_rate_smoothed
+                        
+                        if hr_value is None:
+                            # If no HR data, use default color (red)
+                            segment_color = (1.0, 0.0, 0.0, 1.0)
+                        else:
+                            # Normalize HR to 0-1 range
+                            normalized_hr = (hr_value - hr_min) / hr_range
+                            normalized_hr = max(0.0, min(1.0, normalized_hr))  # Clamp to 0-1
+                            
+                            # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
+                            rgb = speed_based_color(normalized_hr)
+                            
+                            # Use directly as matplotlib color (add alpha channel)
+                            segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
+                        
+                        # Calculate line width (HR-based or fixed)
+                        if use_hr_based_width:
+                            segment_width = _calculate_hr_based_width(hr_value, hr_width_min, hr_width_max) * image_scale
+                        else:
+                            segment_width = effective_line_width
+                        
+                        # Draw this segment
+                        x1, y1 = mercator_coords[j]
+                        x2, y2 = mercator_coords[j + 1]
+                        
+                        ax.plot(
+                            [x1, x2],
+                            [y1, y2],
+                            color=segment_color,
+                            linewidth=segment_width,
+                            zorder=20  # Middle layer for active routes (below tails)
+                        )
+        
+        if not use_speed_based_color and not use_hr_based_color:
+            # STANDARD COLORING: Use LineCollection if no HR-based width, otherwise draw segments individually
             from matplotlib.collections import LineCollection
             
-            # Group active tracks by filename for optimized LineCollection creation
-            filename_tracks = {}  # {filename: [track_segments]}
-            
-            for track_info in active_tracks:
-                route_index, track_index, track = track_info
-                
-                # Draw the main track line using named attributes
-                track_lats = [point.lat for point in track]
-                track_lons = [point.lon for point in track]
-
-                # Get filename from first point of the track
-                filename = track[0].filename if track else None
-                          
-                # Look up pre-computed RGBA color for this filename
-                if filename and filename_to_rgba:
-                    if filename in filename_to_rgba:
-                        rgba_color = filename_to_rgba[filename]
-                    else:
-                        # Try to find a matching filename with different case or whitespace
-                        matching_key = next((k for k in filename_to_rgba.keys() 
-                                          if k and filename and k.lower() == filename.lower()), None)
-                        if matching_key:
-                            rgba_color = filename_to_rgba[matching_key]
+            if use_hr_based_width:
+                # HR-BASED WIDTH MODE: Draw segments individually with varying widths
+                for track_info in active_tracks:
+                    route_index, track_index, track = track_info
+                    
+                    if len(track) < 2:
+                        continue
+                    
+                    # Get filename from first point of the track
+                    filename = track[0].filename if track else None
+                    
+                    # Look up pre-computed RGBA color for this filename
+                    if filename and filename_to_rgba:
+                        if filename in filename_to_rgba:
+                            rgba_color = filename_to_rgba[filename]
                         else:
-                            print(f"WARNING: No color mapping found for filename: '{filename}'. Using default red.")
-                            rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
-                else:
-                    print(f"WARNING: No filename or no filename_to_rgba mapping. Using default red for track.")
-                    rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
+                            matching_key = next((k for k in filename_to_rgba.keys() 
+                                              if k and filename and k.lower() == filename.lower()), None)
+                            if matching_key:
+                                rgba_color = filename_to_rgba[matching_key]
+                            else:
+                                rgba_color = (1.0, 0.0, 0.0, 1.0)
+                    else:
+                        rgba_color = (1.0, 0.0, 0.0, 1.0)
+                    
+                    # Convert GPS coordinates to Web Mercator for plotting
+                    track_lats = [point.lat for point in track]
+                    track_lons = [point.lon for point in track]
+                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
+                    
+                    # Draw each segment with HR-based width
+                    for j in range(len(track) - 1):
+                        current_point = track[j]
+                        next_point = track[j + 1]
+                        
+                        # Skip segments that cross track boundaries
+                        if current_point.new_route_flag or next_point.new_route_flag:
+                            continue
+                        
+                        # Calculate HR-based width (multiply by image_scale for resolution scaling)
+                        segment_width = _calculate_hr_based_width(current_point.heart_rate_smoothed, hr_width_min, hr_width_max) * image_scale
+                        
+                        # Draw this segment
+                        x1, y1 = mercator_coords[j]
+                        x2, y2 = mercator_coords[j + 1]
+                        
+                        ax.plot(
+                            [x1, x2],
+                            [y1, y2],
+                            color=rgba_color,
+                            linewidth=segment_width,
+                            zorder=20
+                        )
+            else:
+                # STANDARD MODE: Group active routes by filename for better LineCollection performance
+                # Since all active routes have the same width, we can create separate LineCollections per filename
+                filename_tracks = {}  # {filename: [track_segments]}
                 
-                # Convert GPS coordinates to Web Mercator for plotting (same coordinate system as cached images)
-                mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
-                mercator_track_lons = [coord[0] for coord in mercator_coords]
-                mercator_track_lats = [coord[1] for coord in mercator_coords]
+                for track_info in active_tracks:
+                    route_index, track_index, track = track_info
+                    
+                    # Draw the main track line using named attributes
+                    track_lats = [point.lat for point in track]
+                    track_lons = [point.lon for point in track]
 
-                # Create line segment for this track
-                # LineCollection expects segments as [(x1, y1), (x2, y2), ...] format
-                segment = list(zip(mercator_track_lons, mercator_track_lats))
+                    # Get filename from first point of the track
+                    filename = track[0].filename if track else None
+                              
+                    # Look up pre-computed RGBA color for this filename
+                    if filename and filename_to_rgba:
+                        if filename in filename_to_rgba:
+                            rgba_color = filename_to_rgba[filename]
+                        else:
+                            # Try to find a matching filename with different case or whitespace
+                            matching_key = next((k for k in filename_to_rgba.keys() 
+                                              if k and filename and k.lower() == filename.lower()), None)
+                            if matching_key:
+                                rgba_color = filename_to_rgba[matching_key]
+                            else:
+                                print(f"WARNING: No color mapping found for filename: '{filename}'. Using default red.")
+                                rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
+                    else:
+                        print(f"WARNING: No filename or no filename_to_rgba mapping. Using default red for track.")
+                        rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
+                    
+                    # Convert GPS coordinates to Web Mercator for plotting (same coordinate system as cached images)
+                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
+                    mercator_track_lons = [coord[0] for coord in mercator_coords]
+                    mercator_track_lats = [coord[1] for coord in mercator_coords]
+
+                    # Create line segment for this track
+                    # LineCollection expects segments as [(x1, y1), (x2, y2), ...] format
+                    segment = list(zip(mercator_track_lons, mercator_track_lats))
+                    
+                    # Group by filename for optimized LineCollection creation
+                    if filename not in filename_tracks:
+                        filename_tracks[filename] = {
+                            'segments': [],
+                            'color': rgba_color
+                        }
+                    filename_tracks[filename]['segments'].append(segment)
                 
-                # Group by filename for optimized LineCollection creation
-                if filename not in filename_tracks:
-                    filename_tracks[filename] = {
-                        'segments': [],
-                        'color': rgba_color
-                    }
-                filename_tracks[filename]['segments'].append(segment)
-            
-            # Create separate LineCollection for each filename (better performance)
-            for filename, track_data in filename_tracks.items():
-                if track_data['segments']:
-                    line_collection = LineCollection(
-                        track_data['segments'],
-                        color=track_data['color'],  # Single color for all segments in this filename
-                        linewidth=effective_line_width,  # Single width for all active routes
-                        zorder=20  # Middle layer for active routes (below tails)
-                    )
-                    ax.add_collection(line_collection)
+                # Create separate LineCollection for each filename (better performance)
+                for filename, track_data in filename_tracks.items():
+                    if track_data['segments']:
+                        line_collection = LineCollection(
+                            track_data['segments'],
+                            color=track_data['color'],  # Single color for all segments in this filename
+                            linewidth=effective_line_width,  # Single width for all active routes
+                            zorder=20  # Middle layer for active routes (below tails)
+                        )
+                        ax.add_collection(line_collection)
         
         # PHASE 3: Draw tails for all routes (top layer - drawn after all route lines)
         if tail_length > 0 and gpx_time_per_video_time is not None:
@@ -1122,8 +1299,9 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             tail_width = float(json_data.get('tail_width', 2))
             tail_color_setting = json_data.get('tail_color', 'light')
             
-            # Check if speed-based coloring is enabled for tails
+            # Check if speed-based or HR-based coloring is enabled for tails
             use_speed_based_color = json_data.get('speed_based_color', False)
+            use_hr_based_color = json_data.get('hr_based_color', False)
             
             if use_speed_based_color:
                 # SPEED-BASED COLORED TAILS: Use speed-based coloring instead of route-to-tail color interpolation
@@ -1202,6 +1380,84 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                             
                             # Draw the speed-based colored tail (zorder=30 - above routes but below labels)
                             _draw_speed_based_tail(tail_points, speed_min, speed_max, tail_width, effective_line_width, ax, effective_leading_time, fade_out_progress, fluffy_tail=json_data.get('fluffy_tail', False))
+            
+            elif use_hr_based_color:
+                # HR-BASED COLORED TAILS: Use HR-based coloring instead of route-to-tail color interpolation
+                hr_min = float(json_data.get('hr_based_color_min', 50))
+                hr_max = float(json_data.get('hr_based_color_max', 180))
+                hr_range = hr_max - hr_min
+                
+                # Validate HR range to prevent division by zero
+                if hr_range > 0:
+                    # NEW APPROACH: Group all points by route_index to identify independent routes
+                    route_groups = {}  # {route_index: [points]}
+                    
+                    for route_points in points_for_frame:
+                        if not route_points:
+                            continue
+                        
+                        for point in route_points:
+                            # Use named attribute for route_index
+                            route_idx = point.route_index
+                            if route_idx not in route_groups:
+                                route_groups[route_idx] = []
+                            route_groups[route_idx].append(point)
+                    
+                    # Draw independent tail for each route_index (sequential mode only for HR-based tails)
+                    for route_index, route_points in route_groups.items():
+                        if len(route_points) < 2:  # Need at least 2 points for a tail
+                            continue
+                                  
+                        # Determine the effective leading time (virtual or actual)
+                        effective_leading_time = None
+                        
+                        # Use route-specific virtual leading time if available (for tail-only frames)
+                        if route_specific_tail_info and route_index in route_specific_tail_info:
+                            route_info = route_specific_tail_info[route_index]
+                            # Check if virtual_leading_time exists (only for tail-only frames)
+                            if 'virtual_leading_time' in route_info:
+                                effective_leading_time = route_info['virtual_leading_time']
+                            else:
+                                # For normal frames, use the actual leading point time
+                                leading_point = route_points[-1]
+                                effective_leading_time = leading_point.accumulated_time
+                        elif virtual_leading_time is not None:
+                            # Fallback to global virtual leading time (for sequential mode)
+                            effective_leading_time = virtual_leading_time
+                        else:
+                            # Normal operation: use actual leading point time
+                            leading_point = route_points[-1]
+                            effective_leading_time = leading_point.accumulated_time
+                        
+                        # Calculate tail start time (backwards from effective leading time)
+                        tail_start_time = effective_leading_time - tail_duration_route
+                        
+                        # OPTIMIZED: Use binary search + slicing instead of reverse iteration + individual appends
+                        # Since points are chronological, we can find the exact cutoff point and slice efficiently
+                        cutoff_index = _binary_search_tail_start_index(route_points, tail_start_time)
+                        tail_points = route_points[cutoff_index:]  # All points from cutoff to end (already in chronological order)
+                        
+                        # Draw tail if we have enough points
+                        if len(tail_points) > 1:
+                            # SIMULTANEOUS MODE TAIL FIX: Calculate fade-out progress for this route
+                            fade_out_progress = None
+                            if route_specific_tail_info and route_index in route_specific_tail_info:
+                                route_info = route_specific_tail_info[route_index]
+                                route_end_time = route_info['route_end_time']
+                                route_delay_seconds = route_info['route_delay_seconds']
+                                
+                                # Calculate how much time has passed since this route ended
+                                current_route_time = target_time * gpx_time_per_video_time if target_time and gpx_time_per_video_time else 0
+                                time_since_route_end = current_route_time - route_end_time
+                                
+                                # Calculate fade-out progress (0.0 = just ended, 1.0 = fully faded)
+                                tail_duration_route = gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
+                                if tail_duration_route > 0:
+                                    fade_out_progress = time_since_route_end / tail_duration_route
+                                    fade_out_progress = max(0.0, min(1.0, fade_out_progress))  # Clamp to valid range
+                            
+                            # Draw the HR-based colored tail (zorder=30 - above routes but below labels)
+                            _draw_speed_based_tail(tail_points, hr_min, hr_max, tail_width, effective_line_width, ax, effective_leading_time, fade_out_progress, fluffy_tail=json_data.get('fluffy_tail', False), hr_mode=True)
             else:
                 # STANDARD TAILS: Use route-to-tail color interpolation (original behavior)
                 # NEW APPROACH: Group all points by route_index to identify independent routes
@@ -1445,44 +1701,163 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             else:
                 print(f"Warning: Stamp does not fit within frame bounds for frame {frame_number}")
         
-        # Add speed-based color label if enabled
-        if json_data and json_data.get('speed_based_color_label', False):
-            label_array = json_data.get('_speed_based_color_label_image')
-            if label_array is not None:
-                height = int(json_data.get('video_resolution_y', 1080))
-                width = int(json_data.get('video_resolution_x', 1920))
+        # Add color and/or width labels if enabled
+        # Collect all labels to display (color label is either speed or HR based, width label is HR based)
+        labels_to_draw = []  # List of (label_array, label_name) tuples
+        
+        # image_scale is already calculated earlier in the function
+        
+        if json_data:
+            # Get color label (speed-based or HR-based, mutually exclusive)
+            if json_data.get('speed_based_color_label', False):
+                color_label = None
                 
-                # Get label dimensions
+                # Try to load the appropriate scaled version from file
+                module_dir = os.path.dirname(os.path.abspath(__file__))
+                # Format scale for filename (special case for 0.7 -> "07x")
+                from image_generator_utils import format_scale_for_label_filename
+                scale_str = format_scale_for_label_filename(image_scale)
+                label_filename = f"speed_based_color_label_{scale_str}.png"
+                label_file = os.path.join(module_dir, "img", label_filename)
+                
+                if os.path.exists(label_file):
+                    try:
+                        color_label = mpimg.imread(label_file)
+                        # Verify the loaded label has the expected size (approximately)
+                        # Expected width for 1x is ~200px, so for scale N it should be ~200*N px
+                        expected_min_width = 150 * image_scale  # Allow some tolerance
+                        actual_width = color_label.shape[1]
+                        if actual_width < expected_min_width:
+                            print(f"WARNING: Loaded {label_filename} has width {actual_width}px, expected at least {expected_min_width}px for scale {image_scale}. Recreating on-the-fly.")
+                            color_label = None  # Force recreation
+                    except Exception as e:
+                        color_label = None
+                
+                # Create label on-the-fly using appropriately scaled base image
+                if color_label is None:
+                    try:
+                        speed_min = json_data.get('speed_based_color_min', 5)
+                        speed_max = json_data.get('speed_based_color_max', 35)
+                        imperial_units = json_data and json_data.get('imperial_units', False) is True
+                        label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units, hr_mode=False, image_scale=image_scale)
+                        color_label = np.array(label_image)
+                    except Exception as e:
+                        # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
+                        print(f"Failed to create speed-based color label on-the-fly: {e}")
+                        color_label = None
+                
+                if color_label is not None:
+                    labels_to_draw.append((color_label, "Speed-based color"))
+            elif json_data.get('hr_based_color_label', False):
+                color_label = None
+                
+                # Try to load the appropriate scaled version from file
+                module_dir = os.path.dirname(os.path.abspath(__file__))
+                # HR-based color uses the same base image as speed-based color
+                # Format scale for filename (special case for 0.7 -> "07x")
+                from image_generator_utils import format_scale_for_label_filename
+                scale_str = format_scale_for_label_filename(image_scale)
+                label_filename = f"speed_based_color_label_{scale_str}.png"
+                label_file = os.path.join(module_dir, "img", label_filename)
+                
+                if os.path.exists(label_file):
+                    try:
+                        color_label = mpimg.imread(label_file)
+                        # Verify the loaded label has the expected size (approximately)
+                        # Expected width for 1x is ~200px, so for scale N it should be ~200*N px
+                        expected_min_width = 150 * image_scale  # Allow some tolerance
+                        actual_width = color_label.shape[1]
+                        if actual_width < expected_min_width:
+                            print(f"WARNING: Loaded {label_filename} has width {actual_width}px, expected at least {expected_min_width}px for scale {image_scale}. Recreating on-the-fly.")
+                            color_label = None  # Force recreation
+                    except Exception as e:
+                        color_label = None
+                
+                # Create label on-the-fly using appropriately scaled base image
+                if color_label is None:
+                    try:
+                        from speed_based_color import create_hr_based_color_label
+                        hr_min = json_data.get('hr_based_color_min', 50)
+                        hr_max = json_data.get('hr_based_color_max', 180)
+                        label_image = create_hr_based_color_label(hr_min, hr_max, image_scale=image_scale)
+                        color_label = np.array(label_image)
+                    except Exception as e:
+                        # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
+                        print(f"Failed to create HR-based color label on-the-fly: {e}")
+                        color_label = None
+                
+                if color_label is not None:
+                    labels_to_draw.append((color_label, "HR-based color"))
+            
+            # Get width label (can coexist with color label)
+            if json_data.get('hr_based_width_label', False):
+                # Always create the label on-the-fly to ensure text labels are included
+                # The create_hr_based_width_label function loads the base image and adds text labels
+                width_label = None
+                try:
+                    hr_min = json_data.get('hr_based_width_min', 50)
+                    hr_max = json_data.get('hr_based_width_max', 180)
+                    label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale)
+                    width_label = np.array(label_image)
+                except Exception as e:
+                    # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
+                    print(f"Failed to create HR-based width label on-the-fly: {e}")
+                    width_label = None
+                
+                if width_label is not None:
+                    labels_to_draw.append((width_label, "HR-based width"))
+        
+        if labels_to_draw:
+            # height and width are already defined earlier in the function
+            # Scale padding and gap with image_scale
+            base_padding_bottom = 20
+            padding_bottom = base_padding_bottom * image_scale
+            base_gap_between_labels = 100
+            gap_between_labels = base_gap_between_labels * image_scale
+            
+            def draw_label_at_position(label_array, label_name, x_start):
+                """Helper to draw a single label with alpha blending at given x position."""
                 label_height, label_width = label_array.shape[:2]
-                
-                # Calculate position: horizontally centered, bottom edge 20 pixels above image bottom
-                padding_bottom = 20
                 y_end = height - padding_bottom
                 y_start = y_end - label_height
-                x_start = (width - label_width) // 2
                 x_end = x_start + label_width
                 
                 # Ensure label fits within frame bounds
                 if y_start >= 0 and x_start >= 0 and y_end <= height and x_end <= width:
-                    # Check if label has alpha channel (RGBA)
                     if label_array.shape[2] == 4:
                         # RGBA label - apply alpha blending
-                        alpha = label_array[:, :, 3:4] / 255.0  # Normalize alpha to 0-1
-                        rgb_label = label_array[:, :, :3] / 255.0  # Normalize RGB to 0-1
-                        
-                        # Extract the region where label will be placed
+                        alpha = label_array[:, :, 3:4] / 255.0
+                        rgb_label = label_array[:, :, :3] / 255.0
                         frame_region = frame_array[y_start:y_end, x_start:x_end].astype(np.float32) / 255.0
-                        
-                        # Alpha blend: result = alpha * label + (1 - alpha) * background
                         blended = alpha * rgb_label + (1 - alpha) * frame_region
-                        
-                        # Convert back to uint8 and place in frame
                         frame_array[y_start:y_end, x_start:x_end] = (blended * 255).astype(np.uint8)
                     else:
-                        # RGB label - direct replacement (no transparency)
                         frame_array[y_start:y_end, x_start:x_end] = label_array[:, :, :3]
                 else:
-                    print(f"Warning: Speed-based color label does not fit within frame bounds for frame {frame_number}")
+                    print(f"Warning: {label_name} label does not fit within frame bounds for frame {frame_number}")
+            
+            if len(labels_to_draw) == 1:
+                # Single label: center it horizontally
+                label_array, label_name = labels_to_draw[0]
+                label_width = label_array.shape[1]
+                x_start = (width - label_width) // 2
+                draw_label_at_position(label_array, label_name, x_start)
+            else:
+                # Two labels: draw side by side with gap
+                label1_array, label1_name = labels_to_draw[0]
+                label2_array, label2_name = labels_to_draw[1]
+                label1_width = label1_array.shape[1]
+                label2_width = label2_array.shape[1]
+                
+                # Calculate total width and starting positions
+                total_width = label1_width + gap_between_labels + label2_width
+                start_x = (width - total_width) // 2
+                
+                # Draw first label (color)
+                draw_label_at_position(label1_array, label1_name, start_x)
+                
+                # Draw second label (width)
+                draw_label_at_position(label2_array, label2_name, start_x + label1_width + gap_between_labels)
         
         # Clean up matplotlib figure to prevent memory leaks
         plt.close(fig)

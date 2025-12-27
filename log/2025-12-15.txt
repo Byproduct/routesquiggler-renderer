@@ -1,0 +1,75 @@
+[20:03:57] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[20:03:57] Using 6 threads (default: max-2, min 1)
+[20:03:57] Debug logging: disabled (from config.txt)
+[20:03:57] Configuration loaded
+[20:03:57] Terminal-only mode enabled
+[20:03:57] GPU rendering enabled
+[20:03:57] ------------------------------------------
+[20:03:57] Starting up Route Squiggler render client.
+[20:03:57] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[20:03:57] Testing connection to web server
+[20:03:58] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-15T18:03:58.530047+00:00", "accepted_version": "0.10"}
+[20:03:58] Storage box connection successful.
+[20:03:58] Syncing map tile cache
+[20:03:58] Running map tile cache sweep.
+[20:03:58] Using local cache directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:03:58] Scanning directory: X:\softa\code\Projects\Route squiggler render client\map tile cache
+[20:03:59] Found 47661 .npy files to process
+[20:04:45] Total tiles processed: 47661
+[20:04:45] Good tiles (kept): 47661
+[20:04:45] Blank/erroneous tiles (deleted): 0
+[20:04:45] 
+Operation completed in: 47s
+[20:04:45] Cache cleaning completed
+[20:04:45] Starting map tile cache sync...
+[20:04:46] Found 1200 files in StadiaLight/CustomStadiaTiles
+[20:04:46] Found 8043 files in StadiaOutdoors/CustomStadiaTiles
+[20:04:46] Found 1480 files in OpenTopoMap/OpenTopoMapTiles
+[20:04:46] Found 3036 files in StadiaToner/CustomStadiaTiles
+[20:04:46] Found 7597 files in StadiaWatercolor/CustomStadiaTiles
+[20:04:46] Found 14844 files in OSM/OSM
+[20:04:46] Found 11425 files in StadiaDark/CustomStadiaTiles
+[20:04:49] Found 47661 local files and 47625 remote files
+[20:05:02] Files to upload: 36, Files to download: 0
+[20:05:02] Using 10 parallel threads for syncing
+[20:05:02] Starting parallel upload...
+[20:05:05] Map tile cache sync completed. Uploaded: 36, downloaded: 0
+[20:05:05] Bootup completed successfully
+[20:05:05] Starting job processing mode...
+[20:05:05] Starting job processing loop. Press Ctrl+C to stop.
+[20:05:15] Processing job #475 (type: video)
+[20:05:15] Step 1: Sorting GPX files chronologically
+[20:05:15] Step 2: Creating combined route
+[20:05:16] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:05:58] Step 4: Caching map images for unique bounding boxes
+[20:07:11] Step 5: Generating video frames
+[20:16:58] 🎬 Total rendering time: 11 minutes 1.96 seconds
+[20:16:58] Step 6: Uploading video and thumbnail to storage box
+[20:16:58] Starting video upload to storage box...
+[20:16:58] Video file validated: 66915576 bytes
+[20:16:59] Uploading video file: Excellent outing 2025-12-15.mp4
+[20:17:17] Video file uploaded successfully: 66915576 bytes
+[20:17:17] Uploading thumbnail file: thumbnail.png
+[20:17:17] Thumbnail uploaded successfully: 319609 bytes
+[20:17:17] Video upload completed successfully
+[20:17:17] ✅ Video upload completed successfully
+[20:17:19] Job #475 completed successfully
+[20:17:19] Job completed. Requesting next job...
+[20:20:20] Processing job #476 (type: video)
+[20:20:20] Step 1: Sorting GPX files chronologically
+[20:20:20] Step 2: Creating combined route
+[20:20:20] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:20:24] Step 4: Caching map images for unique bounding boxes
+[20:21:37] Step 5: Generating video frames
+[20:32:19] 🎬 Total rendering time: 11 minutes 56.79 seconds
+[20:32:19] Step 6: Uploading video and thumbnail to storage box
+[20:32:19] Starting video upload to storage box...
+[20:32:19] Video file validated: 67851056 bytes
+[20:32:20] Uploading video file: Excellent outing 2025-12-15.mp4
+[20:32:35] Video file uploaded successfully: 67851056 bytes
+[20:32:35] Uploading thumbnail file: thumbnail.png
+[20:32:35] Thumbnail uploaded successfully: 320574 bytes
+[20:32:35] Video upload completed successfully
+[20:32:35] ✅ Video upload completed successfully
+[20:32:36] Job #476 completed successfully
+[20:32:36] Job completed. Requesting next job...

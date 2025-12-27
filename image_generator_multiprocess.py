@@ -17,9 +17,10 @@ Image.MAX_IMAGE_PIXELS = 200_000_000
 
 from image_generator_maptileutils import create_map_tiles, set_cache_directory
 from image_generator_postprocess import add_stamp_to_plot, add_legend_to_plot, optimize_png_bytes, add_title_text_to_plot
-from image_generator_utils import ImageGenerator
+from image_generator_utils import ImageGenerator, calculate_resolution_scale
 from html_file_generator import generate_image_gallery_html
 from write_log import write_log, write_debug_log
+from speed_based_color import speed_based_color
 
 class StatusUpdate:
     """Status update message from a worker process."""
@@ -113,7 +114,8 @@ def generate_images_parallel(
     job_id: Optional[str] = None,
     folder: Optional[str] = None,
     route_name: Optional[str] = None,
-    max_workers: Optional[int] = None
+    max_workers: Optional[int] = None,
+    route_points_data: Optional[Dict[str, Any]] = None
 ) -> Tuple[List[Tuple[int, bytes]], mp.Queue]:
     """
     Generate images for multiple zoom levels in parallel.
@@ -173,7 +175,8 @@ def generate_images_parallel(
                 folder,
                 route_name,
                 zoom_level == thumbnail_zoom_level,  # Pass thumbnail=True for middle zoom level
-                sorted_zoom_levels  # Pass all zoom levels
+                sorted_zoom_levels,  # Pass all zoom levels
+                route_points_data  # Pass RoutePoint data for speed-based coloring
             )
         )
         process.start()
@@ -234,7 +237,8 @@ def generate_images_parallel(
                         folder,
                         route_name,
                         next_zoom_level == thumbnail_zoom_level,
-                        sorted_zoom_levels
+                        sorted_zoom_levels,
+                        route_points_data  # Pass RoutePoint data for speed-based coloring
                     )
                 )
                 process.start()
@@ -277,7 +281,8 @@ def _worker_process(
     folder: str,
     route_name: str,
     thumbnail: bool = False,
-    zoom_levels: Optional[List[int]] = None
+    zoom_levels: Optional[List[int]] = None,
+    route_points_data: Optional[Dict[str, Any]] = None
 ):
     """Worker process function that generates a single image."""
     try:
@@ -303,7 +308,8 @@ def _worker_process(
             folder=folder,
             route_name=route_name,
             thumbnail=thumbnail,
-            zoom_levels=zoom_levels
+            zoom_levels=zoom_levels,
+            route_points_data=route_points_data
         )
         result_queue.put(result)
     except Exception as e:
@@ -336,7 +342,8 @@ def generate_image_for_zoom_level(
     folder: str,
     route_name: str,
     thumbnail: bool = False,
-    zoom_levels: Optional[List[int]] = None
+    zoom_levels: Optional[List[int]] = None,
+    route_points_data: Optional[Dict[str, Any]] = None
 ) -> Tuple[int, Optional[bytes]]:
     """
     Generate map image for a specific zoom level.
@@ -441,15 +448,7 @@ def generate_image_for_zoom_level(
             line_width_value = 1.0
         
         # Determine image scale category once per process
-        total_pixels = resolution_x_value * resolution_y_value
-        if total_pixels < 8_000_000:
-            image_scale = 1
-        elif total_pixels < 18_000_000:
-            image_scale = 2
-        elif total_pixels < 33_000_000:
-            image_scale = 3
-        else:
-            image_scale = 4
+        image_scale = calculate_resolution_scale(resolution_x_value, resolution_y_value)
         
         # Plot all tracks
         update_status("drawing tracks", textfield=False)
@@ -460,17 +459,200 @@ def generate_image_for_zoom_level(
         desired_pixels = line_width_value * image_scale
         effective_line_width = desired_pixels * 72 / 100  # dpi fixed to 100  - earlier halving taken out, seems to conform to preview images now
         
-        track_count = 0
-        total_segments = 0
-        for lats, lons, color, name, filename in track_coords_with_metadata:
-            track_count += 1
-            # Split track at longitude wrap if necessary
-            segments = split_track_at_longitude_wrap(lats, lons)
-            total_segments += len(segments)
-            for segment_lats, segment_lons in segments:
-                ax.plot(segment_lons, segment_lats, transform=ccrs.PlateCarree(), color=color, linewidth=effective_line_width)
+        # Check if speed-based or HR-based coloring is enabled and we have RoutePoint data
+        use_speed_based_color = json_data and json_data.get('speed_based_color', False) and route_points_data is not None
+        use_hr_based_color = json_data and json_data.get('hr_based_color', False) and route_points_data is not None
+        use_data_based_color = use_speed_based_color or use_hr_based_color
         
-        write_debug_log(f"Plotted {track_count} tracks as {total_segments} segments (zoom level {zoom_level})")
+        # Check if HR-based width is enabled
+        use_hr_based_width = json_data and json_data.get('hr_based_width', False) and route_points_data is not None
+        hr_width_min = float(json_data.get('hr_based_width_min', 50)) if use_hr_based_width else None
+        hr_width_max = float(json_data.get('hr_based_width_max', 180)) if use_hr_based_width else None
+        
+        def _calculate_hr_based_width_image(hr_value, hr_min, hr_max):
+            """Calculate line width based on heart rate value (1-10 range)."""
+            if hr_value is None:
+                return 5.0  # Default middle width if no HR data
+            if hr_value <= hr_min:
+                return 1.0
+            if hr_value >= hr_max:
+                return 10.0
+            hr_range = hr_max - hr_min
+            if hr_range <= 0:
+                return 5.0
+            normalized_hr = (hr_value - hr_min) / hr_range
+            return 1.0 + normalized_hr * 9.0
+        
+        # Import RoutePoint if needed for data-based coloring or HR-based width
+        if use_data_based_color or use_hr_based_width:
+                from video_generator_create_combined_route import RoutePoint
+                
+        if use_data_based_color:
+            # DATA-BASED COLORING MODE: Draw segments individually with speed-based or HR-based colors
+            if use_speed_based_color:
+                value_min = float(json_data.get('speed_based_color_min', 5))
+                value_max = float(json_data.get('speed_based_color_max', 35))
+                color_type = "speed"
+            else:  # use_hr_based_color
+                value_min = float(json_data.get('hr_based_color_min', 50))
+                value_max = float(json_data.get('hr_based_color_max', 180))
+                color_type = "HR"
+            
+            value_range = value_max - value_min
+            
+            # Validate range to prevent division by zero
+            if value_range <= 0:
+                write_log(f"WARNING: Invalid {color_type} range ({value_min} to {value_max}). Falling back to standard mode.")
+                use_data_based_color = False
+                use_speed_based_color = False
+                use_hr_based_color = False
+            
+            if use_data_based_color:
+                # Get all routes from route_points_data
+                all_routes = route_points_data.get('all_routes', [])
+                if not all_routes:
+                    all_routes = [route_points_data]  # Fallback to single route
+                
+                write_debug_log(f"{color_type.capitalize()}-based coloring: Found {len(all_routes)} route(s) in route_points_data")
+                
+                track_count = 0
+                total_segments = 0
+                skipped_segments = 0
+                
+                for route_idx, route in enumerate(all_routes):
+                    combined_route = route.get('combined_route', [])
+                    write_debug_log(f"Route {route_idx}: {len(combined_route)} points in combined_route")
+                    
+                    if not combined_route or len(combined_route) < 2:
+                        write_debug_log(f"Route {route_idx}: Skipping (too few points)")
+                        continue
+                    
+                    track_count += 1
+                    
+                    # Draw each segment between consecutive points with speed-based color
+                    for j in range(len(combined_route) - 1):
+                        current_point = combined_route[j]
+                        next_point = combined_route[j + 1]
+                        
+                        # Skip segments that cross track boundaries
+                        if current_point.new_route_flag or next_point.new_route_flag:
+                            skipped_segments += 1
+                            continue
+                        
+                        # Get value from current point (speed or HR)
+                        if use_speed_based_color:
+                            value = current_point.current_speed_smoothed
+                        else:  # use_hr_based_color
+                            value = current_point.heart_rate_smoothed
+                        
+                        # Debug: log first few values to diagnose issues
+                        if total_segments < 5:
+                            write_debug_log(f"Segment {total_segments}: {color_type}_value={value}, {color_type}_min={value_min}, {color_type}_max={value_max}")
+                        
+                        if value is None:
+                            # If no data, use default color (red)
+                            segment_color = (1.0, 0.0, 0.0)
+                        else:
+                            # Normalize value to 0-1 range
+                            normalized_value = (value - value_min) / value_range
+                            normalized_value = max(0.0, min(1.0, normalized_value))  # Clamp to 0-1
+                            
+                            # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
+                            rgb = speed_based_color(normalized_value)
+                            
+                            # Use directly as matplotlib color
+                            segment_color = rgb
+                        
+                        # Calculate line width (HR-based or fixed)
+                        if use_hr_based_width:
+                            hr_width_value = _calculate_hr_based_width_image(current_point.heart_rate_smoothed, hr_width_min, hr_width_max)
+                            # Apply resolution scale multiplier (same as effective_line_width)
+                            desired_pixels = hr_width_value * image_scale
+                            segment_width = desired_pixels * 72 / 100  # dpi fixed to 100
+                        else:
+                            segment_width = effective_line_width
+                        
+                        # Draw this segment
+                        ax.plot(
+                            [current_point.lon, next_point.lon],
+                            [current_point.lat, next_point.lat],
+                            transform=ccrs.PlateCarree(),
+                            color=segment_color,
+                            linewidth=segment_width
+                        )
+                        total_segments += 1
+                
+                write_debug_log(f"Plotted {track_count} routes with {color_type}-based coloring: {total_segments} segments drawn, {skipped_segments} segments skipped (zoom level {zoom_level})")
+        
+        if not use_data_based_color:
+            # STANDARD MODE: Use existing coordinate-based plotting
+            # If HR-based width is enabled and we have route points data, draw segments individually
+            if use_hr_based_width:
+                # HR-BASED WIDTH MODE: Draw segments individually with varying widths
+                all_routes = route_points_data.get('all_routes', []) if route_points_data else []
+                if not all_routes and route_points_data:
+                    all_routes = [route_points_data]  # Fallback to single route
+                
+                track_count = 0
+                total_segments = 0
+                
+                for route_idx, route in enumerate(all_routes):
+                    combined_route = route.get('combined_route', [])
+                    
+                    if not combined_route or len(combined_route) < 2:
+                        continue
+                    
+                    track_count += 1
+                    
+                    # Get filename from first point and find the color
+                    point_filename = combined_route[0].filename
+                    
+                    # Find the color from track_coords_with_metadata
+                    route_color = (1.0, 0.0, 0.0)  # Default red
+                    if track_coords_with_metadata:
+                        for lats, lons, color, name, filename in track_coords_with_metadata:
+                            if filename and point_filename and filename.lower() == point_filename.lower():
+                                route_color = color
+                                break
+                    
+                    # Draw each segment with HR-based width
+                    for j in range(len(combined_route) - 1):
+                        current_point = combined_route[j]
+                        next_point = combined_route[j + 1]
+                        
+                        # Skip segments that cross track boundaries
+                        if current_point.new_route_flag or next_point.new_route_flag:
+                            continue
+                        
+                        # Calculate HR-based width
+                        hr_width_value = _calculate_hr_based_width_image(current_point.heart_rate_smoothed, hr_width_min, hr_width_max)
+                        # Apply resolution scale multiplier (same as effective_line_width)
+                        desired_pixels = hr_width_value * image_scale
+                        segment_width = desired_pixels * 72 / 100  # dpi fixed to 100
+                        
+                        ax.plot(
+                            [current_point.lon, next_point.lon],
+                            [current_point.lat, next_point.lat],
+                            transform=ccrs.PlateCarree(),
+                            color=route_color,
+                            linewidth=segment_width
+                        )
+                        total_segments += 1
+                
+                write_debug_log(f"Plotted {track_count} routes with HR-based width: {total_segments} segments (zoom level {zoom_level})")
+            else:
+                # STANDARD MODE WITHOUT HR-BASED WIDTH
+                track_count = 0
+                total_segments = 0
+                for lats, lons, color, name, filename in track_coords_with_metadata:
+                    track_count += 1
+                    # Split track at longitude wrap if necessary
+                    segments = split_track_at_longitude_wrap(lats, lons)
+                    total_segments += len(segments)
+                    for segment_lats, segment_lons in segments:
+                        ax.plot(segment_lons, segment_lats, transform=ccrs.PlateCarree(), color=color, linewidth=effective_line_width)
+                
+                write_debug_log(f"Plotted {track_count} tracks as {total_segments} segments (zoom level {zoom_level})")
         
         # Add statistics if requested
         if statistics != "off":
@@ -508,6 +690,24 @@ def generate_image_for_zoom_level(
                     )
         except Exception as e:
             write_log(f"Failed to add title text: {e}")
+
+        # Add speed-based color, HR-based color, or HR-based width label if enabled (before stamp so stamp is on top)
+        if json_data and (json_data.get('speed_based_color_label', False) or json_data.get('hr_based_color_label', False) or json_data.get('hr_based_width_label', False)):
+            if json_data.get('hr_based_width_label', False):
+                label_type = "HR width"
+            elif json_data.get('hr_based_color_label', False):
+                label_type = "HR color"
+            else:
+                label_type = "speed"
+            update_status(f"adding {label_type} label", textfield=False)
+            from image_generator_postprocess import add_speed_based_color_label_to_plot
+            add_speed_based_color_label_to_plot(
+                ax=ax,
+                json_data=json_data,
+                image_width=resolution_x_value,
+                image_height=resolution_y_value,
+                image_scale=image_scale
+            )
 
         # Add stamp
         update_status("adding stamp", textfield=False)
@@ -600,7 +800,7 @@ def generate_image_for_zoom_level(
         return zoom_level, None
 
 
-def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict, image_width: int, image_height: int, image_scale: int, statistics_theme: str = "light"):
+def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict, image_width: int, image_height: int, image_scale: int | None = None, statistics_theme: str = "light"):
     """
     Add statistics text to the plot in the top-right corner.
     
@@ -610,7 +810,7 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
         json_data: JSON data containing statistics configuration
         image_width: Width of the image in pixels
         image_height: Height of the image in pixels  
-        image_scale: Image scale factor for text sizing
+        image_scale: Optional image scale factor for text sizing; if None, calculated from resolution
         statistics_theme: Theme for statistics display ('light' or 'dark')
     """
     if not statistics_data:
@@ -648,6 +848,10 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     if not stats_lines:
         return
     
+    # Calculate image scale if not provided
+    if image_scale is None:
+        image_scale = calculate_resolution_scale(image_width, image_height)
+    
     # Set theme colors
     if statistics_theme == 'dark':
         bg_color = '#2d2d2d'      # Dark gray background
@@ -665,10 +869,13 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     # Combine all statistics lines
     stats_text = '\n'.join(stats_lines)
     
-    # Position in top right with 10px padding (converted to axes coordinates)
+    # Position in top right with scaled padding (converted to axes coordinates)
+    # Base padding is 10px, scaled by image_scale
     # Use axes coordinates (0-1 range) for consistent positioning
-    padding_x = 10 / image_width  # Convert 10px to axes coordinates
-    padding_y = 10 / image_height # Convert 10px to axes coordinates
+    base_padding_pixels = 10
+    padding_pixels = base_padding_pixels * image_scale
+    padding_x = padding_pixels / image_width  # Convert to axes coordinates
+    padding_y = padding_pixels / image_height # Convert to axes coordinates
     
     text_x = 1.0 - padding_x  # Right edge minus padding
     text_y = 1.0 - padding_y  # Top edge minus padding
@@ -733,12 +940,12 @@ def upload_to_storage_box(
         ftp = ftplib.FTP(storage_box_address)
         ftp.login(storage_box_user, storage_box_password)
         
-        # Create or enter jobs directory
+        # Create or enter media directory
         try:
-            ftp.mkd('jobs')
+            ftp.mkd('media')
         except ftplib.error_perm:
             pass  # Directory might already exist
-        ftp.cwd('jobs')
+        ftp.cwd('media')
         
         # Create job directory if it doesn't exist
         try:

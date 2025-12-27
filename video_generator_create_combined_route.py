@@ -12,7 +12,7 @@ import gpxpy
 import numpy as np
 from PIL import Image
 from image_generator_utils import calculate_haversine_distance
-from speed_based_color import update_speed_based_color_range, create_speed_based_color_label
+from speed_based_color import update_speed_based_color_range, create_speed_based_color_label, update_hr_based_color_range, create_hr_based_color_label, update_hr_based_width_range, create_hr_based_width_label
 
 # Conversion constants for imperial units
 METERS_TO_MILES = 0.000621371
@@ -53,6 +53,7 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
     Calculate smoothed heart rate and speed for all points in a route.
     
     Uses a 0.3 video-second smoothing window, converted to route time using gpx_time_per_video_time.
+    For images (when gpx_time_per_video_time is very large), uses a fixed 0.3 second route time window.
     This pre-calculation avoids per-frame recalculation during video rendering.
     
     Args:
@@ -70,8 +71,13 @@ def _calculate_smoothed_statistics_for_route(route_points, gpx_time_per_video_ti
         return route_points
     
     # Calculate the smoothing window in route time (0.3 video seconds)
+    # For images (when video_length is 0), gpx_time_per_video_time will be very large,
+    # so use a fixed 0.3 second route time window instead
     video_seconds_to_check = 0.3
-    route_time_threshold = video_seconds_to_check * gpx_time_per_video_time
+    if gpx_time_per_video_time > 1000:  # Likely an image (no video), use fixed window
+        route_time_threshold = 0.3  # Fixed 0.3 second route time window for images
+    else:
+        route_time_threshold = video_seconds_to_check * gpx_time_per_video_time
     
     updated_points = []
     
@@ -164,6 +170,18 @@ def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, js
     # Check if we need to calculate any smoothed values
     calculate_hr = json_data.get('statistics_current_hr', False) if json_data else False
     calculate_speed = json_data.get('statistics_current_speed', False) if json_data else False
+    
+    # Also calculate speed if speed-based coloring is enabled (needed for both video and image generation)
+    if json_data and json_data.get('speed_based_color', False):
+        calculate_speed = True
+    
+    # Also calculate HR if HR-based coloring is enabled (needed for both video and image generation)
+    if json_data and json_data.get('hr_based_color', False):
+        calculate_hr = True
+    
+    # Also calculate HR if HR-based width or width label is enabled (needed for both video and image generation)
+    if json_data and (json_data.get('hr_based_width', False) or json_data.get('hr_based_width_label', False)):
+        calculate_hr = True
     
     if not calculate_hr and not calculate_speed:
         if debug_callback:
@@ -515,6 +533,14 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # This must be done after smoothed statistics are calculated
         update_speed_based_color_range(all_routes, json_data, debug_callback)
         
+        # Auto-calculate HR-based color range if needed (if hr_based_color_min/max are -1)
+        # This must be done after smoothed statistics are calculated
+        update_hr_based_color_range(all_routes, json_data, debug_callback)
+        
+        # Auto-calculate HR-based width range if needed (if hr_based_width_min/max are -1)
+        # This must be done after smoothed statistics are calculated
+        update_hr_based_width_range(all_routes, json_data, debug_callback)
+        
         # Create speed-based color label if enabled
         if json_data and json_data.get('speed_based_color_label', False):
             speed_min = json_data.get('speed_based_color_min', 5)
@@ -532,6 +558,40 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
             except Exception as e:
                 if log_callback:
                     log_callback(f"Error creating speed-based color label: {str(e)}")
+        
+        # Create HR-based color label if enabled
+        if json_data and json_data.get('hr_based_color_label', False):
+            hr_min = json_data.get('hr_based_color_min', 50)
+            hr_max = json_data.get('hr_based_color_max', 180)
+            
+            try:
+                label_image = create_hr_based_color_label(hr_min, hr_max)
+                # Convert PIL Image to numpy array (RGBA) for storage
+                label_array = np.array(label_image)
+                # Store in json_data for use during frame generation
+                json_data['_hr_based_color_label_image'] = label_array
+                if debug_callback:
+                    debug_callback(f"Created HR-based color label image ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
+            except Exception as e:
+                if log_callback:
+                    log_callback(f"Error creating HR-based color label: {str(e)}")
+        
+        # Create HR-based width label if enabled
+        if json_data and json_data.get('hr_based_width_label', False):
+            hr_min = json_data.get('hr_based_width_min', 50)
+            hr_max = json_data.get('hr_based_width_max', 180)
+            
+            try:
+                label_image = create_hr_based_width_label(hr_min, hr_max)
+                # Convert PIL Image to numpy array (RGBA) for storage
+                label_array = np.array(label_image)
+                # Store in json_data for use during frame generation
+                json_data['_hr_based_width_label_image'] = label_array
+                if debug_callback:
+                    debug_callback(f"Created HR-based width label image ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
+            except Exception as e:
+                if log_callback:
+                    log_callback(f"Error creating HR-based width label: {str(e)}")
               
         # Final progress update
         if progress_callback:
@@ -576,7 +636,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
         # Check if heart rate extraction is needed (optimization: skip if not requested)
         extract_heart_rate = False
         if json_data:
-            extract_heart_rate = json_data.get('statistics_average_hr', False) or json_data.get('statistics_current_hr', False)
+            extract_heart_rate = json_data.get('statistics_average_hr', False) or json_data.get('statistics_current_hr', False) or json_data.get('hr_based_color', False) or json_data.get('hr_based_width', False) or json_data.get('hr_based_width_label', False)
         
         # Check if imperial units should be used
         imperial_units = _is_imperial_units(json_data)

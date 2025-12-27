@@ -110,12 +110,12 @@ def upload_video_to_storage_box(
         ftp.connect(storage_box_address)
         ftp.login(storage_box_user, storage_box_password)
         
-        # Create or enter jobs directory
+        # Create or enter media directory
         try:
-            ftp.mkd('jobs')
+            ftp.mkd('media')
         except ftplib.error_perm:
             pass  # Directory might already exist
-        ftp.cwd('jobs')
+        ftp.cwd('media')
         
         # Create job directory if it doesn't exist
         try:

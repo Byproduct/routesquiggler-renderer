@@ -335,6 +335,30 @@ class JobRequestManager:
             import traceback
             self.main_window.log_widget.add_log(traceback.format_exc())
             
+            # Extract job_id to report error to server (job was requested but worker never started)
+            job_id = None
+            try:
+                if json_data:
+                    job_id = json_data.get('job_id', '?')
+            except:
+                pass
+            
+            # Report error to server if we have job_id (job was successfully requested but failed to start)
+            if job_id and job_id != '?':
+                try:
+                    update_job_status(
+                        self.main_window.api_url,
+                        self.main_window.user,
+                        self.main_window.hardware_id,
+                        self.main_window.app_version,
+                        job_id,
+                        'error',
+                        self.main_window.log_widget.add_log
+                    )
+                    self.main_window.log_widget.add_log(f"Reported error to server for job #{job_id} (worker failed to start)")
+                except Exception as status_error:
+                    self.main_window.log_widget.add_log(f"Warning: Failed to report error to server: {str(status_error)}")
+            
             # Clean up the job request worker and thread on error
             if self.job_request_thread:
                 try:
@@ -601,6 +625,8 @@ class JobRequestManager:
     
     def process_qt_network_zip_response(self, response_data):
         """Process ZIP response data from Qt network request."""
+        job_id = None  # Track job_id so we can report errors if processing fails
+        
         try:
             # Process the outer ZIP file which contains data.json and gpx_files.zip
             with zipfile.ZipFile(BytesIO(response_data), 'r') as outer_zip:
@@ -610,12 +636,14 @@ class JobRequestManager:
                 try:
                     with outer_zip.open('data.json') as data_file:
                         json_data = json.loads(data_file.read().decode('utf-8'))
-                    self.main_window.log_widget.add_log("data.json parsed successfully")
+                    job_id = json_data.get('job_id', '?')
+                    self.main_window.log_widget.add_log(f"data.json parsed successfully. Job ID: {job_id}")
                     
                     # Apply vertical_video resolution swap if enabled
                     json_data = apply_vertical_video_swap(json_data, self.main_window.log_widget.add_log)
                 except Exception as e:
                     self.main_window.log_widget.add_log(f"Error reading data.json: {str(e)}")
+                    # Can't report error to server since we don't have job_id yet
                     self.on_job_request_error("Failed to read data.json")
                     return
 
@@ -626,39 +654,80 @@ class JobRequestManager:
                     self.main_window.log_widget.add_log("gpx_files.zip read successfully")
                 except Exception as e:
                     self.main_window.log_widget.add_log(f"Error reading gpx_files.zip: {str(e)}")
+                    # Report error to server since we have job_id
+                    if job_id:
+                        update_job_status(
+                            self.main_window.api_url,
+                            self.main_window.user,
+                            self.main_window.hardware_id,
+                            self.main_window.app_version,
+                            job_id,
+                            'error',
+                            self.main_window.log_widget.add_log
+                        )
+                        self.main_window.log_widget.add_log(f"Reported error to server for job #{job_id}")
                     self.on_job_request_error("Failed to read gpx_files.zip")
                     return
 
                 # Process GPX files from the inner ZIP
                 gpx_files_info = []
-                with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
-                    self.main_window.log_widget.add_log("Processing GPX files...")
-                    for file_name in gpx_zip.namelist():
-                        with gpx_zip.open(file_name) as gpx_file:
-                            gpx_content = gpx_file.read()
-                            # Try different encodings
-                            for encoding in ['utf-8', 'latin1', 'cp1252']:
-                                try:
-                                    gpx_text = gpx_content.decode(encoding)
-                                    if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
+                try:
+                    with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
+                        self.main_window.log_widget.add_log("Processing GPX files...")
+                        for file_name in gpx_zip.namelist():
+                            with gpx_zip.open(file_name) as gpx_file:
+                                gpx_content = gpx_file.read()
+                                # Try different encodings
+                                for encoding in ['utf-8', 'latin1', 'cp1252']:
+                                    try:
+                                        gpx_text = gpx_content.decode(encoding)
+                                        if '<gpx' in gpx_text:  # Basic validation that this is a GPX file
 
-                                        gpx_text = harmonize_gpx_times(gpx_text) # Convert format with milliseconds into format without milliseconds
+                                            gpx_text = harmonize_gpx_times(gpx_text) # Convert format with milliseconds into format without milliseconds
 
-                                        gpx_files_info.append({
-                                            'filename': file_name,
-                                            'name': file_name,
-                                            'content': gpx_text
-                                        })
-                                        break
-                                except UnicodeDecodeError:
+                                            gpx_files_info.append({
+                                                'filename': file_name,
+                                                'name': file_name,
+                                                'content': gpx_text
+                                            })
+                                            break
+                                    except UnicodeDecodeError:
+                                        continue
+                                else:
+                                    # If no encoding worked, log an error
+                                    self.main_window.log_widget.add_log(f"Failed to decode {file_name} with any supported encoding")
                                     continue
-                            else:
-                                # If no encoding worked, log an error
-                                self.main_window.log_widget.add_log(f"Failed to decode {file_name} with any supported encoding")
-                                continue
+                except Exception as e:
+                    self.main_window.log_widget.add_log(f"Error processing GPX files: {str(e)}")
+                    # Report error to server since we have job_id
+                    if job_id:
+                        update_job_status(
+                            self.main_window.api_url,
+                            self.main_window.user,
+                            self.main_window.hardware_id,
+                            self.main_window.app_version,
+                            job_id,
+                            'error',
+                            self.main_window.log_widget.add_log
+                        )
+                        self.main_window.log_widget.add_log(f"Reported error to server for job #{job_id}")
+                    self.on_job_request_error("Error processing GPX files")
+                    return
                 
                 if not gpx_files_info:
                     self.main_window.log_widget.add_log("No valid GPX files found in the ZIP")
+                    # Report error to server since we have job_id
+                    if job_id:
+                        update_job_status(
+                            self.main_window.api_url,
+                            self.main_window.user,
+                            self.main_window.hardware_id,
+                            self.main_window.app_version,
+                            job_id,
+                            'error',
+                            self.main_window.log_widget.add_log
+                        )
+                        self.main_window.log_widget.add_log(f"Reported error to server for job #{job_id}")
                     self.on_job_request_error("No valid GPX files found")
                     return
                 
@@ -666,8 +735,26 @@ class JobRequestManager:
                 # Process the job data
                 self.on_job_received(json_data, gpx_files_info)
                 
+        except zipfile.BadZipFile as e:
+            self.main_window.log_widget.add_log(f"Invalid ZIP file received: {str(e)}")
+            import traceback
+            self.main_window.log_widget.add_log(traceback.format_exc())
+            # Can't report error if ZIP is completely invalid (no job_id available)
+            self.on_job_request_error(f"Invalid ZIP file received: {str(e)}")
         except Exception as e:
             self.main_window.log_widget.add_log(f"Error processing ZIP response: {str(e)}")
             import traceback
             self.main_window.log_widget.add_log(traceback.format_exc())
+            # Report error to server if we have job_id
+            if job_id:
+                update_job_status(
+                    self.main_window.api_url,
+                    self.main_window.user,
+                    self.main_window.hardware_id,
+                    self.main_window.app_version,
+                    job_id,
+                    'error',
+                    self.main_window.log_widget.add_log
+                )
+                self.main_window.log_widget.add_log(f"Reported error to server for job #{job_id}")
             self.on_job_request_error(f"Error processing ZIP response: {str(e)}") 

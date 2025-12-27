@@ -575,6 +575,7 @@ class StreamingFrameGenerator:
         
         # Store the last rendered frame for cloning (will be set during frame generation)
         self.last_rendered_frame = None
+        self.last_successfully_returned_frame = None  # Track last successfully returned frame for fallback
         self.frames_to_generate = frames_to_generate
         
         # Initialize multiprocessing components with improved buffering
@@ -880,11 +881,15 @@ class StreamingFrameGenerator:
                     self.last_rendered_frame = self.frame_buffer[self.frames_to_generate].copy()
                     return self.last_rendered_frame.copy()
                 
-                # Last resort: return black frame if last rendered frame isn't available yet
-                print(f"Warning: Cloned frame {frame_number} requested but last frame {self.frames_to_generate} not ready yet")
-                height = int(self.json_data.get('video_resolution_y', 1080))
-                width = int(self.json_data.get('video_resolution_x', 1920))
-                return np.zeros((height, width, 3), dtype=np.uint8)
+                # Last resort: try to use last successfully returned frame, or black frame if not available
+                if self.last_successfully_returned_frame is not None:
+                    print(f"Warning: Cloned frame {frame_number} requested but last frame {self.frames_to_generate} not ready yet, using last successful frame")
+                    return self.last_successfully_returned_frame.copy()
+                else:
+                    print(f"Warning: Cloned frame {frame_number} requested but last frame {self.frames_to_generate} not ready yet, using black frame")
+                    height = int(self.json_data.get('video_resolution_y', 1080))
+                    width = int(self.json_data.get('video_resolution_x', 1920))
+                    return np.zeros((height, width, 3), dtype=np.uint8)
         
         # NEW: Update frame prioritization based on sequential access pattern
         if frame_number > self.last_requested_frame:
@@ -934,7 +939,7 @@ class StreamingFrameGenerator:
             self.consecutive_on_demand_requests = 0
         
         # Wait for the specific frame we need
-        max_wait_time = 30  # Maximum wait time in seconds
+        max_wait_time = 60  # Maximum wait time in seconds (hardcoded to 60 seconds)
         wait_start = time.time()
         
         while frame_number not in self.frame_buffer:
@@ -950,14 +955,39 @@ class StreamingFrameGenerator:
                 
                 # Check timeout
                 if time.time() - wait_start > max_wait_time:
-                    print(f"Timeout waiting for frame {frame_number}, using black frame")
-                    # Return black frame on timeout
+                    print(f"Timeout waiting for frame {frame_number} (timeout: {max_wait_time}s), using last successful frame instead of black frame")
+                    # Try to return the last successfully returned frame instead of black frame
+                    if self.last_successfully_returned_frame is not None:
+                        return self.last_successfully_returned_frame.copy()
+                    
+                    # Try to get the previous frame from buffer (frame_number - 1, frame_number - 2, etc.)
+                    for fallback_frame_num in range(frame_number - 1, max(1, frame_number - 10), -1):
+                        if fallback_frame_num in self.frame_buffer:
+                            fallback_frame = self.frame_buffer[fallback_frame_num].copy()
+                            print(f"Using frame {fallback_frame_num} as fallback for frame {frame_number}")
+                            return fallback_frame
+                    
+                    # Last resort: return black frame if no fallback available
+                    print(f"No fallback frame available, using black frame")
                     height = int(self.json_data.get('video_resolution_y', 1080))
                     width = int(self.json_data.get('video_resolution_x', 1920))
                     return np.zeros((height, width, 3), dtype=np.uint8)
             else:
                 # This really shouldn't happen now, but just in case
-                print(f"Frame {frame_number} disappeared from pending, using black frame")
+                print(f"Frame {frame_number} disappeared from pending, using last successful frame instead of black frame")
+                # Try to return the last successfully returned frame instead of black frame
+                if self.last_successfully_returned_frame is not None:
+                    return self.last_successfully_returned_frame.copy()
+                
+                # Try to get the previous frame from buffer
+                for fallback_frame_num in range(frame_number - 1, max(1, frame_number - 10), -1):
+                    if fallback_frame_num in self.frame_buffer:
+                        fallback_frame = self.frame_buffer[fallback_frame_num].copy()
+                        print(f"Using frame {fallback_frame_num} as fallback for frame {frame_number}")
+                        return fallback_frame
+                
+                # Last resort: return black frame if no fallback available
+                print(f"No fallback frame available, using black frame")
                 height = int(self.json_data.get('video_resolution_y', 1080))
                 width = int(self.json_data.get('video_resolution_x', 1920))
                 return np.zeros((height, width, 3), dtype=np.uint8)
@@ -968,6 +998,9 @@ class StreamingFrameGenerator:
         # NEW: Store the last rendered frame for cloning if this is the final generated frame
         if frame_number == self.frames_to_generate:
             self.last_rendered_frame = frame_array.copy()  # Store copy for cloning
+        
+        # Track the last successfully returned frame for fallback on timeout
+        self.last_successfully_returned_frame = frame_array.copy()
         
         return frame_array
     
@@ -1132,32 +1165,35 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 # Quality/File Size Options:
                 # - Lower bitrate = smaller file, lower quality
                 # - Higher bitrate = larger file, higher quality
-                # - 'slow' preset = better compression, slower encoding
-                # - 'fast' preset = faster encoding, larger file
-                # - 'hq' preset = high quality, slower encoding
-                # - 'll' preset = low latency, larger file
-                # - 'llhq' preset = low latency high quality, slower encoding
-                # - 'lossless' preset = no compression, very large file
-                clip.write_videofile(
-                    output_path,
-                    fps=video_fps,
-                    codec='h264_nvenc',  # NVIDIA GPU encoder
-                    bitrate='15000k',    # Can be reduced for smaller files (e.g., '8000k', '5000k')
-                    audio=False,
-                    threads=max_workers,
-                    logger="bar",         # Suppress MoviePy logger messages
-                    ffmpeg_params=[
-                        '-pix_fmt', 'yuv420p',
-                        '-preset', 'slow',        # Options: fast, slow, hq, ll, llhq, lossless
-                        '-rc', 'vbr',             # Rate control: vbr (variable), cbr (constant), cqp (constant quality)
-                        '-cq', '23',              # Constant quality (18-51, lower = better quality, larger file)
-                        '-b:v', '15000k',         # Target bitrate
-                        '-maxrate', '20000k',     # Maximum bitrate
-                        '-bufsize', '30000k'      # Buffer size for rate control
-                    ]
-                )
-            else:
-                # CPU rendering with libx264
+                # - Presets p1-p7: p1 = fastest, p7 = best quality (slowest)
+                # - p4 is a good balance between speed and quality
+                try:
+                    clip.write_videofile(
+                        output_path,
+                        fps=video_fps,
+                        codec='h264_nvenc',  # NVIDIA GPU encoder
+                        bitrate='15000k',    # Can be reduced for smaller files (e.g., '8000k', '5000k')
+                        audio=False,
+                        threads=max_workers,
+                        logger="bar",         # Suppress MoviePy logger messages
+                        ffmpeg_params=[
+                            '-pix_fmt', 'yuv420p',
+                            '-preset', 'p5',          # Options: p1 (fastest) to p7 (best quality)
+                            '-rc', 'vbr',             # Rate control: vbr (variable), cbr (constant), cqp (constant quality)
+                            '-cq', '23',              # Constant quality (18-51, lower = better quality, larger file)
+                            '-b:v', '15000k',         # Target bitrate
+                            '-maxrate', '20000k',     # Maximum bitrate
+                            '-bufsize', '30000k'      # Buffer size for rate control
+                        ]
+                    )
+                except Exception as nvenc_error:
+                    # Fallback to CPU encoding if NVENC fails
+                    if debug_callback:
+                        debug_callback(f"NVENC encoding failed ({nvenc_error}), falling back to CPU encoding")
+                    gpu_rendering = False  # Will trigger CPU encoding below
+            
+            # CPU rendering with libx264 (either by choice or as fallback from failed NVENC)
+            if not gpu_rendering:
                 clip.write_videofile(
                     output_path,
                     fps=video_fps,

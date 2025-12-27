@@ -1,0 +1,374 @@
+[13:43:11] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[13:43:11] Using 6 threads (default: max-2, min 1)
+[13:43:11] Debug logging: disabled (from config.txt)
+[13:43:11] Configuration loaded
+[13:43:11] Terminal-only mode enabled
+[13:43:11] GPU rendering enabled
+[13:43:11] ------------------------------------------
+[13:43:11] Starting up Route Squiggler render client.
+[13:43:11] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[13:43:11] Testing connection to web server
+[13:43:12] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-27T11:43:12.194156+00:00", "accepted_version": "0.10"}
+[13:43:12] Storage box connection successful.
+[13:43:12] Syncing map tile cache
+[13:43:12] Map tile cache syncing is disabled in config. Skipping sync.
+[13:43:12] Bootup completed successfully
+[13:43:12] Starting job processing mode...
+[13:43:12] Starting job processing loop. Press Ctrl+C to stop.
+[13:43:51] No response received from server
+[13:46:12] Processing job #600 (type: video)
+[13:46:12] Step 1: Sorting GPX files chronologically
+[13:46:12] Step 2: Creating combined route
+[13:46:13] Step 3: Calculating unique bounding boxes and caching map tiles
+[13:46:14] Step 4: Caching map images for unique bounding boxes
+[13:46:16] Step 5: Generating video frames
+[13:46:24] 🎬 Total rendering time: 10.36 seconds
+[13:46:24] Step 6: Uploading video and thumbnail to storage box
+[13:46:24] Starting video upload to storage box...
+[13:46:24] Video file validated: 266375 bytes
+[13:46:24] Uploading video file: Compare_timeshift_test_off.mp4
+[13:46:24] Video file uploaded successfully: 266375 bytes
+[13:46:24] Uploading thumbnail file: thumbnail.png
+[13:46:25] Thumbnail uploaded successfully: 295039 bytes
+[13:46:25] Video upload completed successfully
+[13:46:25] ✅ Video upload completed successfully
+[13:46:27] Job #600 completed successfully
+[13:46:27] Job completed. Requesting next job...
+[13:46:47] Processing job #601 (type: video)
+[13:46:47] Step 1: Sorting GPX files chronologically
+[13:46:47] Step 2: Creating combined route
+[13:46:48] Step 3: Calculating unique bounding boxes and caching map tiles
+[13:46:49] Step 4: Caching map images for unique bounding boxes
+[13:46:50] Step 5: Generating video frames
+[13:46:59] 🎬 Total rendering time: 11.05 seconds
+[13:46:59] Step 6: Uploading video and thumbnail to storage box
+[13:46:59] Starting video upload to storage box...
+[13:46:59] Video file validated: 268257 bytes
+[13:46:59] Uploading video file: Compare_timeshift_test_on.mp4
+[13:47:00] Video file uploaded successfully: 268257 bytes
+[13:47:00] Uploading thumbnail file: thumbnail.png
+[13:47:00] Thumbnail uploaded successfully: 295127 bytes
+[13:47:00] Video upload completed successfully
+[13:47:00] ✅ Video upload completed successfully
+[13:47:01] Job #601 completed successfully
+[13:47:01] Job completed. Requesting next job...
+[14:05:10] Job request timed out (no jobs available)
+[14:06:18] No response received from server
+[14:08:59] Processing job #602 (type: video)
+[14:08:59] Step 1: Sorting GPX files chronologically
+[14:08:59] Step 2: Creating combined route
+[14:09:11] Step 3: Calculating unique bounding boxes and caching map tiles
+[14:09:12] Step 4: Caching map images for unique bounding boxes
+[14:09:14] Step 5: Generating video frames
+[15:01:42] 🎬 Total rendering time: 52 minutes 30.17 seconds
+[15:01:42] Step 6: Uploading video and thumbnail to storage box
+[15:01:42] Starting video upload to storage box...
+[15:01:42] Video file validated: 3123243 bytes
+[15:01:42] Uploading video file: Pkseutu-compare.mp4
+[15:01:44] Video file uploaded successfully: 3123243 bytes
+[15:01:44] Uploading thumbnail file: thumbnail.png
+[15:01:44] Thumbnail uploaded successfully: 214570 bytes
+[15:01:44] Video upload completed successfully
+[15:01:44] ✅ Video upload completed successfully
+[15:01:46] Job #602 completed successfully
+[15:01:46] Job completed. Requesting next job...
+[15:16:11] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[15:16:11] Using 6 threads (default: max-2, min 1)
+[15:16:11] Debug logging: disabled (from config.txt)
+[15:16:11] Configuration loaded
+[15:16:11] Terminal-only mode enabled
+[15:16:11] GPU rendering enabled
+[15:16:11] ------------------------------------------
+[15:16:11] Starting up Route Squiggler render client.
+[15:16:11] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[15:16:11] Testing connection to web server
+[15:16:12] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-27T13:16:12.311674+00:00", "accepted_version": "0.10"}
+[15:16:12] Storage box connection successful.
+[15:16:12] Syncing map tile cache
+[15:16:12] Map tile cache syncing is disabled in config. Skipping sync.
+[15:16:12] Bootup completed successfully
+[15:16:12] Starting job processing mode...
+[15:16:12] Starting job processing loop. Press Ctrl+C to stop.
+[15:18:53] Processing job #605 (type: video)
+[15:18:53] Step 1: Sorting GPX files chronologically
+[15:18:53] Step 2: Creating combined route
+[15:18:53] Step 3: Calculating unique bounding boxes and caching map tiles
+[15:18:54] Step 4: Caching map images for unique bounding boxes
+[15:18:56] Step 5: Generating video frames
+[15:19:06] 🎬 Total rendering time: 12.32 seconds
+[15:19:06] Step 6: Uploading video and thumbnail to storage box
+[15:19:06] Starting video upload to storage box...
+[15:19:06] Video file validated: 494443 bytes
+[15:19:06] Uploading video file: Vid test 1080p.mp4
+[15:19:06] Video file uploaded successfully: 494443 bytes
+[15:19:06] Uploading thumbnail file: thumbnail.png
+[15:19:07] Thumbnail uploaded successfully: 224532 bytes
+[15:19:07] Video upload completed successfully
+[15:19:07] ✅ Video upload completed successfully
+[15:19:08] Job #605 completed successfully
+[15:19:08] Job completed. Requesting next job...
+[15:21:29] Processing job #606 (type: video)
+[15:21:29] Step 1: Sorting GPX files chronologically
+[15:21:29] Step 2: Creating combined route
+[15:21:40] Step 3: Calculating unique bounding boxes and caching map tiles
+[15:21:41] Step 4: Caching map images for unique bounding boxes
+[15:21:43] Step 5: Generating video frames
+[15:21:48] 🎬 Total rendering time: 7.73 seconds
+[15:21:48] Step 6: Uploading video and thumbnail to storage box
+[15:21:48] Starting video upload to storage box...
+[15:21:48] Video file validated: 543189 bytes
+[15:21:48] Uploading video file: Pkseutu-compare.mp4
+[15:21:49] Video file uploaded successfully: 543189 bytes
+[15:21:49] Uploading thumbnail file: thumbnail.png
+[15:21:49] Thumbnail uploaded successfully: 221895 bytes
+[15:21:49] Video upload completed successfully
+[15:21:49] ✅ Video upload completed successfully
+[15:21:51] Job #606 completed successfully
+[15:21:51] Job completed. Requesting next job...
+[15:33:02] Processing job #608 (type: video)
+[15:33:02] Step 1: Sorting GPX files chronologically
+[15:33:02] Step 2: Creating combined route
+[15:33:10] Step 3: Calculating unique bounding boxes and caching map tiles
+[15:33:11] Step 4: Caching map images for unique bounding boxes
+[15:33:13] Step 5: Generating video frames
+[15:33:34] 🎬 Total rendering time: 24.08 seconds
+[15:33:34] Step 6: Uploading video and thumbnail to storage box
+[15:33:34] Starting video upload to storage box...
+[15:33:34] Video file validated: 950335 bytes
+[15:33:35] Uploading video file: Optimistic breeze.mp4
+[15:33:35] Video file uploaded successfully: 950335 bytes
+[15:33:35] Uploading thumbnail file: thumbnail.png
+[15:33:36] Thumbnail uploaded successfully: 239249 bytes
+[15:33:36] Video upload completed successfully
+[15:33:36] ✅ Video upload completed successfully
+[15:33:37] Job #608 completed successfully
+[15:33:37] Job completed. Requesting next job...
+[15:34:48] Processing job #609 (type: video)
+[15:34:48] Step 1: Sorting GPX files chronologically
+[15:34:48] Step 2: Creating combined route
+[15:34:56] Step 3: Calculating unique bounding boxes and caching map tiles
+[15:34:57] Step 4: Caching map images for unique bounding boxes
+[15:34:58] Step 5: Generating video frames
+[15:35:22] 🎬 Total rendering time: 26.20 seconds
+[15:35:22] Step 6: Uploading video and thumbnail to storage box
+[15:35:22] Starting video upload to storage box...
+[15:35:22] Video file validated: 749595 bytes
+[15:35:23] Uploading video file: Optimistic breeze.mp4
+[15:35:23] Video file uploaded successfully: 749595 bytes
+[15:35:23] Uploading thumbnail file: thumbnail.png
+[15:35:24] Thumbnail uploaded successfully: 235008 bytes
+[15:35:24] Video upload completed successfully
+[15:35:24] ✅ Video upload completed successfully
+[15:35:25] Job #609 completed successfully
+[15:35:25] Job completed. Requesting next job...
+[15:37:07] Processing job #610 (type: video)
+[15:37:07] Step 1: Sorting GPX files chronologically
+[15:37:07] Step 2: Creating combined route
+[15:37:21] Step 3: Calculating unique bounding boxes and caching map tiles
+[15:37:22] Step 4: Caching map images for unique bounding boxes
+[15:37:23] Step 5: Generating video frames
+[16:12:06] 🎬 Total rendering time: 34 minutes 45.27 seconds
+[16:12:06] Step 6: Uploading video and thumbnail to storage box
+[16:12:06] Starting video upload to storage box...
+[16:12:06] Video file validated: 4227520 bytes
+[16:12:07] Uploading video file: Optimistic breeze.mp4
+[16:12:09] Video file uploaded successfully: 4227520 bytes
+[16:12:09] Uploading thumbnail file: thumbnail.png
+[16:12:09] Thumbnail uploaded successfully: 218371 bytes
+[16:12:09] Video upload completed successfully
+[16:12:09] ✅ Video upload completed successfully
+[16:12:10] Job #610 completed successfully
+[16:12:10] Job completed. Requesting next job...
+[16:30:36] Processing job #611 (type: video)
+[16:30:36] Step 1: Sorting GPX files chronologically
+[16:30:36] Step 2: Creating combined route
+[16:30:50] Step 3: Calculating unique bounding boxes and caching map tiles
+[16:30:51] Step 4: Caching map images for unique bounding boxes
+[16:30:52] Step 5: Generating video frames
+[17:05:19] 🎬 Total rendering time: 34 minutes 28.91 seconds
+[17:05:19] Step 6: Uploading video and thumbnail to storage box
+[17:05:19] Starting video upload to storage box...
+[17:05:19] Video file validated: 2781879 bytes
+[17:05:19] Uploading video file: Optimistic breeze.mp4
+[17:05:22] Video file uploaded successfully: 2781879 bytes
+[17:05:22] Uploading thumbnail file: thumbnail.png
+[17:05:23] Thumbnail uploaded successfully: 213943 bytes
+[17:05:23] Video upload completed successfully
+[17:05:23] ✅ Video upload completed successfully
+[17:05:24] Job #611 completed successfully
+[17:05:24] Job completed. Requesting next job...
+[20:46:48] Processing job #612 (type: video)
+[20:46:48] Step 1: Sorting GPX files chronologically
+[20:46:48] Step 2: Creating combined route
+[20:46:48] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:46:49] Step 4: Caching map images for unique bounding boxes
+[20:46:51] Step 5: Generating video frames
+[20:46:58] 🎬 Total rendering time: 9.79 seconds
+[20:46:58] Step 6: Uploading video and thumbnail to storage box
+[20:46:58] Starting video upload to storage box...
+[20:46:58] Video file validated: 271745 bytes
+[20:46:58] Uploading video file: Vid test 720p.mp4
+[20:46:59] Video file uploaded successfully: 271745 bytes
+[20:46:59] Uploading thumbnail file: thumbnail.png
+[20:46:59] Thumbnail uploaded successfully: 222246 bytes
+[20:46:59] Video upload completed successfully
+[20:46:59] ✅ Video upload completed successfully
+[20:47:00] Job #612 completed successfully
+[20:47:00] Job completed. Requesting next job...
+[20:47:01] Processing job #613 (type: video)
+[20:47:01] Step 1: Sorting GPX files chronologically
+[20:47:01] Step 2: Creating combined route
+[20:47:01] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:47:02] Step 4: Caching map images for unique bounding boxes
+[20:47:04] Step 5: Generating video frames
+[20:47:14] 🎬 Total rendering time: 13.08 seconds
+[20:47:14] Step 6: Uploading video and thumbnail to storage box
+[20:47:14] Starting video upload to storage box...
+[20:47:14] Video file validated: 494553 bytes
+[20:47:15] Uploading video file: Vid test 1080p.mp4
+[20:47:15] Video file uploaded successfully: 494553 bytes
+[20:47:15] Uploading thumbnail file: thumbnail.png
+[20:47:16] Thumbnail uploaded successfully: 224520 bytes
+[20:47:16] Video upload completed successfully
+[20:47:16] ✅ Video upload completed successfully
+[20:47:17] Job #613 completed successfully
+[20:47:17] Job completed. Requesting next job...
+[20:47:18] Processing job #614 (type: video)
+[20:47:18] Step 1: Sorting GPX files chronologically
+[20:47:18] Step 2: Creating combined route
+[20:47:18] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:47:19] Step 4: Caching map images for unique bounding boxes
+[20:47:21] Step 5: Generating video frames
+[20:47:51] 🎬 Total rendering time: 33.03 seconds
+[20:47:51] Step 6: Uploading video and thumbnail to storage box
+[20:47:51] Starting video upload to storage box...
+[20:47:51] Video file validated: 1183500 bytes
+[20:47:51] Uploading video file: Vid test 4k.mp4
+[20:47:53] Video file uploaded successfully: 1183500 bytes
+[20:47:53] Uploading thumbnail file: thumbnail.png
+[20:47:53] Thumbnail uploaded successfully: 230004 bytes
+[20:47:53] Video upload completed successfully
+[20:47:53] ✅ Video upload completed successfully
+[20:47:54] Job #614 completed successfully
+[20:47:54] Job completed. Requesting next job...
+[20:53:28] Starting Route Squiggler Render Client in terminal-only mode (overridden by command line)
+[20:53:28] Using 6 threads (default: max-2, min 1)
+[20:53:28] Debug logging: disabled (from config.txt)
+[20:53:28] Configuration loaded
+[20:53:28] Terminal-only mode enabled
+[20:53:28] GPU rendering enabled
+[20:53:28] ------------------------------------------
+[20:53:28] Starting up Route Squiggler render client.
+[20:53:28] Hardware ID: dd3c616276296b9fca610de827f083ecadf5e3e57d9e73c873282bd2e4138a31
+[20:53:28] Testing connection to web server
+[20:53:28] Web server connection successful: {"status": "ok", "user_name": "i7-9700K", "user_id": 1, "server_time": "2025-12-27T18:53:28.932130+00:00", "accepted_version": "0.10"}
+[20:53:29] Storage box connection successful.
+[20:53:29] Syncing map tile cache
+[20:53:29] Map tile cache syncing is disabled in config. Skipping sync.
+[20:53:29] Bootup completed successfully
+[20:53:29] Starting job processing mode...
+[20:53:29] Starting job processing loop. Press Ctrl+C to stop.
+[20:53:49] Processing job #615 (type: video)
+[20:53:49] Step 1: Sorting GPX files chronologically
+[20:53:49] Step 2: Creating combined route
+[20:53:49] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:53:51] Step 4: Caching map images for unique bounding boxes
+[20:53:52] Step 5: Generating video frames
+[20:53:58] 🎬 Total rendering time: 8.95 seconds
+[20:53:58] Step 6: Uploading video and thumbnail to storage box
+[20:53:58] Starting video upload to storage box...
+[20:53:58] Error: Video file too small (9446 bytes), minimum 10KB required
+[20:53:58] ❌ Video upload failed
+[20:53:59] Error in video generation: Video upload to storage box failed
+[20:53:59] Job #615 completed successfully
+[20:53:59] Job completed. Requesting next job...
+[20:54:00] Processing job #616 (type: video)
+[20:54:00] Step 1: Sorting GPX files chronologically
+[20:54:00] Step 2: Creating combined route
+[20:54:00] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:54:01] Step 4: Caching map images for unique bounding boxes
+[20:54:03] Step 5: Generating video frames
+[20:54:11] 🎬 Total rendering time: 10.88 seconds
+[20:54:11] Step 6: Uploading video and thumbnail to storage box
+[20:54:11] Starting video upload to storage box...
+[20:54:11] Video file validated: 14281 bytes
+[20:54:11] Uploading video file: Vid test 1080p.mp4
+[20:54:12] Video file uploaded successfully: 14281 bytes
+[20:54:12] Uploading thumbnail file: thumbnail.png
+[20:54:12] Thumbnail uploaded successfully: 609 bytes
+[20:54:12] Video upload completed successfully
+[20:54:12] ✅ Video upload completed successfully
+[20:54:13] Job #616 completed successfully
+[20:54:13] Job completed. Requesting next job...
+[20:54:14] Processing job #617 (type: video)
+[20:54:14] Step 1: Sorting GPX files chronologically
+[20:54:14] Step 2: Creating combined route
+[20:54:14] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:54:15] Step 4: Caching map images for unique bounding boxes
+[20:54:20] Step 5: Generating video frames
+[20:54:44] 🎬 Total rendering time: 29.55 seconds
+[20:54:44] Step 6: Uploading video and thumbnail to storage box
+[20:54:44] Starting video upload to storage box...
+[20:54:44] Video file validated: 40332 bytes
+[20:54:44] Uploading video file: Vid test 4k.mp4
+[20:54:44] Video file uploaded successfully: 40332 bytes
+[20:54:44] Uploading thumbnail file: thumbnail.png
+[20:54:44] Thumbnail uploaded successfully: 609 bytes
+[20:54:44] Video upload completed successfully
+[20:54:44] ✅ Video upload completed successfully
+[20:54:46] Job #617 completed successfully
+[20:54:46] Job completed. Requesting next job...
+[20:55:56] Processing job #615 (type: video)
+[20:55:56] Step 1: Sorting GPX files chronologically
+[20:55:56] Step 2: Creating combined route
+[20:55:57] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:55:58] Step 4: Caching map images for unique bounding boxes
+[20:55:59] Step 5: Generating video frames
+[20:56:07] 🎬 Total rendering time: 10.33 seconds
+[20:56:07] Step 6: Uploading video and thumbnail to storage box
+[20:56:07] Starting video upload to storage box...
+[20:56:07] Video file validated: 272606 bytes
+[20:56:08] Uploading video file: Vid test 720p.mp4
+[20:56:08] Video file uploaded successfully: 272606 bytes
+[20:56:08] Uploading thumbnail file: thumbnail.png
+[20:56:09] Thumbnail uploaded successfully: 221589 bytes
+[20:56:09] Video upload completed successfully
+[20:56:09] ✅ Video upload completed successfully
+[20:56:10] Job #615 completed successfully
+[20:56:10] Job completed. Requesting next job...
+[20:56:11] Processing job #616 (type: video)
+[20:56:11] Step 1: Sorting GPX files chronologically
+[20:56:11] Step 2: Creating combined route
+[20:56:11] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:56:12] Step 4: Caching map images for unique bounding boxes
+[20:56:13] Step 5: Generating video frames
+[20:56:23] 🎬 Total rendering time: 12.38 seconds
+[20:56:23] Step 6: Uploading video and thumbnail to storage box
+[20:56:23] Starting video upload to storage box...
+[20:56:23] Video file validated: 495564 bytes
+[20:56:23] Uploading video file: Vid test 1080p.mp4
+[20:56:24] Video file uploaded successfully: 495564 bytes
+[20:56:24] Uploading thumbnail file: thumbnail.png
+[20:56:24] Thumbnail uploaded successfully: 224570 bytes
+[20:56:24] Video upload completed successfully
+[20:56:24] ✅ Video upload completed successfully
+[20:56:25] Job #616 completed successfully
+[20:56:25] Job completed. Requesting next job...
+[20:56:26] Processing job #617 (type: video)
+[20:56:26] Step 1: Sorting GPX files chronologically
+[20:56:26] Step 2: Creating combined route
+[20:56:27] Step 3: Calculating unique bounding boxes and caching map tiles
+[20:56:28] Step 4: Caching map images for unique bounding boxes
+[20:56:29] Step 5: Generating video frames
+[20:56:57] 🎬 Total rendering time: 30.02 seconds
+[20:56:57] Step 6: Uploading video and thumbnail to storage box
+[20:56:57] Starting video upload to storage box...
+[20:56:57] Video file validated: 1138246 bytes
+[20:56:57] Uploading video file: Vid test 4k.mp4
+[20:56:58] Video file uploaded successfully: 1138246 bytes
+[20:56:58] Uploading thumbnail file: thumbnail.png
+[20:56:58] Thumbnail uploaded successfully: 231206 bytes
+[20:56:58] Video upload completed successfully
+[20:56:58] ✅ Video upload completed successfully
+[20:57:00] Job #617 completed successfully
+[20:57:00] Job completed. Requesting next job...

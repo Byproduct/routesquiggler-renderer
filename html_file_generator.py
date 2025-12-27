@@ -112,7 +112,7 @@ def upload_gallery_html(
         ftp.login(storage_box_user, storage_box_password)
         
         # Navigate to target directory
-        ftp.cwd('jobs')
+        ftp.cwd('media')
         ftp.cwd(job_id)
         ftp.cwd(folder)
         

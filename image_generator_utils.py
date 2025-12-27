@@ -104,6 +104,63 @@ def _is_imperial_units(json_data):
     return json_data and json_data.get('imperial_units', False) is True
 
 
+def calculate_resolution_scale(resolution_x: int, resolution_y: int) -> float:
+    """
+    Calculate the resolution scale based on total pixel count.
+    
+    The scale is determined by the total number of pixels (resolution_x × resolution_y):
+    
+    < 1 MP   → scale 0.7
+    < 8 MP   → scale 1
+    8–18 MP  → scale 2
+    18–33 MP → scale 3
+    ≥ 33 MP  → scale 4
+    
+    Args:
+        resolution_x: Image width in pixels
+        resolution_y: Image height in pixels
+    
+    Returns:
+        Resolution scale (0.7, 1, 2, 3, or 4)
+    """
+    total_pixels = resolution_x * resolution_y
+    
+    if total_pixels < 1_000_000:
+        scale = 0.7
+    elif total_pixels < 8_000_000:
+        scale = 1.0
+    elif total_pixels < 18_000_000:
+        scale = 2.0
+    elif total_pixels < 33_000_000:
+        scale = 3.0
+    else:
+        scale = 4.0
+    
+    debug_log(f"calculate_resolution_scale: resolution_x={resolution_x}, resolution_y={resolution_y}, total_pixels={total_pixels:,}, scale={scale}")
+    
+    return scale
+
+
+def format_scale_for_label_filename(image_scale: float) -> str:
+    """
+    Format the image scale for use in label filenames.
+    
+    Special case: 0.7 becomes "07x" (for hr_based_width_07x.png and speed_based_color_07x.png)
+    Other scales: 1.0 -> "1x", 2.0 -> "2x", 3.0 -> "3x", 4.0 -> "4x"
+    
+    Args:
+        image_scale: The resolution scale (0.7, 1.0, 2.0, 3.0, or 4.0)
+    
+    Returns:
+        String representation for filename (e.g., "07x", "1x", "2x", etc.)
+    """
+    if image_scale == 0.7:
+        return "07x"
+    else:
+        # Convert to int and then to string (1.0 -> "1", 2.0 -> "2", etc.)
+        return f"{int(image_scale)}x"
+
+
 def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate the great circle distance between two points on Earth using the Haversine formula.
