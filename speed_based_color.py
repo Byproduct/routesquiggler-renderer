@@ -357,9 +357,9 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
         max_text = f"{int(round(speed_based_color_max))} {unit}"
     
     # Try to load a default font, fall back to default if not available
-    # Scale font size with image_scale
+    # Scale font size with image_scale (convert to int for PIL)
     base_font_size = 12
-    font_size = base_font_size * image_scale
+    font_size = int(round(base_font_size * image_scale))
     try:
         # Try to use a default font (scaled size)
         font = ImageFont.truetype("arial.ttf", font_size)
@@ -384,12 +384,12 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
     max_descender = max(bbox[3] for bbox in text_bboxes)  # Maximum extent below baseline
     max_ascender = abs(min(bbox[1] for bbox in text_bboxes))  # Maximum extent above baseline (make positive)
     
-    # Spacing between base image and text (scale with image_scale)
+    # Spacing between base image and text (scale with image_scale, convert to int)
     base_spacing_below = 5
-    spacing_below = base_spacing_below * image_scale
-    # Padding at bottom to ensure descenders are fully visible (scale with image_scale)
+    spacing_below = int(round(base_spacing_below * image_scale))
+    # Padding at bottom to ensure descenders are fully visible (scale with image_scale, convert to int)
     base_padding_bottom = 3
-    padding_bottom = base_padding_bottom * image_scale
+    padding_bottom = int(round(base_padding_bottom * image_scale))
     
     # Total height needed: spacing + ascender space + descender space + padding
     total_text_area_height = spacing_below + max_ascender + max_descender + padding_bottom
@@ -414,7 +414,7 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
     
     # Calculate text baseline position: base image height + spacing + ascender height
     # This positions the baseline so ascenders don't overlap the image and descenders have room below
-    text_y = base_img.height + spacing_below + max_ascender
+    text_y = int(base_img.height + spacing_below + max_ascender)
     
     # Draw left text (min) with outline
     _draw_text_with_outline(draw, (0, text_y), min_text, font, fill_color=(255, 255, 255, 255))
@@ -493,9 +493,9 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     max_text = f"{int(round(hr_based_width_max))} ♥"
     
     # Try to load a default font, fall back to default if not available
-    # Scale font size with image_scale
+    # Scale font size with image_scale (convert to int for PIL)
     base_font_size = 12
-    font_size = base_font_size * image_scale
+    font_size = int(round(base_font_size * image_scale))
     try:
         # Try to use a default font (scaled size)
         font = ImageFont.truetype("arial.ttf", font_size)
@@ -517,12 +517,12 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     max_descender = max(bbox[3] for bbox in text_bboxes)
     max_ascender = abs(min(bbox[1] for bbox in text_bboxes))
     
-    # Spacing between base image and text (scale with image_scale)
+    # Spacing between base image and text (scale with image_scale, convert to int)
     base_spacing_below = 5
-    spacing_below = base_spacing_below * image_scale
-    # Padding at bottom to ensure descenders are fully visible (scale with image_scale)
+    spacing_below = int(round(base_spacing_below * image_scale))
+    # Padding at bottom to ensure descenders are fully visible (scale with image_scale, convert to int)
     base_padding_bottom = 3
-    padding_bottom = base_padding_bottom * image_scale
+    padding_bottom = int(round(base_padding_bottom * image_scale))
     
     # Total height needed: spacing + ascender space + descender space + padding
     total_text_area_height = spacing_below + max_ascender + max_descender + padding_bottom
@@ -539,7 +539,7 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     draw = ImageDraw.Draw(new_img)
     
     # Calculate text baseline position
-    text_y = base_img.height + spacing_below + max_ascender
+    text_y = int(base_img.height + spacing_below + max_ascender)
     
     # Draw left text (min) with outline
     _draw_text_with_outline(draw, (0, text_y), min_text, font, fill_color=(255, 255, 255, 255))
