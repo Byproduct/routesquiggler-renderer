@@ -83,24 +83,6 @@ def get_tail_color_for_route(tail_color_setting, route_color_rgba):
         return hex_to_rgba(tail_color_setting)
 
 
-def _get_resolution_scale_factor(json_data):
-    """
-    Get font size scale factor based on vertical video resolution.
-    Uses 1080p as the baseline (scale factor = 1.0).
-    Uses linear scaling to maintain consistent proportional screen space.
-    
-    Args:
-        json_data (dict): Job data containing video parameters
-    
-    Returns:
-        float: Scale factor for font sizes
-    """
-    resolution_y = int(json_data.get('video_resolution_y', 1080))
-    baseline_resolution = 1080
-    # Use linear scaling to maintain same proportion of screen space
-    return resolution_y / baseline_resolution
-
-
 def _gps_to_web_mercator(lon, lat):
     """Convert GPS (lon, lat) to Web Mercator (x, y) meters."""
     import math

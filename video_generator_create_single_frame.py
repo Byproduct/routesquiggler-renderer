@@ -16,7 +16,7 @@ from video_generator_route_statistics import _calculate_video_statistics, _draw_
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
-from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes, _get_resolution_scale_factor)
+from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes)
 from video_generator_create_combined_route import RoutePoint
 from speed_based_color import speed_based_color, create_speed_based_color_label, create_hr_based_width_label
 from image_generator_utils import calculate_resolution_scale
@@ -974,13 +974,12 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         ax.set_ylim(mercator_bbox[2], mercator_bbox[3])
         
         # OPTIMIZATION: Pre-calculate resolution scale once per frame (constant for entire video)
-        resolution_scale = _get_resolution_scale_factor(json_data)
+        # Use calculate_resolution_scale for consistent scaling across all visual elements
+        resolution_scale = image_scale  # Already calculated earlier in the function
         
         # Calculate effective line width based on resolution scaling (consistent with font scaling)
-        base_line_scale = 1.0  # Base scale for 1080p
-        line_scale = base_line_scale * resolution_scale
-        
-        desired_pixels = line_thickness * line_scale
+        # image_scale is already the resolution scale (0.7, 1.0, 2.0, 3.0, or 4.0)
+        desired_pixels = line_thickness * resolution_scale
         effective_line_width = desired_pixels * 72 / 100  # dpi fixed to 100
              
         # PHASE 1: Draw completed routes from cache (bottom layer)
@@ -1809,11 +1808,11 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         
         if labels_to_draw:
             # height and width are already defined earlier in the function
-            # Scale padding and gap with image_scale
+            # Scale padding and gap with image_scale (convert to int for slice indices)
             base_padding_bottom = 20
-            padding_bottom = base_padding_bottom * image_scale
+            padding_bottom = int(round(base_padding_bottom * image_scale))
             base_gap_between_labels = 100
-            gap_between_labels = base_gap_between_labels * image_scale
+            gap_between_labels = int(round(base_gap_between_labels * image_scale))
             
             def draw_label_at_position(label_array, label_name, x_start):
                 """Helper to draw a single label with alpha blending at given x position."""

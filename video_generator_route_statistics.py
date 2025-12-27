@@ -13,24 +13,6 @@ def _is_imperial_units(json_data):
     return json_data and json_data.get('imperial_units', False) is True
 
 
-def _get_resolution_scale_factor(json_data):
-    """
-    Get font size scale factor based on vertical video resolution.
-    Uses 1080p as the baseline (scale factor = 1.0).
-    Uses linear scaling to maintain consistent proportional screen space.
-    
-    Args:
-        json_data (dict): Job data containing video parameters
-    
-    Returns:
-        float: Scale factor for font sizes
-    """
-    resolution_y = int(json_data.get('video_resolution_y', 1080))
-    baseline_resolution = 1080
-    # Use linear scaling to maintain same proportion of screen space
-    return resolution_y / baseline_resolution
-
-
 def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_time, frame_number=None, is_multiple_routes=None, original_route_end_frame=None):
     """
     Calculate statistics for video frame from the current points_for_frame data.
@@ -365,7 +347,13 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     
     # Use pre-calculated resolution scale if provided, otherwise calculate it
     if resolution_scale is None:
-        resolution_scale = _get_resolution_scale_factor(json_data) if json_data else 1.0
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        else:
+            resolution_scale = 1.0
     
     # Calculate resolution-scaled offset (15px baseline for 1080p)
     base_offset_pixels = 15  # Baseline for 1080p
@@ -486,7 +474,13 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
     
     # Use pre-calculated resolution scale if provided, otherwise calculate it
     if resolution_scale is None:
-        resolution_scale = _get_resolution_scale_factor(json_data) if json_data else 1.0
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        else:
+            resolution_scale = 1.0
     
     # Calculate resolution-scaled offset (15px baseline for 1080p)
     base_offset_pixels = 15  # Baseline for 1080p
@@ -602,7 +596,13 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     
     # Use pre-calculated resolution scale if provided, otherwise calculate it
     if resolution_scale is None:
-        resolution_scale = _get_resolution_scale_factor(json_data) if json_data else 1.0
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        else:
+            resolution_scale = 1.0
     
     # Calculate resolution-scaled offset (15px baseline for 1080p)
     base_offset_pixels = 15  # Baseline for 1080p
@@ -720,7 +720,13 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     
     # Use pre-calculated resolution scale if provided, otherwise calculate it
     if resolution_scale is None:
-        resolution_scale = _get_resolution_scale_factor(json_data)
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        else:
+            resolution_scale = 1.0
     
     # Use hardcoded base font size that scales with resolution
     base_font_size = 12  # Hardcoded base size for 1080p
