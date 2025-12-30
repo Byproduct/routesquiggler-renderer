@@ -20,6 +20,7 @@ from video_generator_create_combined_route import create_combined_route
 from video_generator_cache_map_tiles import cache_map_tiles
 from video_generator_cache_map_images import cache_map_images
 from video_generator_cache_video_frames import cache_video_frames
+from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 
 
 def upload_video_to_storage_box(
@@ -322,14 +323,34 @@ class VideoGeneratorWorker(QObject):
             self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
             
             # Step 3: Calculate unique bounding boxes and cache map tiles
-            self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")           
-            cache_result = cache_map_tiles(
+            self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
+            
+            # Acquire map tile lock before downloading
+            lock_acquired, lock_error = acquire_map_tile_lock(
                 self.json_data,
-                combined_route_data=self.combined_route_data,
-                progress_callback=self.progress_update.emit,
                 log_callback=self.log_message.emit,
-                max_workers=self.max_workers
+                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
             )
+            
+            if not lock_acquired:
+                # Lock acquisition failed after 60 minutes - mark job as error
+                raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
+            
+            try:
+                cache_result = cache_map_tiles(
+                    self.json_data,
+                    combined_route_data=self.combined_route_data,
+                    progress_callback=self.progress_update.emit,
+                    log_callback=self.log_message.emit,
+                    max_workers=self.max_workers
+                )
+            finally:
+                # Always release the lock after map tile caching, even if it fails
+                release_map_tile_lock(
+                    self.json_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
+                )
             
             if not cache_result:
                 raise ValueError("Map tile caching failed")

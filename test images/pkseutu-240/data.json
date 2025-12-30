@@ -1,0 +1,1458 @@
+{
+  "created_at": "2025-12-28T22:36:14.131963+00:00",
+  "folder": "5gU3xtuqOZy",
+  "image_resolution_x": 7680,
+  "image_resolution_y": 4320,
+  "job_id": 643,
+  "job_type": "image",
+  "legend": "time",
+  "legend_theme": "dark",
+  "line_width": "3",
+  "map_style": "osm",
+  "map_transparency": "0",
+  "route_name": "pk-seutu",
+  "statistics": "off",
+  "user_id": 1,
+  "track_objects": [
+    {
+      "filename": "2017-12-22.gpx",
+      "date": "2017-12-22",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2017-12-30.gpx",
+      "date": "2017-12-30",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-01-02.gpx",
+      "date": "2018-01-02",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-04-07.gpx",
+      "date": "2018-04-07",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-05-07.gpx",
+      "date": "2018-05-07",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-05-10.gpx",
+      "date": "2018-05-10",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-05-11.gpx",
+      "date": "2018-05-11",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-05-21.gpx",
+      "date": "2018-05-21",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-05-23.gpx",
+      "date": "2018-05-23",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-06-10.gpx",
+      "date": "2018-06-10",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-07-15.gpx",
+      "date": "2018-07-15",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-07-17.gpx",
+      "date": "2018-07-17",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-07-23.gpx",
+      "date": "2018-07-23",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-07-25.gpx",
+      "date": "2018-07-25",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-07-27.gpx",
+      "date": "2018-07-27",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-07-30.gpx",
+      "date": "2018-07-30",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-08-01.gpx",
+      "date": "2018-08-01",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-08-05.gpx",
+      "date": "2018-08-05",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-08-07.gpx",
+      "date": "2018-08-07",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-09-03.gpx",
+      "date": "2018-09-03",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-09-04.gpx",
+      "date": "2018-09-04",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-09-12.gpx",
+      "date": "2018-09-12",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-10-14.gpx",
+      "date": "2018-10-14",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-10-21.gpx",
+      "date": "2018-10-21",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-11-03.gpx",
+      "date": "2018-11-03",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2018-11-15.gpx",
+      "date": "2018-11-15",
+      "color": "#000000",
+      "name": ""
+    },
+    {
+      "filename": "2019-04-06.gpx",
+      "date": "2019-04-06",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-04-11.gpx",
+      "date": "2019-04-11",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-04-23.gpx",
+      "date": "2019-04-23",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-04-27.gpx",
+      "date": "2019-04-27",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-05-27.gpx",
+      "date": "2019-05-27",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-10-23.gpx",
+      "date": "2019-10-23",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-12-04.gpx",
+      "date": "2019-12-04",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-12-04_2.gpx",
+      "date": "2019-12-04",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-12-04_3.gpx",
+      "date": "2019-12-04",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-12-04_4.gpx",
+      "date": "2019-12-04",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2019-12-14.gpx",
+      "date": "2019-12-14",
+      "color": "#ff0000",
+      "name": ""
+    },
+    {
+      "filename": "2020-01-02.gpx",
+      "date": "2020-01-02",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-01-03.gpx",
+      "date": "2020-01-03",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-01-03_2.gpx",
+      "date": "2020-01-03",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-01-20.gpx",
+      "date": "2020-01-20",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-03-14.gpx",
+      "date": "2020-03-14",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-03-21.gpx",
+      "date": "2020-03-21",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-03-22.gpx",
+      "date": "2020-03-22",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-04-15.gpx",
+      "date": "2020-04-15",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-04-21.gpx",
+      "date": "2020-04-21",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-04-26.gpx",
+      "date": "2020-04-26",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-05-10.gpx",
+      "date": "2020-05-10",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-05-12.gpx",
+      "date": "2020-05-12",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-05-20.gpx",
+      "date": "2020-05-20",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-05-26.gpx",
+      "date": "2020-05-26",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-05-31.gpx",
+      "date": "2020-05-31",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-09.gpx",
+      "date": "2020-06-09",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-13.gpx",
+      "date": "2020-06-13",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-13_2.gpx",
+      "date": "2020-06-13",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-13_3.gpx",
+      "date": "2020-06-13",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-23.gpx",
+      "date": "2020-06-23",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-26.gpx",
+      "date": "2020-06-26",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-06-29.gpx",
+      "date": "2020-06-29",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-08-26.gpx",
+      "date": "2020-08-26",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-08-27.gpx",
+      "date": "2020-08-27",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-08-28.gpx",
+      "date": "2020-08-28",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-09-01.gpx",
+      "date": "2020-09-01",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-10-10.gpx",
+      "date": "2020-10-10",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2020-11-08.gpx",
+      "date": "2020-11-08",
+      "color": "#8000ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-02-15.gpx",
+      "date": "2021-02-15",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-04-19.gpx",
+      "date": "2021-04-19",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-01.gpx",
+      "date": "2021-05-01",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-03.gpx",
+      "date": "2021-05-03",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-08.gpx",
+      "date": "2021-05-08",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-08_2.gpx",
+      "date": "2021-05-08",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-13.gpx",
+      "date": "2021-05-13",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-14.gpx",
+      "date": "2021-05-14",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-05-16.gpx",
+      "date": "2021-05-16",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-06-10.gpx",
+      "date": "2021-06-10",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-06-19.gpx",
+      "date": "2021-06-19",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-06-19_2.gpx",
+      "date": "2021-06-19",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-06-25.gpx",
+      "date": "2021-06-25",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-07-04.gpx",
+      "date": "2021-07-04",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-07-10.gpx",
+      "date": "2021-07-10",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-07-17.gpx",
+      "date": "2021-07-17",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-07-26.gpx",
+      "date": "2021-07-26",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-08-10.gpx",
+      "date": "2021-08-10",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-08-13.gpx",
+      "date": "2021-08-13",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-08-29.gpx",
+      "date": "2021-08-29",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-09-05.gpx",
+      "date": "2021-09-05",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-09-21.gpx",
+      "date": "2021-09-21",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-09-25.gpx",
+      "date": "2021-09-25",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-09-27.gpx",
+      "date": "2021-09-27",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-09-30.gpx",
+      "date": "2021-09-30",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-10-27.gpx",
+      "date": "2021-10-27",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-10-31.gpx",
+      "date": "2021-10-31",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-11-13.gpx",
+      "date": "2021-11-13",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-11-15.gpx",
+      "date": "2021-11-15",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-11-16.gpx",
+      "date": "2021-11-16",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-11-28.gpx",
+      "date": "2021-11-28",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2021-12-08.gpx",
+      "date": "2021-12-08",
+      "color": "#0080ff",
+      "name": ""
+    },
+    {
+      "filename": "2022-01-14.gpx",
+      "date": "2022-01-14",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-04-19.gpx",
+      "date": "2022-04-19",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-04-27.gpx",
+      "date": "2022-04-27",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-05-24.gpx",
+      "date": "2022-05-24",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-01.gpx",
+      "date": "2022-06-01",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-07.gpx",
+      "date": "2022-06-07",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-10.gpx",
+      "date": "2022-06-10",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-16.gpx",
+      "date": "2022-06-16",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-17.gpx",
+      "date": "2022-06-17",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-26.gpx",
+      "date": "2022-06-26",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-06-29.gpx",
+      "date": "2022-06-29",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-07-01.gpx",
+      "date": "2022-07-01",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-07-18.gpx",
+      "date": "2022-07-18",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-07-20.gpx",
+      "date": "2022-07-20",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-07-22.gpx",
+      "date": "2022-07-22",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-07-28.gpx",
+      "date": "2022-07-28",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-08-09.gpx",
+      "date": "2022-08-09",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-08-12.gpx",
+      "date": "2022-08-12",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-08-14.gpx",
+      "date": "2022-08-14",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-08-15.gpx",
+      "date": "2022-08-15",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-08-15_2.gpx",
+      "date": "2022-08-15",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-08-30.gpx",
+      "date": "2022-08-30",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-09-06.gpx",
+      "date": "2022-09-06",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-09-06_2.gpx",
+      "date": "2022-09-06",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2022-10-13.gpx",
+      "date": "2022-10-13",
+      "color": "#00c600",
+      "name": ""
+    },
+    {
+      "filename": "2023-01-19.gpx",
+      "date": "2023-01-19",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-03-25.gpx",
+      "date": "2023-03-25",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-03-29.gpx",
+      "date": "2023-03-29",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-04-08.gpx",
+      "date": "2023-04-08",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-04-12.gpx",
+      "date": "2023-04-12",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-04-19.gpx",
+      "date": "2023-04-19",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-04-21.gpx",
+      "date": "2023-04-21",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-04-22.gpx",
+      "date": "2023-04-22",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-04.gpx",
+      "date": "2023-05-04",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-08.gpx",
+      "date": "2023-05-08",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-12.gpx",
+      "date": "2023-05-12",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-12_2.gpx",
+      "date": "2023-05-12",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-13.gpx",
+      "date": "2023-05-13",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-18.gpx",
+      "date": "2023-05-18",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-19.gpx",
+      "date": "2023-05-19",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-23.gpx",
+      "date": "2023-05-23",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-23_2.gpx",
+      "date": "2023-05-23",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-28.gpx",
+      "date": "2023-05-28",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-29.gpx",
+      "date": "2023-05-29",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-05-30.gpx",
+      "date": "2023-05-30",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-06-02.gpx",
+      "date": "2023-06-02",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-06-13.gpx",
+      "date": "2023-06-13",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-06-14.gpx",
+      "date": "2023-06-14",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-06-19.gpx",
+      "date": "2023-06-19",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-07-07.gpx",
+      "date": "2023-07-07",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-07-09.gpx",
+      "date": "2023-07-09",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-07-19.gpx",
+      "date": "2023-07-19",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-07-24.gpx",
+      "date": "2023-07-24",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-08-20.gpx",
+      "date": "2023-08-20",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2023-09-19.gpx",
+      "date": "2023-09-19",
+      "color": "#a3630c",
+      "name": ""
+    },
+    {
+      "filename": "2024-03-10.gpx",
+      "date": "2024-03-10",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-03-31.gpx",
+      "date": "2024-03-31",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-03-31_2.gpx",
+      "date": "2024-03-31",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-04-01.gpx",
+      "date": "2024-04-01",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-04-04.gpx",
+      "date": "2024-04-04",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-04-05.gpx",
+      "date": "2024-04-05",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-04-12.gpx",
+      "date": "2024-04-12",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-04-28.gpx",
+      "date": "2024-04-28",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-02.gpx",
+      "date": "2024-05-02",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-04.gpx",
+      "date": "2024-05-04",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-04_2.gpx",
+      "date": "2024-05-04",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-07.gpx",
+      "date": "2024-05-07",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-15.gpx",
+      "date": "2024-05-15",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-17.gpx",
+      "date": "2024-05-17",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-18.gpx",
+      "date": "2024-05-18",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-19.gpx",
+      "date": "2024-05-19",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-24.gpx",
+      "date": "2024-05-24",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-25 (2).gpx",
+      "date": "2024-05-25",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-25.gpx",
+      "date": "2024-05-25",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-05-26.gpx",
+      "date": "2024-05-25",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-06-04.gpx",
+      "date": "2024-06-04",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-06-22.gpx",
+      "date": "2024-06-22",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-06-27.gpx",
+      "date": "2024-06-27",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-07-01.gpx",
+      "date": "2024-07-01",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-07-09.gpx",
+      "date": "2024-07-09",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-07-21.gpx",
+      "date": "2024-07-21",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-07-23.gpx",
+      "date": "2024-07-23",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-07-25.gpx",
+      "date": "2024-07-25",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-09.gpx",
+      "date": "2024-08-09",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-10.gpx",
+      "date": "2024-08-10",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-13.gpx",
+      "date": "2024-08-13",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-20(1).gpx",
+      "date": "2024-08-20",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-20.gpx",
+      "date": "2024-08-20",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-27.gpx",
+      "date": "2024-08-27",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-29.gpx",
+      "date": "2024-08-29",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-08-31.gpx",
+      "date": "2024-08-31",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-09-04.gpx",
+      "date": "2024-09-04",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-09-12.gpx",
+      "date": "2024-09-12",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-09-17.gpx",
+      "date": "2024-09-17",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-09-19.gpx",
+      "date": "2024-09-19",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-10-14.gpx",
+      "date": "2024-10-14",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-10-25.gpx",
+      "date": "2024-10-25",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-10-28.gpx",
+      "date": "2024-10-28",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-10-30.gpx",
+      "date": "2024-10-30",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-11-01.gpx",
+      "date": "2024-11-01",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-11-23.gpx",
+      "date": "2024-11-23",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2024-11-25.gpx",
+      "date": "2024-11-25",
+      "color": "#ffff48",
+      "name": ""
+    },
+    {
+      "filename": "2025-01-11.gpx",
+      "date": "2025-01-11",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-02-08(1).gpx",
+      "date": "2025-02-08",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-02-08.gpx",
+      "date": "2025-02-08",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-03-28(1).gpx",
+      "date": "2025-03-28",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-03-28.gpx",
+      "date": "2025-03-28",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-04-03(1).gpx",
+      "date": "2025-04-03",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-04-03.gpx",
+      "date": "2025-04-03",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-05-01.gpx",
+      "date": "2025-05-01",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-05-20.gpx",
+      "date": "2025-05-20",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-06-02.gpx",
+      "date": "2025-06-02",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-06-03.gpx",
+      "date": "2025-06-03",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-06-13.gpx",
+      "date": "2025-06-13",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-06-24.gpx",
+      "date": "2025-06-24",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-06-28.gpx",
+      "date": "2025-06-28",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-01(1).gpx",
+      "date": "2025-07-01",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-01.gpx",
+      "date": "2025-07-01",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-02(1).gpx",
+      "date": "2025-07-02",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-02.gpx",
+      "date": "2025-07-02",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-04.gpx",
+      "date": "2025-07-04",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-16.gpx",
+      "date": "2025-07-16",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-19(2).gpx",
+      "date": "2025-07-19",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-25.gpx",
+      "date": "2025-07-25",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-28.gpx",
+      "date": "2025-07-28",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-07-28-1.gpx",
+      "date": "2025-07-28",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-08-12.gpx",
+      "date": "2025-08-12",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-08-13.gpx",
+      "date": "2025-08-13",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-08-14.gpx",
+      "date": "2025-08-14",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-08-20.gpx",
+      "date": "2025-08-20",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-09-06.gpx",
+      "date": "2025-09-06",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-09-06-1.gpx",
+      "date": "2025-09-06",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-09-06-2.gpx",
+      "date": "2025-09-06",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-09-07.gpx",
+      "date": "2025-09-07",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-09-13.gpx",
+      "date": "2025-09-13",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-09-13-1.gpx",
+      "date": "2025-09-13",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-10-04.gpx",
+      "date": "2025-10-04",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-10-15-2.gpx",
+      "date": "2025-10-15",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-10-15-3.gpx",
+      "date": "2025-10-15",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-11-06.gpx",
+      "date": "2025-11-06",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-12-01.gpx",
+      "date": "2025-12-01",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-12-08.gpx",
+      "date": "2025-12-08",
+      "color": "#ff80ff",
+      "name": ""
+    },
+    {
+      "filename": "2025-12-15.gpx",
+      "date": "2025-12-15",
+      "color": "#ff80ff",
+      "name": ""
+    }
+  ]
+}

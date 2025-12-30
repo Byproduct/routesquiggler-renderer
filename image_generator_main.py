@@ -16,6 +16,7 @@ from image_generator_maptileutils import detect_zoom_level
 from job_request import update_job_status
 from video_generator_sort_files_chronologically import get_sorted_gpx_list
 from video_generator_create_combined_route import create_combined_route
+from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 
 class ImageGeneratorWorker(QObject):
     """Worker class to handle image generation in a separate thread."""
@@ -309,30 +310,49 @@ class ImageGeneratorWorker(QObject):
             except Exception:
                 pass
             
-            self.results, _ = generate_images_parallel(
-                zoom_levels=zoom_levels,
-                map_style=self.json_data.get('map_style', 'osm'),
-                map_bounds=map_bounds,
-                track_coords_with_metadata=track_coords_with_metadata,
-                track_lookup=track_lookup,
-                map_transparency=map_transparency_value,
-                line_width=line_width_value,
-                resolution_x=resolution_x_value,
-                resolution_y=resolution_y_value,
-                legend=self.json_data.get('legend', 'off'),
-                statistics=statistics_setting,
-                statistics_data=statistics_data,
-                json_data=self.json_data,
-                status_queue=status_queue,
-                storage_box_address=self.storage_box_address,
-                storage_box_user=self.storage_box_user,
-                storage_box_password=self.storage_box_password,
-                job_id=str(self.json_data.get('job_id', '')),
-                folder=self.json_data.get('folder', ''),
-                route_name=self.json_data.get('route_name', 'unknown'),
-                max_workers=self.max_workers,
-                route_points_data=route_points_data  # Pass RoutePoint data for speed-based coloring
+            # Acquire map tile lock before generating images (tiles are downloaded during generation)
+            lock_acquired, lock_error = acquire_map_tile_lock(
+                self.json_data,
+                log_callback=self.log_message.emit,
+                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
             )
+            
+            if not lock_acquired:
+                # Lock acquisition failed after 60 minutes - mark job as error
+                raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
+            
+            try:
+                self.results, _ = generate_images_parallel(
+                    zoom_levels=zoom_levels,
+                    map_style=self.json_data.get('map_style', 'osm'),
+                    map_bounds=map_bounds,
+                    track_coords_with_metadata=track_coords_with_metadata,
+                    track_lookup=track_lookup,
+                    map_transparency=map_transparency_value,
+                    line_width=line_width_value,
+                    resolution_x=resolution_x_value,
+                    resolution_y=resolution_y_value,
+                    legend=self.json_data.get('legend', 'off'),
+                    statistics=statistics_setting,
+                    statistics_data=statistics_data,
+                    json_data=self.json_data,
+                    status_queue=status_queue,
+                    storage_box_address=self.storage_box_address,
+                    storage_box_user=self.storage_box_user,
+                    storage_box_password=self.storage_box_password,
+                    job_id=str(self.json_data.get('job_id', '')),
+                    folder=self.json_data.get('folder', ''),
+                    route_name=self.json_data.get('route_name', 'unknown'),
+                    max_workers=self.max_workers,
+                    route_points_data=route_points_data  # Pass RoutePoint data for speed-based coloring
+                )
+            finally:
+                # Always release the lock after image generation, even if it fails
+                release_map_tile_lock(
+                    self.json_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
+                )
             
             # After all workers have completed, check if we have all results
             if self.results and len(self.results) == len(zoom_levels):

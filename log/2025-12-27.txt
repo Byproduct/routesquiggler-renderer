@@ -911,3 +911,31 @@
 [21:36:43] Image generation completed in 6 seconds.
 [21:36:43] Job #639 completed successfully
 [21:36:43] Job completed. Requesting next job...
+[21:56:28] Processing job #639 (type: image)
+[21:56:28] Starting image generation.
+[21:56:35] Image generation completed in 6 seconds.
+[21:56:35] Job #639 completed successfully
+[21:56:35] Job completed. Requesting next job...
+[22:13:20] Processing job #640 (type: image)
+[22:13:20] Starting image generation.
+[22:13:40] Image generation completed in 19 seconds.
+[22:13:40] Job #640 completed successfully
+[22:13:40] Job completed. Requesting next job...
+[22:15:21] Processing job #641 (type: video)
+[22:15:21] Step 1: Sorting GPX files chronologically
+[22:15:21] Step 2: Creating combined route
+[22:15:21] Step 3: Calculating unique bounding boxes and caching map tiles
+[22:15:22] Step 4: Caching map images for unique bounding boxes
+[22:15:24] Step 5: Generating video frames
+[22:15:52] 🎬 Total rendering time: 30.66 seconds
+[22:15:52] Step 6: Uploading video and thumbnail to storage box
+[22:15:52] Starting video upload to storage box...
+[22:15:52] Video file validated: 1186733 bytes
+[22:15:52] Uploading video file: Vid test 4k_lw5.mp4
+[22:15:53] Video file uploaded successfully: 1186733 bytes
+[22:15:53] Uploading thumbnail file: thumbnail.png
+[22:15:54] Thumbnail uploaded successfully: 225431 bytes
+[22:15:54] Video upload completed successfully
+[22:15:54] ✅ Video upload completed successfully
+[22:15:55] Job #641 completed successfully
+[22:15:55] Job completed. Requesting next job...
