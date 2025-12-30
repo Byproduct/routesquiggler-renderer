@@ -3,6 +3,8 @@ Post-processing to the images after they have been plotted.
 """
 
 import os
+import subprocess
+import tempfile
 
 # Set matplotlib backend before importing pyplot
 import matplotlib
@@ -13,7 +15,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib.patches as mpatches
 from matplotlib import patheffects
 from collections import OrderedDict
-import oxipng
 import numpy as np
 from video_generator_create_single_frame import get_legend_theme_colors
 from write_log import write_log, write_debug_log
@@ -22,7 +23,7 @@ from image_generator_utils import calculate_resolution_scale
 
 def optimize_png_bytes(png_data: bytes) -> bytes:
     """
-    Optimize PNG data using pyoxipng with balanced settings.  
+    Optimize PNG data using oxipng CLI with balanced settings.  
     "Png compression test" (separate project) compares time/file size results. 
 
     Args:
@@ -31,22 +32,48 @@ def optimize_png_bytes(png_data: bytes) -> bytes:
         Optimized PNG data as bytes
     """
     try:
-        write_debug_log("Starting PNG optimization with pyoxipng")
-        optimized = oxipng.optimize_from_memory(
-            png_data,
-            level=3,  # Optimization level 1-6
-            interlace=oxipng.Interlacing.Off,  # Disable interlacing for web
-            strip=oxipng.StripChunks.safe(),  # Strip unnecessary chunks that won't affect rendering
-            deflate=oxipng.Deflaters.libdeflater(10)  # Deflate compression 0-12
-        )
+        write_debug_log("Starting PNG optimization with oxipng CLI")
         
-        original_kb = len(png_data) / 1024
-        optimized_kb = len(optimized) / 1024
-        reduction = (1 - len(optimized) / len(png_data)) * 100
+        # Create a temporary file to write the PNG data
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+            temp_path = temp_file.name
+            temp_file.write(png_data)
         
-        write_debug_log(f"PNG Optimized. Original size: {original_kb:.1f}KB - Optimized size: {optimized_kb:.1f}KB - Reduction: {reduction:.1f}%")
-        
-        return optimized
+        try:
+            # Run oxipng CLI with equivalent settings
+            # -o 3: Optimization level 3 (1-6)
+            # --strip safe: Strip unnecessary chunks that won't affect rendering
+            # --deflate 10: Deflate compression level 10 (0-12)
+            # --no-interlace: Disable interlacing for web
+            result = subprocess.run(
+                ['oxipng', '-o', '3', '--strip', 'safe', '--deflate', '10', '--no-interlace', temp_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            # Read the optimized PNG data
+            with open(temp_path, 'rb') as optimized_file:
+                optimized = optimized_file.read()
+            
+            original_kb = len(png_data) / 1024
+            optimized_kb = len(optimized) / 1024
+            reduction = (1 - len(optimized) / len(png_data)) * 100
+            
+            write_debug_log(f"PNG Optimized. Original size: {original_kb:.1f}KB - Optimized size: {optimized_kb:.1f}KB - Reduction: {reduction:.1f}%")
+            
+            return optimized
+            
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass  # Ignore cleanup errors
+                
+    except subprocess.CalledProcessError as e:
+        write_debug_log(f"PNG optimization failed (oxipng error): {e.stderr if e.stderr else str(e)}")
+        return png_data  # Return original data if optimization fails
     except Exception as e:
         write_debug_log(f"PNG optimization failed: {e}")
         return png_data  # Return original data if optimization fails

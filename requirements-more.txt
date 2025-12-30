@@ -1,0 +1,5 @@
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+restart (exec bash)
+cargo install oxipng
+
+Windowsille rustup: rust-lang.org
