@@ -2,6 +2,7 @@
 __pycache__/
 map tile cache/
 temporary files/
+log/
 config.txt
 ffmpeg.exe
 git-commit.bat
