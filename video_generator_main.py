@@ -33,7 +33,8 @@ def upload_video_to_storage_box(
     folder: str,
     filename: str,
     log_callback=None,
-    progress_callback=None
+    progress_callback=None,
+    debug_callback=None
 ) -> bool:
     """
     Upload a video and its thumbnail to the storage box and verify they exist.
@@ -78,8 +79,8 @@ def upload_video_to_storage_box(
     
     ftp = None
     try:
-        if log_callback:
-            log_callback("Starting video upload to storage box...")
+        if debug_callback:
+            debug_callback("Starting video upload to storage box...")
             
         # Validate video file exists and has sufficient size (> 10KB)
         if not os.path.exists(video_path):
@@ -93,8 +94,8 @@ def upload_video_to_storage_box(
                 log_callback(f"Error: Video file too small ({video_size} bytes), minimum 10KB required")
             return False
             
-        if log_callback:
-            log_callback(f"Video file validated: {video_size} bytes")
+        if debug_callback:
+            debug_callback(f"Video file validated: {video_size} bytes")
         
         # Calculate total upload size
         total_upload_size = video_size
@@ -137,8 +138,8 @@ def upload_video_to_storage_box(
         ftp.cwd(folder)
         
         # Upload the video file
-        if log_callback:
-            log_callback(f"Uploading video file: {filename}")
+        if debug_callback:
+            debug_callback(f"Uploading video file: {filename}")
             
         if progress_callback:
             progress_callback("progress_bar_upload", 0, f"Uploading video: {filename}")
@@ -160,13 +161,13 @@ def upload_video_to_storage_box(
                 log_callback(f"File {filename} has zero or negative size")
             return False
             
-        if log_callback:
-            log_callback(f"Video file uploaded successfully: {file_size} bytes")
+        if debug_callback:
+            debug_callback(f"Video file uploaded successfully: {file_size} bytes")
 
         # Upload thumbnail if it exists
         if os.path.exists(thumbnail_path):
-            if log_callback:
-                log_callback("Uploading thumbnail file: thumbnail.png")
+            if debug_callback:
+                debug_callback("Uploading thumbnail file: thumbnail.png")
                 
             if progress_callback:
                 progress_callback("progress_bar_upload", int((video_size / total_upload_size) * 100), "Uploading thumbnail...")
@@ -188,18 +189,16 @@ def upload_video_to_storage_box(
                     log_callback("File thumbnail.png has zero or negative size")
                 return False
                 
-            if log_callback:
-                log_callback(f"Thumbnail uploaded successfully: {thumb_size} bytes")
+            if debug_callback:
+                debug_callback(f"Thumbnail uploaded successfully: {thumb_size} bytes")
         else:
             if log_callback:
                 log_callback("Warning: Thumbnail file not found, skipping thumbnail upload")
         
         if progress_callback:
             progress_callback("progress_bar_upload", 100, "Upload completed")
-            
-        if log_callback:
-            log_callback("Video upload completed successfully")
         
+        # Note: Final success message is emitted by the caller with checkmark emoji
         return True
         
     except Exception as e:
@@ -463,7 +462,8 @@ class VideoGeneratorWorker(QObject):
                         folder=folder,
                         filename=video_filename,
                         log_callback=self.log_message.emit,
-                        progress_callback=self.progress_update.emit
+                        progress_callback=self.progress_update.emit,
+                        debug_callback=self.debug_message.emit
                     )
                     
                     if upload_success:

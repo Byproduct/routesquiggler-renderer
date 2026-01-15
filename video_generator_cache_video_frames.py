@@ -6,10 +6,13 @@ The actual map plotting is in video_generator_create_single_frame.py.
 
 import json
 import os
+import sys
 import time
 import gc
 import multiprocessing
 import numpy as np
+from contextlib import contextmanager
+from io import StringIO
 
 # Set matplotlib backend before importing pyplot
 import matplotlib
@@ -30,6 +33,47 @@ from video_generator_create_single_frame import generate_video_frame_in_memory
 from video_generator_create_single_frame_utils import hex_to_rgba
 from video_generator_create_combined_route import RoutePoint
 from write_log import write_log, write_debug_log
+from config import config
+
+
+class MoviePyDebugLogger:
+    """Custom logger for MoviePy that only outputs when debug logging is enabled."""
+    def __init__(self, debug_callback=None):
+        self.debug_callback = debug_callback
+    
+    def message(self, message):
+        """Log MoviePy messages only when debug is enabled."""
+        if config.debug_logging and self.debug_callback:
+            self.debug_callback(f"MoviePy: {message}")
+    
+    def error(self, message):
+        """Log MoviePy errors only when debug is enabled."""
+        if config.debug_logging and self.debug_callback:
+            self.debug_callback(f"MoviePy error: {message}")
+    
+    def warning(self, message):
+        """Log MoviePy warnings only when debug is enabled."""
+        if config.debug_logging and self.debug_callback:
+            self.debug_callback(f"MoviePy warning: {message}")
+
+
+@contextmanager
+def suppress_moviepy_output():
+    """Context manager to suppress MoviePy stdout/stderr output when debug is off."""
+    if not config.debug_logging:
+        # Redirect stdout and stderr to devnull when debug is off
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        try:
+            sys.stdout = StringIO()
+            sys.stderr = StringIO()
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+    else:
+        # When debug is on, don't suppress anything
+        yield
 
 
 def _binary_search_cutoff_index(route_points, target_time):
@@ -428,7 +472,7 @@ class StreamingFrameGenerator:
     Generator class that yields frames for moviepy using multiprocessing.
     Uses an improved producer-consumer pattern with adaptive buffering and continuous frame generation.
     """
-    def __init__(self, json_data, route_time_per_frame, combined_route_data, max_workers=None, shared_map_cache=None, shared_route_cache=None, progress_callback=None, gpx_time_per_video_time=None):
+    def __init__(self, json_data, route_time_per_frame, combined_route_data, max_workers=None, shared_map_cache=None, shared_route_cache=None, progress_callback=None, gpx_time_per_video_time=None, debug_callback=None):
         self.json_data = json_data
         self.route_time_per_frame = route_time_per_frame
         self.combined_route_data = combined_route_data
@@ -436,6 +480,7 @@ class StreamingFrameGenerator:
         self.shared_route_cache = shared_route_cache
         self.progress_callback = progress_callback
         self.gpx_time_per_video_time = gpx_time_per_video_time
+        self.debug_callback = debug_callback
         
         # Pre-compute filename-to-RGBA color mapping once for all frames
         self.filename_to_rgba = {}
@@ -791,12 +836,14 @@ class StreamingFrameGenerator:
         
         # If buffer is getting low and we have many pending, increase request rate
         if buffer_ratio < 0.3 and pending_count < self.num_workers:
-            print("Buffer getting low - increasing request rate")
+            if self.debug_callback:
+                self.debug_callback("Buffer getting low - increasing request rate")
             self._request_more_frames()
         
         # If we're falling behind, request more aggressively
         if self.consecutive_on_demand_requests > self.max_consecutive_on_demand:
-            print("Too many on-demand requests - aggressive buffer refill")
+            if self.debug_callback:
+                self.debug_callback("Too many on-demand requests - aggressive buffer refill")
             self._aggressive_buffer_refill()
             self.consecutive_on_demand_requests = 0
     
@@ -1138,7 +1185,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 debug_callback(f"Video filename: {output_filename}")
         
         # Create the frame generator
-        frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time)
+        frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time, debug_callback)
         
         # Initial progress update
         if progress_callback:
@@ -1168,24 +1215,28 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 # - Presets p1-p7: p1 = fastest, p7 = best quality (slowest)
                 # - p4 is a good balance between speed and quality
                 try:
-                    clip.write_videofile(
-                        output_path,
-                        fps=video_fps,
-                        codec='h264_nvenc',  # NVIDIA GPU encoder
-                        bitrate='15000k',    # Can be reduced for smaller files (e.g., '8000k', '5000k')
-                        audio=False,
-                        threads=max_workers,
-                        logger="bar",         # Suppress MoviePy logger messages
-                        ffmpeg_params=[
-                            '-pix_fmt', 'yuv420p',
-                            '-preset', 'p5',          # Options: p1 (fastest) to p7 (best quality)
-                            '-rc', 'vbr',             # Rate control: vbr (variable), cbr (constant), cqp (constant quality)
-                            '-cq', '23',              # Constant quality (18-51, lower = better quality, larger file)
-                            '-b:v', '15000k',         # Target bitrate
-                            '-maxrate', '20000k',     # Maximum bitrate
-                            '-bufsize', '30000k'      # Buffer size for rate control
-                        ]
-                    )
+                    # Suppress MoviePy output when debug is off
+                    with suppress_moviepy_output():
+                        # Create custom logger that respects debug settings
+                        moviepy_logger = MoviePyDebugLogger(debug_callback) if debug_callback else None
+                        clip.write_videofile(
+                            output_path,
+                            fps=video_fps,
+                            codec='h264_nvenc',  # NVIDIA GPU encoder
+                            bitrate='15000k',    # Can be reduced for smaller files (e.g., '8000k', '5000k')
+                            audio=False,
+                            threads=max_workers,
+                            logger=moviepy_logger if config.debug_logging else None,  # Only use logger when debug is enabled
+                            ffmpeg_params=[
+                                '-pix_fmt', 'yuv420p',
+                                '-preset', 'p5',          # Options: p1 (fastest) to p7 (best quality)
+                                '-rc', 'vbr',             # Rate control: vbr (variable), cbr (constant), cqp (constant quality)
+                                '-cq', '23',              # Constant quality (18-51, lower = better quality, larger file)
+                                '-b:v', '15000k',         # Target bitrate
+                                '-maxrate', '20000k',     # Maximum bitrate
+                                '-bufsize', '30000k'      # Buffer size for rate control
+                            ]
+                        )
                 except Exception as nvenc_error:
                     # Fallback to CPU encoding if NVENC fails
                     if debug_callback:
@@ -1194,23 +1245,27 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
             
             # CPU rendering with libx264 (either by choice or as fallback from failed NVENC)
             if not gpu_rendering:
-                clip.write_videofile(
-                    output_path,
-                    fps=video_fps,
-                    codec='libx264',
-                    bitrate='15000k',
-                    audio=False,
-                    threads=max_workers,
-                    logger="bar",         # Suppress MoviePy logger messages
-                    ffmpeg_params=[
-                        '-pix_fmt', 'yuv420p',
-                        '-preset', 'medium',        # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
+                # Suppress MoviePy output when debug is off
+                with suppress_moviepy_output():
+                    # Create custom logger that respects debug settings
+                    moviepy_logger = MoviePyDebugLogger(debug_callback) if debug_callback else None
+                    clip.write_videofile(
+                        output_path,
+                        fps=video_fps,
+                        codec='libx264',
+                        bitrate='15000k',
+                        audio=False,
+                        threads=max_workers,
+                        logger=moviepy_logger if config.debug_logging else None,  # Only use logger when debug is enabled
+                        ffmpeg_params=[
+                            '-pix_fmt', 'yuv420p',
+                            '-preset', 'medium',        # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
 #                        '-tune', 'animation',       # Options: film, animation, grain, stillimage, fastdecode, zerolatency
-                        '-crf', '25',               # Constant Rate Factor (0-51, lower = better quality, larger file)
-                        '-profile:v', 'high',       # Profile: baseline, main, high, high10, high422, high444
-                        '-level', '4.1'             # H.264 level for compatibility
-                    ]
-                )
+                            '-crf', '25',               # Constant Rate Factor (0-51, lower = better quality, larger file)
+                            '-profile:v', 'high',       # Profile: baseline, main, high, high10, high422, high444
+                            '-level', '4.1'             # H.264 level for compatibility
+                        ]
+                    )
             
             # Final frame generation progress update
             if progress_callback:

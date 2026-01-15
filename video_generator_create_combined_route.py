@@ -541,6 +541,15 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         # This must be done after smoothed statistics are calculated
         update_hr_based_width_range(all_routes, json_data, debug_callback)
         
+        # Create label images with correct scale based on video resolution
+        # Calculate image_scale from video resolution for consistent label sizing
+        image_scale = 1  # Default scale
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            image_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        
         # Create speed-based color label if enabled
         if json_data and json_data.get('speed_based_color_label', False):
             speed_min = json_data.get('speed_based_color_min', 5)
@@ -548,13 +557,13 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
             imperial_units = _is_imperial_units(json_data)
             
             try:
-                label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units)
+                label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units, hr_mode=False, image_scale=image_scale)
                 # Convert PIL Image to numpy array (RGBA) for storage
                 label_array = np.array(label_image)
                 # Store in json_data for use during frame generation
                 json_data['_speed_based_color_label_image'] = label_array
                 if debug_callback:
-                    debug_callback(f"Created speed-based color label image ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
+                    debug_callback(f"Created speed-based color label image at scale {image_scale}x ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
             except Exception as e:
                 if log_callback:
                     log_callback(f"Error creating speed-based color label: {str(e)}")
@@ -565,13 +574,13 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
             hr_max = json_data.get('hr_based_color_max', 180)
             
             try:
-                label_image = create_hr_based_color_label(hr_min, hr_max)
+                label_image = create_hr_based_color_label(hr_min, hr_max, image_scale=image_scale)
                 # Convert PIL Image to numpy array (RGBA) for storage
                 label_array = np.array(label_image)
                 # Store in json_data for use during frame generation
                 json_data['_hr_based_color_label_image'] = label_array
                 if debug_callback:
-                    debug_callback(f"Created HR-based color label image ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
+                    debug_callback(f"Created HR-based color label image at scale {image_scale}x ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
             except Exception as e:
                 if log_callback:
                     log_callback(f"Error creating HR-based color label: {str(e)}")
@@ -582,13 +591,13 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
             hr_max = json_data.get('hr_based_width_max', 180)
             
             try:
-                label_image = create_hr_based_width_label(hr_min, hr_max)
+                label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale)
                 # Convert PIL Image to numpy array (RGBA) for storage
                 label_array = np.array(label_image)
                 # Store in json_data for use during frame generation
                 json_data['_hr_based_width_label_image'] = label_array
                 if debug_callback:
-                    debug_callback(f"Created HR-based width label image ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
+                    debug_callback(f"Created HR-based width label image at scale {image_scale}x ({label_array.shape[1]}x{label_array.shape[0]} pixels)")
             except Exception as e:
                 if log_callback:
                     log_callback(f"Error creating HR-based width label: {str(e)}")

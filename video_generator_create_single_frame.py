@@ -18,7 +18,7 @@ from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_
 from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
 from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes)
 from video_generator_create_combined_route import RoutePoint
-from speed_based_color import speed_based_color, create_speed_based_color_label, create_hr_based_width_label
+from speed_based_color import speed_based_color
 from image_generator_utils import calculate_resolution_scale
 import os
 import matplotlib.image as mpimg
@@ -771,7 +771,7 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def _draw_video_title(ax, title_text, effective_line_width, json_data, resolution_scale=None):
+def _draw_video_title(ax, title_text, effective_line_width, json_data, resolution_scale=None, image_height=None, theme='light'):
     """
     Draw video title at the top center of the frame.
     
@@ -781,32 +781,52 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
         effective_line_width (float): Base line width for scaling (unused, kept for compatibility)
         json_data (dict): Job data containing video parameters for resolution scaling
         resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
+        image_height (int): Image height in pixels for padding calculation
+        theme (str): Theme for title text ('light' or 'dark')
+            - 'light': light-colored text with dark outline
+            - 'dark': dark-colored text with light outline
     """
     if not title_text:
         return
     
-    # Use hardcoded base font size that scales with resolution
-    base_font_size = 16  # Hardcoded base size for 1080p
+    # Use same base font size as image mode
+    base_font_size = 22
     font_size = base_font_size * resolution_scale
     
-    # Position at top center with 10px padding
-    # Use relative coordinates for consistent positioning across different resolutions
-    padding_factor = 0.01  # Roughly equivalent to 10px padding
-    text_x = 0.5          # Center horizontally (50% of axis)
-    text_y = 1.0 - padding_factor  # Top edge minus padding
+    # Scale padding with resolution_scale, then convert to axes coordinates
+    base_padding_pixels = 10
+    padding_pixels = base_padding_pixels * resolution_scale
+    if image_height:
+        padding_y = padding_pixels / image_height
+    else:
+        # Fallback to approximate padding if height not provided
+        padding_y = 0.01
     
-    # Draw title text with light gray color and black outline
+    text_x = 0.5
+    text_y = 1.0 - padding_y
+    
+    # Calculate outline width: default 0.7, scaled by resolution_scale
+    outline_width = 0.7 * resolution_scale
+    
+    # Set colors based on theme
+    if theme == 'dark':
+        text_color = '#1a1a1a'  
+        outline_color = '#e8e8e8' 
+    else:  # 'light' theme (default)
+        text_color = '#e8e8e8'  
+        outline_color = '#1a1a1a' 
+    
+    # Draw title text
     ax.text(
         text_x, text_y, title_text,
         transform=ax.transAxes,  # Use axes coordinates
-        color='#cccccc',         # Light gray text
-            fontsize=font_size,
-            fontweight='bold',
+        color=text_color,
+        fontsize=font_size,
+        fontweight='bold',
         ha='center',             # Center align horizontally
         va='top',                # Top align vertically
-        # Create black outline effect using path effects
         path_effects=[
-            matplotlib.patheffects.Stroke(linewidth=2, foreground='black'),
+            matplotlib.patheffects.Stroke(linewidth=outline_width, foreground=outline_color),
             matplotlib.patheffects.Normal()
         ],
         zorder=110  # Very top layer - above everything else
@@ -1590,11 +1610,17 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 if legend_handles and legend_labels:
                     create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width)
         
-        # Add title text if enabled (boolean flag) (zorder=55 - top layer, above statistics)
-        if isinstance(json_data.get('title_text'), bool) and json_data.get('title_text') is True:
-            title_text_value = (json_data.get('route_name') or '').strip()
-            if title_text_value:
-                _draw_video_title(ax, title_text_value, effective_line_width, json_data, resolution_scale=resolution_scale)
+        # Add title text if enabled (can be 'light' or 'dark', text is route_name)
+        if json_data is not None:
+            title_text_setting = json_data.get('title_text', 'off')
+            # Legacy boolean values for backward compatibility (is now string instead)
+            if isinstance(title_text_setting, bool):
+                title_text_setting = 'light' if title_text_setting else 'off'
+            
+            if title_text_setting in ['light', 'dark']:
+                title_text_value = (json_data.get('route_name') or '').strip()
+                if title_text_value:
+                    _draw_video_title(ax, title_text_value, effective_line_width, json_data, resolution_scale=resolution_scale, image_height=height, theme=title_text_setting)
         
         # Add statistics if enabled (zorder=50 - top layer, above everything else) - MOVED TO END
         statistics_setting = json_data.get('statistics', 'off')
@@ -1708,101 +1734,22 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         
         if json_data:
             # Get color label (speed-based or HR-based, mutually exclusive)
+            # Use cached label images created during route processing
             if json_data.get('speed_based_color_label', False):
-                color_label = None
-                
-                # Try to load the appropriate scaled version from file
-                module_dir = os.path.dirname(os.path.abspath(__file__))
-                # Format scale for filename (special case for 0.7 -> "07x")
-                from image_generator_utils import format_scale_for_label_filename
-                scale_str = format_scale_for_label_filename(image_scale)
-                label_filename = f"speed_based_color_label_{scale_str}.png"
-                label_file = os.path.join(module_dir, "img", label_filename)
-                
-                if os.path.exists(label_file):
-                    try:
-                        color_label = mpimg.imread(label_file)
-                        # Verify the loaded label has the expected size (approximately)
-                        # Expected width for 1x is ~200px, so for scale N it should be ~200*N px
-                        expected_min_width = 150 * image_scale  # Allow some tolerance
-                        actual_width = color_label.shape[1]
-                        if actual_width < expected_min_width:
-                            print(f"WARNING: Loaded {label_filename} has width {actual_width}px, expected at least {expected_min_width}px for scale {image_scale}. Recreating on-the-fly.")
-                            color_label = None  # Force recreation
-                    except Exception as e:
-                        color_label = None
-                
-                # Create label on-the-fly using appropriately scaled base image
-                if color_label is None:
-                    try:
-                        speed_min = json_data.get('speed_based_color_min', 5)
-                        speed_max = json_data.get('speed_based_color_max', 35)
-                        imperial_units = json_data and json_data.get('imperial_units', False) is True
-                        label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units, hr_mode=False, image_scale=image_scale)
-                        color_label = np.array(label_image)
-                    except Exception as e:
-                        # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
-                        print(f"Failed to create speed-based color label on-the-fly: {e}")
-                        color_label = None
-                
+                # Use cached label from json_data
+                color_label = json_data.get('_speed_based_color_label_image')
                 if color_label is not None:
                     labels_to_draw.append((color_label, "Speed-based color"))
             elif json_data.get('hr_based_color_label', False):
-                color_label = None
-                
-                # Try to load the appropriate scaled version from file
-                module_dir = os.path.dirname(os.path.abspath(__file__))
-                # HR-based color uses the same base image as speed-based color
-                # Format scale for filename (special case for 0.7 -> "07x")
-                from image_generator_utils import format_scale_for_label_filename
-                scale_str = format_scale_for_label_filename(image_scale)
-                label_filename = f"speed_based_color_label_{scale_str}.png"
-                label_file = os.path.join(module_dir, "img", label_filename)
-                
-                if os.path.exists(label_file):
-                    try:
-                        color_label = mpimg.imread(label_file)
-                        # Verify the loaded label has the expected size (approximately)
-                        # Expected width for 1x is ~200px, so for scale N it should be ~200*N px
-                        expected_min_width = 150 * image_scale  # Allow some tolerance
-                        actual_width = color_label.shape[1]
-                        if actual_width < expected_min_width:
-                            print(f"WARNING: Loaded {label_filename} has width {actual_width}px, expected at least {expected_min_width}px for scale {image_scale}. Recreating on-the-fly.")
-                            color_label = None  # Force recreation
-                    except Exception as e:
-                        color_label = None
-                
-                # Create label on-the-fly using appropriately scaled base image
-                if color_label is None:
-                    try:
-                        from speed_based_color import create_hr_based_color_label
-                        hr_min = json_data.get('hr_based_color_min', 50)
-                        hr_max = json_data.get('hr_based_color_max', 180)
-                        label_image = create_hr_based_color_label(hr_min, hr_max, image_scale=image_scale)
-                        color_label = np.array(label_image)
-                    except Exception as e:
-                        # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
-                        print(f"Failed to create HR-based color label on-the-fly: {e}")
-                        color_label = None
-                
+                # Use cached label from json_data
+                color_label = json_data.get('_hr_based_color_label_image')
                 if color_label is not None:
                     labels_to_draw.append((color_label, "HR-based color"))
             
             # Get width label (can coexist with color label)
+            # Use cached label from json_data
             if json_data.get('hr_based_width_label', False):
-                # Always create the label on-the-fly to ensure text labels are included
-                # The create_hr_based_width_label function loads the base image and adds text labels
-                width_label = None
-                try:
-                    hr_min = json_data.get('hr_based_width_min', 50)
-                    hr_max = json_data.get('hr_based_width_max', 180)
-                    label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale)
-                    width_label = np.array(label_image)
-                except Exception as e:
-                    # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
-                    print(f"Failed to create HR-based width label on-the-fly: {e}")
-                    width_label = None
-                
+                width_label = json_data.get('_hr_based_width_label_image')
                 if width_label is not None:
                     labels_to_draw.append((width_label, "HR-based width"))
         

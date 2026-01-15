@@ -26,6 +26,52 @@ def _draw_text_with_outline(draw, position, text, font, fill_color, outline_colo
     draw.text((x, y), text, fill=fill_color, font=font)
 
 
+def _draw_text_with_red_heart(draw, position, text, font, fill_color, outline_color=(0, 0, 0, 255), outline_width=1):
+    """
+    Draw text with a red heart symbol. The text should end with " ♥".
+    The number part is drawn in fill_color, and the heart symbol is drawn in red.
+    
+    Args:
+        draw: ImageDraw object
+        position: (x, y) tuple for text position
+        text: Text string ending with " ♥" (e.g., "136 ♥")
+        font: Font to use
+        fill_color: RGBA tuple for the main text color (for the number)
+        outline_color: RGBA tuple for the outline color (default: black)
+        outline_width: Width of the outline in pixels (default: 1)
+    """
+    x, y = position
+    
+    # Split text into number and heart symbol
+    if text.endswith(" ♥"):
+        number_text = text[:-2]  # Everything except " ♥"
+        heart_symbol = " ♥"
+    else:
+        # If no heart symbol, just draw normally
+        _draw_text_with_outline(draw, position, text, font, fill_color, outline_color, outline_width)
+        return
+    
+    # Measure the number text width
+    number_bbox = draw.textbbox((0, 0), number_text, font=font)
+    number_width = number_bbox[2] - number_bbox[0]
+    
+    # Red color for heart symbol (RGBA)
+    heart_color = (255, 0, 0, 255)  # Red
+    
+    # Draw number with outline
+    _draw_text_with_outline(draw, (x, y), number_text, font, fill_color, outline_color, outline_width)
+    
+    # Draw heart symbol with outline in red
+    heart_x = x + number_width
+    # Draw outline for heart symbol
+    for dx in range(-outline_width, outline_width + 1):
+        for dy in range(-outline_width, outline_width + 1):
+            if dx != 0 or dy != 0:
+                draw.text((heart_x + dx, y + dy), heart_symbol, fill=outline_color, font=font)
+    # Draw heart symbol in red
+    draw.text((heart_x, y), heart_symbol, fill=heart_color, font=font)
+
+
 def update_speed_based_color_range(all_routes, json_data, debug_callback=None):
     """
     Update speed_based_color_min and speed_based_color_max in json_data based on actual data.
@@ -416,20 +462,30 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
     # This positions the baseline so ascenders don't overlap the image and descenders have room below
     text_y = int(base_img.height + spacing_below + max_ascender)
     
-    # Draw left text (min) with outline
-    _draw_text_with_outline(draw, (0, text_y), min_text, font, fill_color=(255, 255, 255, 255))
+    # Choose drawing function based on whether we're in HR mode (heart symbol should be red)
+    if hr_mode:
+        draw_text_func = _draw_text_with_red_heart
+    else:
+        draw_text_func = _draw_text_with_outline
     
-    # Draw center text (average) with outline
+    # Draw left text (min) with outline (and red heart if HR mode)
+    # Add padding to prevent cutoff: 5 pixels
+    padding_horizontal = 5
+    min_x = padding_horizontal
+    draw_text_func(draw, (min_x, text_y), min_text, font, fill_color=(255, 255, 255, 255))
+    
+    # Draw center text (average) with outline (and red heart if HR mode)
     avg_bbox = draw.textbbox((0, 0), avg_text, font=font)
     avg_text_width = avg_bbox[2] - avg_bbox[0]
     avg_x = (new_width - avg_text_width) // 2
-    _draw_text_with_outline(draw, (avg_x, text_y), avg_text, font, fill_color=(255, 255, 255, 255))
+    draw_text_func(draw, (avg_x, text_y), avg_text, font, fill_color=(255, 255, 255, 255))
     
-    # Draw right text (max) with outline
+    # Draw right text (max) with outline (and red heart if HR mode)
+    # Add padding to prevent cutoff: 5 pixels
     max_bbox = draw.textbbox((0, 0), max_text, font=font)
     max_text_width = max_bbox[2] - max_bbox[0]
-    max_x = new_width - max_text_width
-    _draw_text_with_outline(draw, (max_x, text_y), max_text, font, fill_color=(255, 255, 255, 255))
+    max_x = new_width - max_text_width - padding_horizontal
+    draw_text_func(draw, (max_x, text_y), max_text, font, fill_color=(255, 255, 255, 255))
     
     # Debug logging before return
     try:
@@ -541,20 +597,24 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     # Calculate text baseline position
     text_y = int(base_img.height + spacing_below + max_ascender)
     
-    # Draw left text (min) with outline
-    _draw_text_with_outline(draw, (0, text_y), min_text, font, fill_color=(255, 255, 255, 255))
+    # Draw left text (min) with outline and red heart symbol
+    # Add padding to prevent cutoff: 5 pixels
+    padding_horizontal = 5
+    min_x = padding_horizontal
+    _draw_text_with_red_heart(draw, (min_x, text_y), min_text, font, fill_color=(255, 255, 255, 255))
     
-    # Draw center text (average) with outline
+    # Draw center text (average) with outline and red heart symbol
     avg_bbox = draw.textbbox((0, 0), avg_text, font=font)
     avg_text_width = avg_bbox[2] - avg_bbox[0]
     avg_x = (new_width - avg_text_width) // 2
-    _draw_text_with_outline(draw, (avg_x, text_y), avg_text, font, fill_color=(255, 255, 255, 255))
+    _draw_text_with_red_heart(draw, (avg_x, text_y), avg_text, font, fill_color=(255, 255, 255, 255))
     
-    # Draw right text (max) with outline
+    # Draw right text (max) with outline and red heart symbol
+    # Add padding to prevent cutoff: 5 pixels
     max_bbox = draw.textbbox((0, 0), max_text, font=font)
     max_text_width = max_bbox[2] - max_bbox[0]
-    max_x = new_width - max_text_width
-    _draw_text_with_outline(draw, (max_x, text_y), max_text, font, fill_color=(255, 255, 255, 255))
+    max_x = new_width - max_text_width - padding_horizontal
+    _draw_text_with_red_heart(draw, (max_x, text_y), max_text, font, fill_color=(255, 255, 255, 255))
     
     return new_img
 

@@ -635,8 +635,12 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     font_size = base_font_size * resolution_scale
     
     # Add the current heart rate text with heart symbol
-    ax.text(
-        hr_x, hr_y, f"{current_hr} ❤",
+    # First draw the full text (number + heart) with bbox for proper sizing
+    number_text = f"{current_hr}"
+    heart_symbol = " ♥"
+    full_text = number_text + heart_symbol
+    text_obj = ax.text(
+        hr_x, hr_y, full_text,
         color=text_color,
         fontsize=font_size,
         fontweight='bold',
@@ -650,6 +654,39 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
             linewidth=1
         ),
         zorder=100  # Very top layer - above all other elements
+    )
+    
+    # Get the bounding box of the number text to position the heart symbol overlay
+    # We need to get the renderer to measure text
+    fig = ax.figure
+    if fig.canvas is not None:
+        renderer = fig.canvas.get_renderer()
+    else:
+        # Fallback: create a dummy renderer for measurement
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+        canvas = FigureCanvasAgg(fig)
+        renderer = canvas.get_renderer()
+    
+    # Measure just the number text to find where heart symbol starts
+    temp_text = ax.text(hr_x, hr_y, number_text, fontsize=font_size, fontweight='bold', 
+                       ha='left', va='center', visible=False)
+    bbox_number = temp_text.get_window_extent(renderer=renderer)
+    temp_text.remove()
+    
+    # Convert bbox to data coordinates to get the right edge
+    transform = ax.transData.inverted()
+    bbox_data = bbox_number.transformed(transform)
+    heart_x = bbox_data.x1  # Right edge of the number text
+    
+    # Draw the heart symbol in red, positioned right after the number (overlay)
+    ax.text(
+        heart_x, hr_y, heart_symbol,
+        color='red',  # Red color for heart symbol
+        fontsize=font_size,
+        fontweight='bold',
+        ha='left',
+        va='center',
+        zorder=101  # Slightly above the number text to overlay
     )
 
 
@@ -701,8 +738,11 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
         stats_lines.append(f"{statistics_data['current_elevation']} m ↑")
     
     # Include average heart rate if available (current HR is displayed at point, not in corner)
+    # Store heart rate separately so we can draw the heart symbol in red
+    avg_hr_value = None
     if 'average_hr' in statistics_data and statistics_data['average_hr']:
-        stats_lines.append(f"{statistics_data['average_hr']} ❤")
+        avg_hr_value = statistics_data['average_hr']
+        stats_lines.append(f"{avg_hr_value} ♥")
     
     # If no statistics are available, return
     if not stats_lines:
@@ -742,7 +782,7 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     text_y = 1.0 - padding_factor  # Top edge minus padding
     
     # Add the statistics text
-    ax.text(
+    text_obj = ax.text(
         text_x, text_y, stats_text,
         transform=ax.transAxes,  # Use axes coordinates
         color=text_color,
@@ -758,4 +798,60 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
             linewidth=1
         ),
         zorder=100  # Very top layer - above all other elements
-    ) 
+    )
+    
+    # If average HR is displayed, overlay the heart symbol in red
+    if avg_hr_value is not None:
+        # Find which line contains the heart rate (count from bottom)
+        hr_line_index = None
+        for i, line in enumerate(stats_lines):
+            if '♥' in line or avg_hr_value in line:
+                hr_line_index = len(stats_lines) - 1 - i  # Line index from top (0 = top line)
+                break
+        
+        if hr_line_index is not None:
+            # Calculate the y position of the heart rate line
+            # Each line has a height, we need to account for line spacing
+            fig = ax.figure
+            if fig.canvas is not None:
+                renderer = fig.canvas.get_renderer()
+            else:
+                # Fallback: create a dummy renderer for measurement
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                canvas = FigureCanvasAgg(fig)
+                renderer = canvas.get_renderer()
+            
+            # Measure single line height
+            temp_text = ax.text(0, 0, "Test", fontsize=font_size, fontweight='bold', visible=False)
+            line_bbox = temp_text.get_window_extent(renderer=renderer)
+            temp_text.remove()
+            
+            # Convert to axes coordinates
+            transform = ax.transAxes.inverted()
+            line_height_axes = line_bbox.transformed(transform).height
+            
+            # Calculate y position of the heart rate line (from top)
+            hr_line_y = text_y - (hr_line_index * line_height_axes)
+            
+            # Measure the number text to find where heart symbol should go
+            number_text = f"{avg_hr_value}"
+            temp_text = ax.text(text_x, hr_line_y, number_text, transform=ax.transAxes,
+                               fontsize=font_size, fontweight='bold', ha='right', va='top', visible=False)
+            number_bbox = temp_text.get_window_extent(renderer=renderer)
+            temp_text.remove()
+            
+            # Convert to axes coordinates to get the left edge of number (since ha='right')
+            number_bbox_axes = number_bbox.transformed(transform)
+            heart_x = number_bbox_axes.x0  # Left edge of number (right-aligned)
+            
+            # Draw the heart symbol in red, positioned right after the number
+            ax.text(
+                heart_x, hr_line_y, " ♥",
+                transform=ax.transAxes,
+                color='red',  # Red color for heart symbol
+                fontsize=font_size,
+                fontweight='bold',
+                ha='left',  # Left align from the number's left edge
+                va='top',
+                zorder=101  # Slightly above the statistics text
+            ) 

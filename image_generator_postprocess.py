@@ -16,6 +16,8 @@ import matplotlib.patches as mpatches
 from matplotlib import patheffects
 from collections import OrderedDict
 import numpy as np
+from PIL import Image as PILImage
+import cartopy.crs as ccrs
 from video_generator_create_single_frame import get_legend_theme_colors
 from write_log import write_log, write_debug_log
 from image_generator_utils import calculate_resolution_scale
@@ -41,12 +43,12 @@ def optimize_png_bytes(png_data: bytes) -> bytes:
         
         try:
             # Run oxipng CLI with equivalent settings
-            # -o 3: Optimization level 3 (1-6)
+            # --opt 3: Optimization level 3 (1-6)
             # --strip safe: Strip unnecessary chunks that won't affect rendering
-            # --deflate 10: Deflate compression level 10 (0-12)
-            # --no-interlace: Disable interlacing for web
+            # Note: --deflate and --no-interlace removed as they're no longer supported in newer oxipng versions
+            # Compression is now handled automatically by the optimization level
             result = subprocess.run(
-                ['oxipng', '-o', '3', '--strip', 'safe', '--deflate', '10', '--no-interlace', temp_path],
+                ['oxipng', '--opt', '4', '--strip', 'safe', temp_path],
                 capture_output=True,
                 text=True,
                 check=True
@@ -78,7 +80,7 @@ def optimize_png_bytes(png_data: bytes) -> bytes:
         write_debug_log(f"PNG optimization failed: {e}")
         return png_data  # Return original data if optimization fails
 
-def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: int, image_scale: int | None = None):
+def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: int, image_scale: int | None = None, theme: str = 'light'):
     """
     Draw a title at the top center of the image, visually matching video title styling.
 
@@ -88,6 +90,9 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
         image_width: Width in pixels (for scaling and padding conversion)
         image_height: Height in pixels
         image_scale: Optional precomputed image scale; if None it's derived from pixels
+        theme: Theme for title text ('light' or 'dark')
+            - 'light': light-colored text with dark outline
+            - 'dark': dark-colored text with light outline
     """
     if not title_text:
         return
@@ -103,28 +108,39 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
         else:
             image_scale = 4
 
-    base_font_size = 16
+    base_font_size = 22
     font_size = base_font_size * image_scale
 
-    # Convert ~10px padding into axes coordinates
-    padding_pixels = 10
+    # Scale padding with resolution_scale, then convert to axes coordinates
+    base_padding_pixels = 10
+    padding_pixels = base_padding_pixels * image_scale
     padding_y = padding_pixels / image_height
 
     text_x = 0.5
     text_y = 1.0 - padding_y
+
+    # Calculate outline width: default 0.7, scaled by image_scale
+    outline_width = 0.7 * image_scale
+
+    if theme == 'dark':
+        text_color = '#1a1a1a'  
+        outline_color = '#e8e8e8' 
+    else:  # 'light' theme (default)
+        text_color = '#e8e8e8'  
+        outline_color = '#1a1a1a' 
 
     ax.text(
         text_x,
         text_y,
         title_text,
         transform=ax.transAxes,
-        color='#cccccc',
+        color=text_color,
         fontsize=font_size,
         fontweight='bold',
         ha='center',
         va='top',
         path_effects=[
-            patheffects.Stroke(linewidth=2, foreground='black'),
+            patheffects.Stroke(linewidth=outline_width, foreground=outline_color),
             patheffects.Normal()
         ],
         zorder=110,
@@ -147,7 +163,8 @@ def add_stamp_to_plot(ax, image_width: int, image_height: int, image_scale: int 
     if image_scale is None:
         image_scale = calculate_resolution_scale(image_width, image_height)
 
-    stamp_filename = f"stamp_{image_scale}x.png"
+    stamp_scale_int = int(image_scale)
+    stamp_filename = f"stamp_{stamp_scale_int}x.png"
 
     # Resolve path to the stamp inside the "img" folder next to this module
     module_dir = os.path.dirname(os.path.abspath(__file__))
@@ -555,3 +572,183 @@ def add_speed_based_color_label_to_plot(ax, json_data: dict, image_width: int, i
         
     except Exception as e:
         write_debug_log(f"Error adding labels: {e}")
+
+
+def add_markers_to_plot(ax, track_coords_with_metadata, image_width: int, image_height: int, lon_min: float, lon_max: float, lat_min: float, lat_max: float, image_scale: int | None = None):
+    """
+    Add start and finish markers to the plot at the first and last points of the route.
+    
+    Args:
+        ax: Matplotlib axis object with cartopy projection
+        track_coords_with_metadata: List of (lats, lons, color, name, filename) tuples
+        image_width: Width of the image in pixels
+        image_height: Height of the image in pixels
+        lon_min: Minimum longitude in degrees (PlateCarree)
+        lon_max: Maximum longitude in degrees (PlateCarree)
+        lat_min: Minimum latitude in degrees (PlateCarree)
+        lat_max: Maximum latitude in degrees (PlateCarree)
+        image_scale: Optional image scale factor; if None, calculated from resolution
+    """
+    if not track_coords_with_metadata:
+        write_debug_log("No track coordinates available for markers")
+        return
+    
+    # Calculate image scale if not provided
+    if image_scale is None:
+        image_scale = calculate_resolution_scale(image_width, image_height)
+    
+    write_debug_log(f"add_markers_to_plot: image_width={image_width}, image_height={image_height}, image_scale={image_scale}")
+    
+    # Get first point from first track and last point from last track
+    first_track = track_coords_with_metadata[0]
+    last_track = track_coords_with_metadata[-1]
+    
+    first_lats, first_lons, _, _, _ = first_track
+    last_lats, last_lons, _, _, _ = last_track
+    
+    if not first_lats or not first_lons:
+        write_debug_log("First track has no coordinates")
+        return
+    
+    if not last_lats or not last_lons:
+        write_debug_log("Last track has no coordinates")
+        return
+    
+    # Get first point coordinates
+    start_lat = first_lats[0]
+    start_lon = first_lons[0]
+    
+    # Get last point coordinates
+    end_lat = last_lats[-1]
+    end_lon = last_lons[-1]
+    
+    write_debug_log(f"Start marker at: lat={start_lat}, lon={start_lon}")
+    write_debug_log(f"Finish marker at: lat={end_lat}, lon={end_lon}")
+    
+    # Resolve path to the img folder
+    module_dir = os.path.dirname(os.path.abspath(__file__))
+    start_file = os.path.join(module_dir, "img", "start.png")
+    finish_file = os.path.join(module_dir, "img", "finish.png")
+    
+    # Base size is 35 pixels, multiply by image_scale
+    target_size_pixels = int(35 * image_scale)
+    
+    def load_and_resize_marker(file_path, marker_name):
+        """Load and resize a marker image to target size while maintaining aspect ratio."""
+        if not os.path.exists(file_path):
+            write_debug_log(f"{marker_name} file not found: {file_path}")
+            return None
+        
+        try:
+            # Load image using PIL for better resizing control
+            img = PILImage.open(file_path)
+            original_width, original_height = img.size
+            
+            # Calculate new size maintaining aspect ratio
+            aspect_ratio = original_width / original_height
+            if original_width >= original_height:
+                new_width = target_size_pixels
+                new_height = int(target_size_pixels / aspect_ratio)
+            else:
+                new_height = target_size_pixels
+                new_width = int(target_size_pixels * aspect_ratio)
+            
+            # Resize image
+            img_resized = img.resize((new_width, new_height), PILImage.Resampling.LANCZOS)
+            
+            # Convert to numpy array for matplotlib
+            marker_array = np.array(img_resized)
+            
+            write_debug_log(f"{marker_name} loaded and resized: original={original_width}x{original_height}, resized={new_width}x{new_height}")
+            
+            return marker_array, new_width, new_height
+            
+        except Exception as e:
+            write_debug_log(f"Error loading {marker_name}: {e}")
+            return None
+    
+    # Load and resize markers
+    start_result = load_and_resize_marker(start_file, "Start")
+    finish_result = load_and_resize_marker(finish_file, "Finish")
+    
+    # Calculate spans in degrees (bounds are already in PlateCarree/degrees)
+    lon_span = lon_max - lon_min
+    lat_span = lat_max - lat_min
+    write_debug_log(f"Map extent (degrees): lon=[{lon_min:.6f}, {lon_max:.6f}], lat=[{lat_min:.6f}, {lat_max:.6f}]")
+    write_debug_log(f"Map spans: lon_span={lon_span:.6f}, lat_span={lat_span:.6f}")
+    
+    if not start_result:
+        write_debug_log("Failed to load start marker, skipping")
+    else:
+        start_array, start_width, start_height = start_result
+        try:
+            # Convert geographic coordinates to figure coordinates (0-1 range)
+            # Normalize coordinates to 0-1 range
+            start_x_fig = (start_lon - lon_min) / lon_span
+            start_y_fig = (start_lat - lat_min) / lat_span
+            
+            # Calculate marker size in figure coordinates
+            marker_width_fig = start_width / image_width
+            marker_height_fig = start_height / image_height
+            
+            # Position marker so bottom-left corner is at the point
+            marker_x_fig = start_x_fig
+            marker_y_fig = start_y_fig
+            
+            write_debug_log(f"Start marker image size: {start_width}x{start_height} pixels")
+            write_debug_log(f"Start point in figure coords: ({start_x_fig:.4f}, {start_y_fig:.4f})")
+            write_debug_log(f"Marker size in figure coords: {marker_width_fig:.4f}x{marker_height_fig:.4f}")
+            write_debug_log(f"Marker position in figure coords: ({marker_x_fig:.4f}, {marker_y_fig:.4f})")
+            
+            # Use inset_axes like the stamp does, but position at geographic coordinates
+            # Convert to figure coordinates first (same approach as preview_image.py)
+            marker_ax = ax.inset_axes(
+                [marker_x_fig, marker_y_fig, marker_width_fig, marker_height_fig],
+                transform=ax.transAxes
+            )
+            marker_ax.imshow(start_array)
+            marker_ax.axis('off')
+            write_debug_log(f"Added start marker image at: ({start_lon:.6f}, {start_lat:.6f})")
+            
+        except Exception as e:
+            write_debug_log(f"Error placing start marker: {e}")
+            import traceback
+            write_debug_log(f"Traceback: {traceback.format_exc()}")
+    
+    if not finish_result:
+        write_debug_log("Failed to load finish marker, skipping")
+    else:
+        finish_array, finish_width, finish_height = finish_result
+        try:
+            # Convert geographic coordinates to figure coordinates (0-1 range)
+            # Normalize coordinates to 0-1 range
+            end_x_fig = (end_lon - lon_min) / lon_span
+            end_y_fig = (end_lat - lat_min) / lat_span
+            
+            # Calculate marker size in figure coordinates
+            marker_width_fig = finish_width / image_width
+            marker_height_fig = finish_height / image_height
+            
+            # Position marker so bottom-left corner is at the point
+            marker_x_fig = end_x_fig
+            marker_y_fig = end_y_fig
+            
+            write_debug_log(f"Finish marker image size: {finish_width}x{finish_height} pixels")
+            write_debug_log(f"End point in figure coords: ({end_x_fig:.4f}, {end_y_fig:.4f})")
+            write_debug_log(f"Marker size in figure coords: {marker_width_fig:.4f}x{marker_height_fig:.4f}")
+            write_debug_log(f"Marker position in figure coords: ({marker_x_fig:.4f}, {marker_y_fig:.4f})")
+            
+            # Use inset_axes like the stamp does, but position at geographic coordinates
+            # Convert to figure coordinates first (same approach as preview_image.py)
+            marker_ax = ax.inset_axes(
+                [marker_x_fig, marker_y_fig, marker_width_fig, marker_height_fig],
+                transform=ax.transAxes
+            )
+            marker_ax.imshow(finish_array)
+            marker_ax.axis('off')
+            write_debug_log(f"Added finish marker image at: ({end_lon:.6f}, {end_lat:.6f})")
+            
+        except Exception as e:
+            write_debug_log(f"Error placing finish marker: {e}")
+            import traceback
+            write_debug_log(f"Traceback: {traceback.format_exc()}")

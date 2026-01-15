@@ -675,19 +675,26 @@ def generate_image_for_zoom_level(
                 legend_theme=legend_theme
             )
         
-        # Add title text if boolean flag is true (text is route_name)
+        # Add title text if enabled (can be 'light' or 'dark', text is route_name)
         try:
-            if json_data is not None and isinstance(json_data.get('title_text'), bool) and json_data.get('title_text') is True:
-                title_text_value = (route_name or json_data.get('route_name') or '').strip()
-                if title_text_value:
-                    update_status("adding title", textfield=False)
-                    add_title_text_to_plot(
-                        ax=ax,
-                        title_text=title_text_value,
-                        image_width=resolution_x_value,
-                        image_height=resolution_y_value,
-                        image_scale=image_scale,
-                    )
+            if json_data is not None:
+                title_text_setting = json_data.get('title_text', 'off')
+                # Legacy boolean values for backward compatibility (is now string instead)
+                if isinstance(title_text_setting, bool):
+                    title_text_setting = 'light' if title_text_setting else 'off'
+                
+                if title_text_setting in ['light', 'dark']:
+                    title_text_value = (route_name or json_data.get('route_name') or '').strip()
+                    if title_text_value:
+                        update_status("adding title", textfield=False)
+                        add_title_text_to_plot(
+                            ax=ax,
+                            title_text=title_text_value,
+                            image_width=resolution_x_value,
+                            image_height=resolution_y_value,
+                            image_scale=image_scale,
+                            theme=title_text_setting,
+                        )
         except Exception as e:
             write_log(f"Failed to add title text: {e}")
 
@@ -706,6 +713,22 @@ def generate_image_for_zoom_level(
                 json_data=json_data,
                 image_width=resolution_x_value,
                 image_height=resolution_y_value,
+                image_scale=image_scale
+            )
+
+        # Add markers (start and finish) if enabled
+        if json_data and json_data.get('markers', False):
+            update_status("adding markers", textfield=False)
+            from image_generator_postprocess import add_markers_to_plot
+            add_markers_to_plot(
+                ax=ax,
+                track_coords_with_metadata=track_coords_with_metadata,
+                image_width=resolution_x_value,
+                image_height=resolution_y_value,
+                lon_min=lon_min_padded,
+                lon_max=lon_max_padded,
+                lat_min=lat_min_padded,
+                lat_max=lat_max_padded,
                 image_scale=image_scale
             )
 
@@ -839,10 +862,13 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     if json_data.get('statistics_average_speed', False):
         stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} {speed_unit}")
     
+    # Store heart rate separately so we can draw the heart symbol in red
+    avg_hr_value = None
     if json_data.get('statistics_average_hr', False):
         avg_hr = statistics_data.get('average_hr', '0')
         if avg_hr and avg_hr != '0':
-            stats_lines.append(f"{avg_hr} ❤")
+            avg_hr_value = avg_hr
+            stats_lines.append(f"{avg_hr} ♥")
     
     # If no statistics are configured to be shown, return
     if not stats_lines:
@@ -881,7 +907,7 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     text_y = 1.0 - padding_y  # Top edge minus padding
     
     # Add the statistics text
-    ax.text(
+    text_obj = ax.text(
         text_x, text_y, stats_text,
         transform=ax.transAxes,  # Use axes coordinates
         color=text_color,
@@ -895,8 +921,65 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
             edgecolor=border_color,
             alpha=0.9,
             linewidth=1
-        )
+        ),
+        zorder=100  # Very top layer - above all other elements
     )
+    
+    # If average HR is displayed, overlay the heart symbol in red
+    if avg_hr_value is not None:
+        # Find which line contains the heart rate (count from bottom)
+        hr_line_index = None
+        for i, line in enumerate(stats_lines):
+            if '♥' in line or avg_hr_value in line:
+                hr_line_index = len(stats_lines) - 1 - i  # Line index from top (0 = top line)
+                break
+        
+        if hr_line_index is not None:
+            # Calculate the y position of the heart rate line
+            # Each line has a height, we need to account for line spacing
+            fig = ax.figure
+            if fig.canvas is not None:
+                renderer = fig.canvas.get_renderer()
+            else:
+                # Fallback: create a dummy renderer for measurement
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                canvas = FigureCanvasAgg(fig)
+                renderer = canvas.get_renderer()
+            
+            # Measure single line height
+            temp_text = ax.text(0, 0, "Test", fontsize=font_size, fontweight='bold', visible=False)
+            line_bbox = temp_text.get_window_extent(renderer=renderer)
+            temp_text.remove()
+            
+            # Convert to axes coordinates
+            transform = ax.transAxes.inverted()
+            line_height_axes = line_bbox.transformed(transform).height
+            
+            # Calculate y position of the heart rate line (from top)
+            hr_line_y = text_y - (hr_line_index * line_height_axes)
+            
+            # Measure the number text to find where heart symbol should go
+            number_text = f"{avg_hr_value}"
+            temp_text = ax.text(text_x, hr_line_y, number_text, transform=ax.transAxes,
+                               fontsize=font_size, fontweight='bold', ha='right', va='top', visible=False)
+            number_bbox = temp_text.get_window_extent(renderer=renderer)
+            temp_text.remove()
+            
+            # Convert to axes coordinates to get the left edge of number (since ha='right')
+            number_bbox_axes = number_bbox.transformed(transform)
+            heart_x = number_bbox_axes.x0  # Left edge of number (right-aligned)
+            
+            # Draw the heart symbol in red, positioned right after the number
+            ax.text(
+                heart_x, hr_line_y, " ♥",
+                transform=ax.transAxes,
+                color='red',  # Red color for heart symbol
+                fontsize=font_size,
+                fontweight='bold',
+                ha='left',  # Left align from the number's left edge
+                va='top',
+                zorder=101  # Slightly above the statistics text
+            )
 
 
 def upload_to_storage_box(
