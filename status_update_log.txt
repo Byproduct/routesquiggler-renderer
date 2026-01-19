@@ -1,0 +1,1945 @@
+[2026-01-16 16:50:31.055] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 1152)
+
+[2026-01-16 16:50:32.074] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:50:32 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=2k4RZTEh9Qs7vw3VtyYsF6ulsy41URTMJg4N2de%2Ftc5VcudAQY%2B%2BpeFhMC1DBsef5whnr0j5yRWbcX0xUOtwRt%2FVhjASPRAZOerDJ0ToZ%2FUDpzGz4pKLrrFJeSou0w%3D%3D"}]}', 'CF-RAY': '9bee6d038d9433ca-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:50:32.074] Status update completed
+
+[2026-01-16 16:53:00.634] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 18668)
+
+[2026-01-16 16:53:01.666] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:05 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=sOLGLwe0Fo%2BFM8JU%2BrqxAlqeEEwrwXZ2fcK9hKH6KVBMpJezk3AFCUoEwA2Wr1A1RL8Lor9QmZru0TOAaAdelV%2Fo0TNC9P4hKvcEQpbN1u0lt3WYjD0njSCbu%2FI%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee70a9c98d8d8b-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:01.666] Status update completed
+
+[2026-01-16 16:53:36.361] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: working (773)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:37 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=V1ys29I2H8EvIasy%2FkbZRqZiT4gPkDddH17656GrV8lMPnf2zq5%2Fsux83dAEzJQa535Mb5Imp%2BYSowcfv31qhpuy9Wer%2BlHWL8JAS8G2bZyakUATdl15OGoaADSRrQ%3D%3D"}]}', 'CF-RAY': '9bee7182eee874ff-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:36.361] Status update completed
+
+[2026-01-16 16:53:36.670] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: downloading maps (773)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:37 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=oKuYX2x5UsSlkVUM89l1D52DODYLC%2BbtzlIPtlR0NpQOAuH9aubPOUYbkoY5FCYuLZNfDRrhCOX3%2Fbm8pI%2F4TUqla5yj1G7K%2FR4y%2Bt2lLyUWkzQ3HJo3bSgaNXk%3D"}]}', 'CF-RAY': '9bee718528508d8b-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:36.670] Status update completed
+
+[2026-01-16 16:53:38.593] update_status() called
+  Status parameter: uploading (773)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20340)
+
+[2026-01-16 16:53:41.463] update_status() called
+  Status parameter: uploading (773)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 11092)
+
+[2026-01-16 16:53:41.895] update_status() called
+  Status parameter: uploading (773)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 8712)
+
+[2026-01-16 16:53:42.492] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (773)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=yYXay3VMl%2FaLRN6Wo%2BEWTtf1%2BSy2bQGjpLx2x7kSCHPFoxrbaY9QQCI2z0OJHCzLO3AipQQmYPThBs2Esz4wq1wHhWlp8LRpjioehIl7z7uUGzJ%2BpVKbo7Pg7rH7lg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee71a90b6e70dd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:42.492] Status update completed
+
+[2026-01-16 16:53:42.932] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (773)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=xSfT8%2B2vPMuw2y9XvDR%2Fi0i3KnQMwKS3jRldeVfKOe2CZFg6A7HjnOiM%2BLlXnhQ4gkTJjvXF%2BhfEFSklaBRlZ9%2B4uQ2ixafnP84M8KU%2Ff3uTCRXYDID7QyaBDQYgWA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee71ab9c6c9d3c-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:42.932] Status update completed
+
+[2026-01-16 16:53:44.821] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: rendering (773)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:45 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=tz0Fl1scPJkD8YtbhWfOay9ePv3qAxhpSR%2B74jXxe4GLD8BpUkTEiUCepamPy3SyTmaSNcIWyOxGtH6AjO2rEZtyZRUiOHpyuFnFM1lUFQ%2BqBvVDL0mekl0U%2FUGKxQ%3D%3D"}]}', 'CF-RAY': '9bee71b7ebb70a0e-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:44.821] Status update completed
+
+[2026-01-16 16:53:45.941] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:53:46 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=LW6e3HBL0wUDldQDEfKneIhrjBF%2Face5LvTnkpiO1gNKTKYzrr67z85WD7iAfVXs%2BlsdrauOhICmzlKtiiRRy6ZNamEy3xpsjV93xu%2FXhdfCdu5j2g1fgqgayM%2Bf4A%3D%3D"}]}', 'CF-RAY': '9bee71beec38cc81-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:53:45.941] Status update completed
+
+[2026-01-16 16:54:36.373] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: working (774)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:54:37 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=PnN4b6uc72V1ZlyZb6iey8Vz%2BEuKEh7X2JfiQmiE9U%2BgOz%2BT%2FNHy7Ao1QjDMTJRekRdqG8IfP%2BJB%2B1nqkw478UmeC6nsBSYovjgqBCaYJk2vLLwIGGD6RTfc9Lk%3D"}]}', 'CF-RAY': '9bee72f9e8a18da4-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:54:36.373] Status update completed
+
+[2026-01-16 16:54:36.657] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: downloading maps (774)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:54:37 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TI%2BnxX0FH4qSfQOs12bz7v7pJzalInTl4rvN3zpaZ6e%2BzsliD7KEzyuvt43zLo9Izi3eOUpgr5pUfgeS7crHmnhX3QxYfJwztJZ7cEJwLgPStv2yW6wi20qS5mp4ew%3D%3D"}]}', 'CF-RAY': '9bee72fba9d6dc20-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:54:36.657] Status update completed
+
+[2026-01-16 16:54:38.645] update_status() called
+  Status parameter: uploading (774)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19732)
+
+[2026-01-16 16:54:41.569] update_status() called
+  Status parameter: uploading (774)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 6156)
+
+[2026-01-16 16:54:41.981] update_status() called
+  Status parameter: uploading (774)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 6080)
+
+[2026-01-16 16:54:42.628] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (774)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:54:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=GbsIEyGS8tV750R6Flijq8dHk64UK7H0X%2FHqwMSKbFPfM%2BFiOSX8adxvEzsW%2FOb8bEZDJ1iikzrmnO7BXdCyHDgxu6kDHxQgQ0hQrNPOMBx9BVWQ2MV7tu57XAW3Aw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee7320e88aabc5-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:54:42.628] Status update completed
+
+[2026-01-16 16:54:43.029] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (774)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 16:54:44.456] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: rendering (774)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:54:45 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=D97ZYfjYUIOuq90iuOVb60z193vPylsE1KwUfHTbEvRVc%2BY9yx93RIl2x6Ghggf5Qog9kD%2BHgy1N97V%2BnUeOXX1aPbb5a5Mm6By7pf5B7OjKc9G2YSOk9neZYMA%3D"}]}', 'CF-RAY': '9bee732caa148d7e-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:54:44.456] Status update completed
+
+[2026-01-16 16:54:45.606] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 405
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:54:46 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'Allow': 'POST', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2BlMJGSedevTWOKYHM%2FIPXADsDZjYjKOIW2TQPXG61gx8CBN04VsjOW6ZeNEo27kt5iy3aRaYH0LQ8XZU5KbSVzBfgBt1gIunoHvPibcGIO%2BTnWT%2B783ruq6zzkY%3D"}]}', 'CF-RAY': '9bee7333a8e78d6a-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:54:45.606] Status update completed
+
+[2026-01-16 16:57:12.630] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 5632)
+
+[2026-01-16 16:57:13.654] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:14 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=N3FA5L%2FT9J%2Funw7%2BJctSS6%2FktUXI1yQymWVxjkjb%2BX3P5Kl2DvZpuwYIQ4nD3%2BL0ZHKV%2FyjarGMEz9uqxcBRgq68MpDf%2F3fGx1TtFQeTfl9lB%2FYMsDrw2fEd3M7qmw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee76d0aa30c783-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:13.654] Status update completed
+
+[2026-01-16 16:57:33.013] update_status() called
+  Status parameter: working (775)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21960)
+
+[2026-01-16 16:57:33.234] update_status() called
+  Status parameter: downloading maps (775)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 8648)
+
+[2026-01-16 16:57:34.053] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (775)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:34 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=3I6qZjErIr2y85CTZGWQdvNy4rQ85c8v5bWLQhzODLT7qn5gemqQq36TL8vtGVFR04F8L4lLNBfYJUW2IALi7a64D5mbCg1UOoYOgibj4bGuTZui%2FZvEULdtdRPb%2BQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee77502f59e849-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:34.053] Status update completed
+
+[2026-01-16 16:57:34.368] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (775)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:35 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=nCGM9fMBRVnCY7Jp8tF75Qac2XlOEq2y%2FxIXWHF5qdHHN3Ss7S%2FOw61Tq5lOn34FE3Y68iDUuL5pIipevTOypSPt%2B9vmVIxh0ArNeuYs93jHntcX1PnXgNOYbpQ%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee775229938db7-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:34.368] Status update completed
+
+[2026-01-16 16:57:36.271] update_status() called
+  Status parameter: uploading (775)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20080)
+
+[2026-01-16 16:57:39.185] update_status() called
+  Status parameter: uploading (775)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 18136)
+
+[2026-01-16 16:57:39.660] update_status() called
+  Status parameter: uploading (775)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22020)
+
+[2026-01-16 16:57:40.221] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (775)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:40 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=j8m1SC6N7Bv7apNrtNWiSY9rpdkTcj9Sq3o52CZgjug4LBISMFFL06CSYCxFc9KEAcJXgAMPTGtfWBOyTIgbVa%2BU%2F7%2FnUd41PUbxTadjMVzNjoRuDCvP2CLetM%2FZgQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee77767d9d5288-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:40.221] Status update completed
+
+[2026-01-16 16:57:40.728] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (775)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:41 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=NcBKWUk4ylc2Gx0zA1%2F89LTu%2BdIrMQ9yjL4QIYsGGRYW%2F3wGqTKM61B87snzVGCf8JsGIovLNqpehmqvEtC7RHIrtLTxs99lSLTkBaYVFhFRZUllCLpIw5u7XJ0%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee777a7b728dd5-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:40.728] Status update completed
+
+[2026-01-16 16:57:41.458] update_status() called
+  Status parameter: rendering (775)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21000)
+
+[2026-01-16 16:57:42.504] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (775)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 16:57:42.601] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 2432)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=mC6omZSL%2Bimwak4aopRzGuS%2Bgp%2BddrJ95lFHrEYOjO%2FHeF3%2FtAZjTbaiRGmnpQpe%2F70wVQgXuwIcvMFw3NVAjBqoxQp8LgzfWihUJDYvMZZwWBoR4xJbVCL7n4Y%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee77852dea8db7-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:42.504] Status update completed
+
+[2026-01-16 16:57:43.641] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:57:44 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=vqBL321gQU4lhFa78ciq9EQaOmTUTgjWZ%2FHdgBXjsGuVLT0yoEPub5i9qC3MRJPwm0mU85SpRvTeDlIvsbPGuwf2VSkej2R6eY%2FORe1P3ckFIlDUpImlWXEmd1sfKg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee778c395832d9-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:57:43.641] Status update completed
+
+[2026-01-16 16:58:02.900] update_status() called
+  Status parameter: working (776)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20588)
+
+[2026-01-16 16:58:03.935] update_status() called
+  Status parameter: downloading maps (776)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 3516)
+
+[2026-01-16 16:58:03.938] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (776)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:58:04 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=gttlonF%2BDiKWHfAjrsr1p8l0UwwGMkiS0X%2FPiFUNExjCae7b2M%2Bsrx%2Fawt7ujAOdbseP%2Fn8AKHWK4uwzBfTu%2Bas8XvQhr%2BTZwx8cjgsLISkkkcbWqj%2Fw%2FgwM7mHCEQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee780aef500de5-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:58:03.938] Status update completed
+
+[2026-01-16 16:58:04.187] update_status() called
+  Status parameter: rendering (776)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20728)
+
+[2026-01-16 16:58:04.997] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (776)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:58:05 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=15AHo4qBlI7XRqqYcdPu4DUbmJccxSEUWpOa2jM%2Bblq%2Bc3fHKtVZqHZZtFKfWzfAg%2B1IoaUoymsMMHSPewanmRWlgSc2S9qdfzOO9oRJJRncwxJgoPU1oF8BYu1E0w%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee78117cf227cc-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:58:04.997] Status update completed
+
+[2026-01-16 16:58:05.294] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (776)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:58:06 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=5IoCu38cwoLv5aRcM7Y4b5UI4mqWgti8KVIPbGRXFhtLTw4JckdZq9CERbbZ5YwVaX9p3JBVF6N8W9VONGybYeaC%2B6tUiKTqCL9xCF12y%2BciAxm9qKCU80NqRYL34A%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee78136ac0accb-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:58:05.294] Status update completed
+
+[2026-01-16 16:58:24.023] update_status() called
+  Status parameter: uploading (776)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10048)
+
+[2026-01-16 16:58:25.026] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (776)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:58:25 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=IRXHR5IqB%2FA%2B0lQF0QoUZM0bJjSZ5J69RoyiFQwKq4iOimZDmZxhmZTLt3Lx9ZAHdC163mI3yPn%2Fo8GmvD3xGpshgnRaGz4VXtr4HkS6nnF2TW0nLG5pDmRMU0UFzg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee788edf5a9596-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:58:25.026] Status update completed
+
+[2026-01-16 16:58:26.633] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 15672)
+
+[2026-01-16 16:58:27.648] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 14:58:28 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=AXJXT7la0q1JIPvmZJm1n1Gjp52kqog7%2F3S9NLxvkyyCTsWi%2BXBTuDWHQ9%2BjX%2FdeWaiMzX%2FfVqnv6tyTH1ATA4fubmahHuJpv9yipeGvbuv8nq2yXJtOow22RYI%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee789f4aa18d5d-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 16:58:27.648] Status update completed
+
+[2026-01-16 17:06:48.538] update_status() called
+  Status parameter: working (777)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21720)
+
+[2026-01-16 17:06:49.377] update_status() called
+  Status parameter: downloading maps (777)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20664)
+
+[2026-01-16 17:06:49.572] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (777)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 17:06:49.690] update_status() called
+  Status parameter: rendering (777)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10336)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 15:06:50 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=VD2zgMS2zxnVr%2FUvcqZHz4RaGfIzHKwgc4e9SEtAQ7UXKoc9dRcZlhQqNY6%2FjHIGBl0ez0Y4RSIuKo0Nk7Xz9TrLQliV%2BqjWeyqWRkhzxeWMgPb651OI2GKklSA%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee84e0297c8d71-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 17:06:49.572] Status update completed
+
+[2026-01-16 17:06:50.430] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (777)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 15:06:51 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=MxPFZgwQmGbYiNSEIlpwER1bEcARRFKiTVQfXK8MdiIomZiwb%2FgiN5GlbOMFvAScySi%2BqADHuKnTP0pkXSoOOmW1VDtTKhaF7h6WyY%2BaDSdilu6ShCKorZTeRLNvMw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee84e5ae2bdfc8-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 17:06:50.430] Status update completed
+
+[2026-01-16 17:06:50.807] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (777)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 15:06:51 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TeVU01FCN3meqT6znrhT8BE6p4aQ21gNgluYNkxeh%2B6OVd1FEhBZ4mzXCn3i1CNMDgL91jwYWCQkFF3PkjAsaWITjdd1XHSnkvVJE2NKGK10ekIavJpctAoUhnGXhg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee84e7f8c4b69e-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 17:06:50.807] Status update completed
+
+[2026-01-16 17:07:10.158] update_status() called
+  Status parameter: uploading (777)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 18268)
+
+[2026-01-16 17:07:11.193] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (777)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 15:07:11 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=8v3th4zJ1HSbTz99HcMYf1G2H713oXOEfFULE28LoZ3tybYV1%2FGny8eM%2FY9ahchV9yKewFCYtjCeAJIATfF%2FX%2BxPFTuF%2Fp%2F2SoyCzak0%2BKJJzIkv0cCloNePc9U%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee85672bd48dda-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 17:07:11.193] Status update completed
+
+[2026-01-16 17:07:13.004] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7340)
+
+[2026-01-16 17:07:14.020] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 15:07:14 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=n4S%2FqbFi%2FqsarGVNBbFRKhSGXFA1XSsa1EnqWetLOTB%2BUREtrmYBbCdZDmKUsPziHZ13KjuGfBxX%2FadU2Ah7U4pwV37PzJYSnUgSMsCysWqRru6%2Fd7KshtFeY7c%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bee85792a6d8dd1-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 17:07:14.020] Status update completed
+
+[2026-01-16 18:43:48.289] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 11272)
+
+[2026-01-16 18:43:49.359] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:43:50 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=jI2qac8GN%2FIOgfI1T76WhY1ljy4ruBpltbjdYfNCmrxtBo07DTQMhUlQvZumxglJxTljkmlVy5csQD3TiPLx2812n%2FIySQSY3VYtqnY0OEI%2BkSL3hZ2XoNTNRR64zg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef12f66d063d5f-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:43:49.359] Status update completed
+
+[2026-01-16 18:45:27.259] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7644)
+
+[2026-01-16 18:45:27.473] update_status() called
+  Status parameter: working (778)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22428)
+
+[2026-01-16 18:45:27.769] update_status() called
+  Status parameter: downloading maps (778)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21136)
+
+[2026-01-16 18:45:28.310] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:45:28.533] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (778)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:45:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=1Q9Qtl1HR3o5ZT1xk9e3ggiKRpfgC2HatABZ%2BKeRrFhgudrXd7jxnEVlFDg5nTPUlet21A%2FLZczHi%2Bjx5gTaBJvouxdR81O7nDaXifZlUb9CNmkocBGPCzz72x8Emg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1560df09accb-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:45:28.310] Status update completed
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:45:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=hQ4aQaC5L%2BlsdXVbibKGhKwrJqpO8ZA9j4CJbAQ%2BF7Acb%2FRnHiYjrTlW5l%2FbC9pj%2BX5ZNokMj4qGwNqN1uc%2BKlIDORgvF7uSJDeKefMKCbpTzkBRhioVEzUrxfVO%2FA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef15624e14d102-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:45:28.533] Status update completed
+
+[2026-01-16 18:45:28.947] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (778)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:45:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ZJSpxV8ZNh7kXXDeZV2ktTehHc88CkLmbzumLtmBLu38f8ag3hYigdLGGMkxup4Ks%2F1c9zhhgppOeSVhi%2BbrnKRpLoYp9ZEFlgz986o%2BHJJ%2B2OcS8rrgH4GHTnNNtA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1564eca6789d-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:45:28.947] Status update completed
+
+[2026-01-16 18:45:31.248] update_status() called
+  Status parameter: uploading (778)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 12144)
+
+[2026-01-16 18:45:34.005] update_status() called
+  Status parameter: uploading (778)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 14300)
+
+[2026-01-16 18:45:34.615] update_status() called
+  Status parameter: uploading (778)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 18100)
+
+[2026-01-16 18:45:35.033] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (778)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:45:35 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ytMOi6Dt8pm7VEs46W6CXLDZQfahY%2B79%2Fn5IFkvRtq58BBL5Glxsqf8AmH6qCW%2BaWLxm9%2Byv0YKa%2FHwS39cUgVFvFdQfwAI8xB7y8QTJZWASHVJWW37yu6ActKM%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef158b1fda8dbd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:45:35.033] Status update completed
+
+[2026-01-16 18:45:35.888] update_status() called
+  Status parameter: rendering (778)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21832)
+
+[2026-01-16 18:45:36.884] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (778)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:45:36.978] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21480)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:45:37 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=hGzAlrBPdb1GsBNDCUP%2F2Q%2FeQW%2BYZZtY5GSWiGrHwrlZCz8SLNuGe8XdAfMpmWTJo8YlKx0cvrYcLdAftlW%2Fe1hOxqKOPZmcj45wzl8l%2FMmuLb9o03NYH0AiQue87A%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef15967881d4fd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:45:36.884] Status update completed
+
+[2026-01-16 18:45:37.969] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:45:38 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TZRaET9A0%2F3BZ987bGuphOFsW6Iw5z9hMSG9V6JTAP8TNnfp%2F7MvorCT0l3vYXFvbKKPAgeh2lLH1ZD56APOgopzhwlM7nW0PnOy%2BZAEj7rZukORFOzF%2FbHacYoq4w%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef159d2c37d177-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:45:37.969] Status update completed
+
+[2026-01-16 18:51:38.340] update_status() called
+  Status parameter: working (779)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22476)
+
+[2026-01-16 18:51:38.545] update_status() called
+  Status parameter: downloading maps (779)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 4936)
+
+[2026-01-16 18:51:39.402] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (779)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:40 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=l49fT8pHnS00pr4lpyMduBKPgRH88QGHutAiYi6ef%2B54PCtGEjIJSS2BM48MBD8FrN0TaGm%2BOD2qv%2FzpxcNr%2F13w4W%2FO%2F1SE%2BYDtj7d3%2B38amZ0mmm6g7uId%2BGs%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1e702ace8d6e-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:39.402] Status update completed
+
+[2026-01-16 18:51:39.669] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (779)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:40 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Thwc99r29olOAx5%2F7OR3SQuXi%2BaOEkG7nOxUUDKZGe3kA%2B4WqgcDrn97ZoESA1EvVBHFdOPQTgj6wahNWrBNaaP0lFyBMeHZFnpou6CZB5Qd8rvyjxjaXmgrFu4%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1e71ef9e8d7d-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:39.669] Status update completed
+
+[2026-01-16 18:51:41.849] update_status() called
+  Status parameter: uploading (779)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 15752)
+
+[2026-01-16 18:51:44.734] update_status() called
+  Status parameter: uploading (779)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 13584)
+
+[2026-01-16 18:51:45.335] update_status() called
+  Status parameter: uploading (779)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21528)
+
+[2026-01-16 18:51:45.758] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (779)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:51:46.441] update_status() called
+  Status parameter: rendering (779)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 996)
+
+[2026-01-16 18:51:47.459] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (779)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:51:47.549] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 14764)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:48 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=VeeAz28AgLhnFvTD6Sxh2waxmD9k9tV%2Fz3GzBZpV8MtpxvBmcgqfbvDZjqAvKMMrg1iKHGl0p1A1pAyhJGMkmeV2LU3iqPx%2B2DIEY6zinTOvz6FpR5v4KfgrRdE%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1ea26d818dd4-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:47.459] Status update completed
+
+[2026-01-16 18:51:47.775] update_status() called
+  Status parameter: working (780)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21832)
+
+[2026-01-16 18:51:48.014] update_status() called
+  Status parameter: downloading maps (780)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10692)
+
+[2026-01-16 18:51:48.589] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:49 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=IB6JP3t4TMkmc1hhE%2F3TMXxQ3Sj5TD9vIrKU%2FyFJP2VWE%2B54kxkmz%2FIpH8cv5dG3brQxiuccA%2FJl%2FYs7qCpuzcp%2B2ZtqmMw%2F5xVWTkw8xkPU%2FBpt0xX337%2FAQyqLFQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1ea9ab959a02-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:48.589] Status update completed
+
+[2026-01-16 18:51:48.818] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (780)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:49 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=3KzYO00zc2wO98k2kic%2Fz4s3VlPSnKQ6dMQSiEuVimbcrs1BHrlXgfxXQ538LPS8DN5NQpgEhwVPw7p9fvaOpNJXEDda3n5cjB7%2Bao85cA8blTo39kcyEUwMRSE%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1eab0f1f8dcf-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:48.818] Status update completed
+
+[2026-01-16 18:51:49.160] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (780)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:50 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ilQJ0gtfMeMaNDn2G9aJR%2FVandJlr5Zj4DGWCbzLV551CanPxaCVX1KQ4JDYATZ6Nx2UBL31kLFqzPce1kL%2B%2BdcTLwSQ475fwmUZrvXmN89ijLHoi3Fv8xrjMJIqrQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1ead2ed9a103-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:49.160] Status update completed
+
+[2026-01-16 18:51:51.525] update_status() called
+  Status parameter: uploading (780)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 8780)
+
+[2026-01-16 18:51:54.452] update_status() called
+  Status parameter: uploading (780)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21408)
+
+[2026-01-16 18:51:55.099] update_status() called
+  Status parameter: uploading (780)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 14392)
+
+[2026-01-16 18:51:55.522] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (780)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:56 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=WmihIrRk%2BL%2BQlKABQ%2Bg688lGIKP%2FFhahqam9lQHbFplK9BnGDxAlNNVoRIipWsEgT5VQazPD0YKrbCuLB22Vuq62V4IwftHEoshwAUWriiqFXvvppNIm8tNLvzwepA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1ed4efa72d9f-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:55.522] Status update completed
+
+[2026-01-16 18:51:56.931] update_status() called
+  Status parameter: rendering (780)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21788)
+
+[2026-01-16 18:51:57.956] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (780)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:51:58.036] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 6340)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:58 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=vyRO0E9cnmtcgezaCk%2BMDdo1a9mjuqsleDzBmtEi7DVCwK7JCTRvAvSqC8VlHI6lC0WRnqF4NbrIdzMaFgjiGoWilaF1tQK%2BTtHmbBMJ6uWCqIPR00xZM4vE9aPApg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1ee4280a500f-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:57.956] Status update completed
+
+[2026-01-16 18:51:59.071] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:51:59 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=qBDYPmOCj34zQuIDtKC1%2Fs0IrQ5Nkep71ElsrW78oycRDJs1qqbK99cgYTJ4oZYSt4ohSX6VAcRgqPYV406g0DPX7ch6qw%2BDPfCx58t%2BvPDDS%2Bj9YNQLURBpMr2%2B6Q%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef1eeb28335288-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:51:59.071] Status update completed
+
+[2026-01-16 18:52:48.284] update_status() called
+  Status parameter: working (781)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 16204)
+
+[2026-01-16 18:52:48.490] update_status() called
+  Status parameter: downloading maps (781)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 6068)
+
+[2026-01-16 18:52:49.331] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (781)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:52:50 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=mhZQILgJgToHm549HnC86%2F4azz9kCWnFnUi9UTnZhsvkmc6nFucjczF5c18leMXlv9lkWOO6ECqUInv%2F7pyptdathTB%2Ff9VlOBZfCM0XyVwivTlE%2BEOHy%2BMnj1oIHg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef202558dfb724-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:52:49.331] Status update completed
+
+[2026-01-16 18:52:49.624] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (781)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:52:50 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TOq4TksJVVDZBiOL%2B6c7TGDm%2FUXn%2Frdp18Vz17Cczulct1Gsp%2Bqet8wd2IMZnUPUg5mxaULilHtkoGamfL1i18MUjAA3vy2pbjTSkeGd%2B7obGkXrN1lfFCp2dG89vA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef20271e709a02-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:52:49.624] Status update completed
+
+[2026-01-16 18:52:51.787] update_status() called
+  Status parameter: uploading (781)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 14492)
+
+[2026-01-16 18:52:54.422] update_status() called
+  Status parameter: uploading (781)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 14072)
+
+[2026-01-16 18:52:55.089] update_status() called
+  Status parameter: uploading (781)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22472)
+
+[2026-01-16 18:52:55.434] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (781)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:52:56 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=V%2BK%2FE4fU9SnaupcKr4sD%2Byl5AE0SRtks3nw9VzxDvmcq0cSTv4E2LjIG6Wkunis4oD%2BaNCAMm8CPG3s%2FQQ05OMvemRTDG1Umi%2Fp2iNXJRqA5t88MxccBdoQ3PY1Hmw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef204b7f9d472d-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:52:55.434] Status update completed
+
+[2026-01-16 18:52:56.101] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (781)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:52:56.411] update_status() called
+  Status parameter: rendering (781)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7996)
+
+[2026-01-16 18:52:57.412] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (781)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:52:57.545] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 9752)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:52:58 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=DblmPp8KA91IAigmkTdJ34JvWF2EdAnf8eh6exbTNcAE%2BO%2BcccAvtIqB9WlDDQIQpj3Rj7pQScSqwsiTB28jeCzIlV7UCv702KBc4uPmnQpYBYoQWWtn8oI2onWJBQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef2057bb00e849-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:52:57.412] Status update completed
+
+[2026-01-16 18:52:58.547] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:52:59 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=cVfoZnSDIdHNuTfewXX8M3kl0u16qXqbIIuwi0DFW6tdUGZZmT0xy8Ouygc%2B3eaxXODFNYmGWpJfJai%2B0g%2FYh%2FVznASfn68YwrqOAJWXVVTlr19WOx4Dtac39Ew%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef205ee9898d90-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:52:58.547] Status update completed
+
+[2026-01-16 18:53:07.780] update_status() called
+  Status parameter: working (782)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 2592)
+
+[2026-01-16 18:53:08.048] update_status() called
+  Status parameter: downloading maps (782)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19808)
+
+[2026-01-16 18:53:08.793] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (782)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:53:09 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=57kr4%2B%2BzKaDmPYNBbpXceSwaPZA3dwYX0eXG%2Btji7hpQRABSjwJMOInCPPmSClhBx26KZkoAljtlL%2FeclRgOKGfWt4v8sk%2BcCeJiZjcit0Odyn3Z4Yf8QAuNU%2F4%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef209ef8268d87-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:53:08.793] Status update completed
+
+[2026-01-16 18:53:09.155] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (782)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:53:10 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=1cfV27s174A7%2FcO71qP9WEY9ISjcNp8i3Ch1lOwRTI84Sm42f5qY%2FP9QTgbG9dhdWoWl%2BQfzPaEIake4pYZarrDC7OR1SMy9wer6xOmbaa2NYUbqDXGuiVkje70%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef20a17f9d8d95-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:53:09.155] Status update completed
+
+[2026-01-16 18:53:11.349] update_status() called
+  Status parameter: uploading (782)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19724)
+
+[2026-01-16 18:53:14.105] update_status() called
+  Status parameter: uploading (782)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 5632)
+
+[2026-01-16 18:53:14.780] update_status() called
+  Status parameter: uploading (782)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19144)
+
+[2026-01-16 18:53:15.115] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (782)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:53:16 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=h2A%2BSL4dxOjK%2BsVyaIX1yzsNgIBKXl3AgNxPHZU4i%2F4x8Y1NZ%2FU1zRQgpAhKDgdEbx37BSRXzdqjRSDaaP6a4sX3N3ZgEIcdYPR87rRrlhcy9sMmDKVKymhqYjc%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef20c649dc8d78-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:53:15.115] Status update completed
+
+[2026-01-16 18:53:15.797] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (782)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:53:16.267] update_status() called
+  Status parameter: rendering (782)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 6836)
+
+[2026-01-16 18:53:17.311] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (782)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:53:17.373] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22472)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:53:18 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=i%2BMoV0SMTQ5JNaW2ZE60IfOMFFG0%2BAFakQtJoXm8GMIYaVUW%2FEGr7KQZ%2Bc55P88xWZokuoZkJrYM7KajFQvbPaIOl6lrmA9KULivXLlFpDmPWp7H04EvaJoF3FCHxg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef20d44e2c5288-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:53:17.311] Status update completed
+
+[2026-01-16 18:53:18.375] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:53:19 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=bQ%2FIotzPkt7fScnk0vpCETLSenQfIu8FCP0wnbNPf%2B9tCFE06AtLW0uVEqTrdYi4Exxkqdr9qsePnT9t2RVMnWJwSne45PUdd1KumFzvZs4A1hRQY95CsMSuOAkXlg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef20dac8f3fdb9-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:53:18.375] Status update completed
+
+[2026-01-16 18:54:47.014] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21896)
+
+[2026-01-16 18:54:47.227] update_status() called
+  Status parameter: working (783)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 11116)
+
+[2026-01-16 18:54:47.492] update_status() called
+  Status parameter: downloading maps (783)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 4848)
+
+[2026-01-16 18:54:48.136] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:54:48.337] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (783)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:54:49 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=EdJ%2FWTiq3%2BeqLo82V74njq5tX51zDh%2FgL1tRLwigYRLgyvVHm3tv3QkdMddquM4u5%2FB%2FUfMP1rklyCz7tWOtLWDL1R2MHyDKPjLrGU5JfZNYFX0Nd4L5BvM921%2F7tw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef230bce39472d-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:54:48.136] Status update completed
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:54:49 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=CwJpzYhlkE76mb1kqyiYpVAPEzYldpZeCaqoY2LypBmjd7fNlQ6Y3yNA9wNv1HPnduy4Tg0lOZouZkYBLS5r%2F%2F83XyaEHf7eJWQ13BAfvHmclmxDFJPf%2Boq1sGYO5Q%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef230cebb36999-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:54:48.337] Status update completed
+
+[2026-01-16 18:54:48.687] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (783)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:54:49 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=iD6r11yrm2iI0h2uMCm5yi8NXFTj%2BIqdJOAuXauQQ7DhtjNJycxK9mlGQM4jd2hRATTrDlOjHhmAtqJQqm%2FeXJW%2BK2v7LKwVPDndSpPU5R8gbxrd%2BxwXEO6mW2s%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef230f2caf8dcb-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:54:48.687] Status update completed
+
+[2026-01-16 18:54:50.963] update_status() called
+  Status parameter: uploading (783)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20924)
+
+[2026-01-16 18:54:53.706] update_status() called
+  Status parameter: uploading (783)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 17980)
+
+[2026-01-16 18:54:54.306] update_status() called
+  Status parameter: uploading (783)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10300)
+
+[2026-01-16 18:54:54.770] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (783)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:54:55 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=KGAedkvRex7EhKIzfNvuPJTiYL1y90oGr3mNHGo964ojyE9UgrvNagdgQV7LtuKvFakiBS86JyfKhzfmUfYnv0uPjlesGphhRdF7m8xmtoLfxOukoDSBhuNz5zFRzw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef233559b9accb-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:54:54.770] Status update completed
+
+[2026-01-16 18:54:55.690] update_status() called
+  Status parameter: rendering (783)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21212)
+
+[2026-01-16 18:54:56.697] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (783)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:54:56.849] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 9316)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:54:57 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=idHFqiOyMjsn9cChqXXMpfBC3bL%2Fd%2BJQu%2Bjd1mrtm8ZIw0r9LdSnqdAY9X7sAvat5I6F57in%2B2YRhXqKvyaKZP7y5Qc6aGmb6v3Ltbjgv4U%2FFMWxxlk%2Bkl5Jyb2B%2BA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef23414f4b2970-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:54:56.697] Status update completed
+
+[2026-01-16 18:54:57.869] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:54:58 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=VQfKfzoi4nffSJWPtQb459bgHNLcmCq6xzN03lNMJnWeJ9yixK%2BzhZFldgCAfrd4A3Bjh7OoeJQ46NhzOoJoqD9eC31QSIBmDXS%2FF35kkW4MAZBqJCR%2BO2hqpTHxCw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef2348adb970dd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:54:57.869] Status update completed
+
+[2026-01-16 18:55:37.940] update_status() called
+  Status parameter: working (784)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 9476)
+
+[2026-01-16 18:55:38.137] update_status() called
+  Status parameter: downloading maps (784)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20948)
+
+[2026-01-16 18:55:38.998] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (784)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:55:39 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=0uhXqaql64KV2AYRp3znkHpfyO67qJk4YK5yqxDdq3FM33rW6LoSHJaYKZBV3JRTEE9JVCmNjCPX4JiA4wNS9keLXUsMYSohR2SUv9ZERxdMaE61db5WIM86qPlOPg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef2449acd8a1a0-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:55:38.998] Status update completed
+
+[2026-01-16 18:55:39.356] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (784)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:55:40 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Vs0ZsK9wrJD%2B62PANaJD3SgkylRtjEsah530cGBOumDGEIUxy5c3jWCB%2B4IvrigCsJQEabR2Sd%2BOiK%2F6ma%2FqhoLxTnQXZ8wn7n%2BwGCWE1832FEONFS%2BOYOXFK5mLpA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef244bf8a0e5dc-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:55:39.356] Status update completed
+
+[2026-01-16 18:55:41.527] update_status() called
+  Status parameter: uploading (784)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 5852)
+
+[2026-01-16 18:55:42.973] update_status() called
+  Status parameter: uploading (784)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21064)
+
+[2026-01-16 18:55:43.361] update_status() called
+  Status parameter: uploading (784)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 17180)
+
+[2026-01-16 18:55:44.425] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (784)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:55:45 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=W0Guw1j%2FfK7iMDdUAtp72kJQWZ3jeCsoq3zjHvVgLLuvSHEbHDeyoWRCWnDaoXYKR0bjLQBHlQQymkqTiRa%2BEYXkhR0yaH6%2BVDRrPfiD%2BpD%2B3RPQTBPRwtusJ6G2Pw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef246baf79d4fd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:55:44.425] Status update completed
+
+[2026-01-16 18:55:45.300] update_status() called
+  Status parameter: rendering (784)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 12608)
+
+[2026-01-16 18:55:46.353] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (784)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:55:46.460] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19448)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:55:47 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=xcyw0Rgc7r9lP31LGnWIYQhngf5FTrQtacvsapaHX0Wj%2FOhrGQKYAysndYQS9hWf%2FwmO9WmUC9WYT42YJRZ7tYUaB2ZsQKHtUUbkZ08OF4oqPDdySNwSIleOCQCxQA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef2477ad68d4fd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:55:46.353] Status update completed
+
+[2026-01-16 18:55:47.489] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:55:48 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=X3xAYGuKU85C7ghzRt7vmF5a%2FjmAIUvX6JrwzYmgx553nhWIFVcUlXWfxC%2BJo6ACH%2FQPc7c%2FPYB8XyTmRfz2X3qPO2C9bH08n7qg9rvVPSqKSPhchs8GGyDpxXPaSg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef247ed96ed800-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:55:47.489] Status update completed
+
+[2026-01-16 18:56:26.778] update_status() called
+  Status parameter: working (785)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 2212)
+
+[2026-01-16 18:56:27.005] update_status() called
+  Status parameter: downloading maps (785)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 592)
+
+[2026-01-16 18:56:27.810] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (785)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:56:28 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ihtgyC9wMsk3FPnByIU%2FwnmxlrirwRnXrZCgZmNAj0TGyjakNGF5YiBtQajWncoYAaDDVEwrMQb4lHVkH%2F07bT97WEYPTMzVp0uvXmElr2l4GwQpLzeRfUCs8p7dpg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef257add84d4fd-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:56:27.810] Status update completed
+
+[2026-01-16 18:56:28.128] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (785)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:56:28 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Ww7fMKzk5CO0n8alSJyQ7rk8t70jFoiJ%2BORxDJSs6HFrHqFfgPU8%2F6G7Vy78vXeK2EGwRBtV9qjBFGfjX6asQUT5tvP3TV%2FSAUFS3oZnYTvTaQ4LXFfdFiTAPee3Ag%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef257ccbc32970-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:56:28.128] Status update completed
+
+[2026-01-16 18:56:30.234] update_status() called
+  Status parameter: uploading (785)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 14580)
+
+[2026-01-16 18:56:33.030] update_status() called
+  Status parameter: uploading (785)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 17084)
+
+[2026-01-16 18:56:33.718] update_status() called
+  Status parameter: uploading (785)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7604)
+
+[2026-01-16 18:56:34.046] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (785)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:56:34 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=TkdHj%2F5aW2sHWIb4tPXmltyOUVrEdPxN4kuLdKiWhLj6PE4pLM5QPN7oQ0Y2xRArWn5EZ3XysEzX0vI8cwts9%2FfJhoLCowgV7qi86WwSRPf5GAUzfnLURmykkdkneQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef25a1aa0dd102-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:56:34.046] Status update completed
+
+[2026-01-16 18:56:35.095] update_status() called
+  Status parameter: rendering (785)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10544)
+
+[2026-01-16 18:56:36.095] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (785)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:56:36.189] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19748)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:56:36 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=KeCOq2RudoWGDuZrkOM7iCSYJn5xcIbQKCu5lzEEAlPsvweXJ8XjZix%2FLbtlvwZVArSO18IxHbFT8urSl1IpxHUjiHNp00zApN7%2B1f4Kj2%2BsqHhP%2BRNKJErBTfjnIA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef25ae8bcdd102-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:56:36.095] Status update completed
+
+[2026-01-16 18:56:37.197] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:56:38 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=54GSMaAaSahK5keS5EIZ5GD3hQEANPqFAUd%2BA9c9nBNW%2BqEvXll0g%2BytXiwbWIM%2FCLtb%2Fb56111dl0CLsIM%2BnLtzkQH9HDK158iRITcixILAiKf3xxIZxRnSEDyupA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef25b58ebb2542-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:56:37.197] Status update completed
+
+[2026-01-16 18:57:26.410] update_status() called
+  Status parameter: working (786)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22236)
+
+[2026-01-16 18:57:26.786] update_status() called
+  Status parameter: downloading maps (786)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 8424)
+
+[2026-01-16 18:57:27.147] update_status() called
+  Status parameter: rendering (786)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 5616)
+
+[2026-01-16 18:57:27.510] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (786)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:57:28 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=n%2BqnaZ9RzZj3uajriNztXRFLvorraIt2CpW8GU62zBOnrAjXPymgEPX%2Feu%2BANuzshTLPa%2BlUVw9WRmMPRYvikfvi8%2BybtxJIkjOorICW5uHhlqTq8793IxEK%2BzIFvA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef26efcfac811a-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:57:27.510] Status update completed
+
+[2026-01-16 18:57:27.894] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (786)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:57:28 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Y0vuOlsqnmPJu%2FzbV%2FNNEp3FT3zfGJvkx4PaO%2Fj0s35s%2Fd7iu9rx0qi0GpcT16kJgGv2KdaET7JyUQpxHVau1C0ZOgp0ibUCe5%2Fci5YGFTWxvBz%2F6XMM%2B%2F6x8RqJ0w%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef26f24f7a2970-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:57:27.894] Status update completed
+
+[2026-01-16 18:57:28.308] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (786)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:57:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=FpKDo5iL7miutjE51K%2BF5Xxtr4BwxPrwRx4%2FRmOSW1FIYl62cjYECxJzGvpVR8%2FidPhziP5L90JvfSNoEcMmn5wlPoaubyQjooo2xYXF3X4oK4veJQszvo9AEo2uDg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef26f4ce1232d9-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:57:28.308] Status update completed
+
+[2026-01-16 18:57:34.655] update_status() called
+  Status parameter: uploading (786)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 9476)
+
+[2026-01-16 18:57:35.649] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (786)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:57:36 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=6AcHlG5YWkKpo%2BnkgkJ6vJr3WPh%2BjgTlvY%2BF8a%2FsMOvM8V5P5qOi4LOSvNgBZOGKepkJUd2xEhw87Tu8pK%2FEIxIhNr1%2Fp%2Bzcib9pMdaqvStBIPmR5wAjFiX7lI8%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef2722af4f8dbf-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:57:35.649] Status update completed
+
+[2026-01-16 18:57:36.857] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 4016)
+
+[2026-01-16 18:57:37.859] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:57:38 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=VpKmM8RUmJAcpuB1i5iFCUECAw2M3IZEeruD7OpqNCvFtF5zNbJVcrY%2BEnLOcL0tiaiXRIjUmh5zMXVaeHDMbgt3cYiAjLQTWaAztOGlBg0o9xGG4VEGNGcTdyO6RQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef2730ab00f82c-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:57:37.859] Status update completed
+
+[2026-01-16 18:57:54.015] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 5864)
+
+[2026-01-16 18:57:55.091] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:57:55 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=DZFSJ%2F6CHELWxmqQONlzcFCUlyYSsc%2BUUiGfe31oB1Krzl5rkLTS7wwHhR7JZu6B6sx%2FizeSt6hzYvzXnV8%2FYw1fJo0SDmgGMUQtaPsKV9A1ctz%2FEJGLHA7BCglLrQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef279c4f4ab141-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:57:55.091] Status update completed
+
+[2026-01-16 18:58:04.232] update_status() called
+  Status parameter: working (787)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7640)
+
+[2026-01-16 18:58:04.607] update_status() called
+  Status parameter: downloading maps (787)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 3840)
+
+[2026-01-16 18:58:05.033] update_status() called
+  Status parameter: rendering (787)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10620)
+
+[2026-01-16 18:58:05.333] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (787)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:06 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=c9k5IteNULDOThh%2FlwfpyRNtCM3VkDFa3ztRG1ODbGnmf%2BFK%2BxlK2o26Httk9S66M5MgUjFhhGLpoWkfrD7n0woIHYNpMdg%2BJc4B2cdIEsK4UzB%2BWCvmBv7RgW8rSQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef27dca97ce8db-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:05.333] Status update completed
+
+[2026-01-16 18:58:05.698] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (787)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:06 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=slzRfc%2FG%2BlEsIh29Y6Arx9VZziynr7IFE4uf0staedcpigri0Y2kLlGi9xBdVTDSBokfVpI1LcXh9FyWgptduzvWb5mdoJYn1UJBpaeMOKOuPl0sm6oWY4npSNUsKQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef27de8a317ddb-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:05.698] Status update completed
+
+[2026-01-16 18:58:06.146] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (787)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:06 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=O7oieZ%2FQZwxdJOQBaOatMeEyAT4VtwYVEHdbtVZK1rcqMsMKCu5keAJZ9z%2FiiFNSVL78q5ltyh4Z8z7ZFpOtlROgwLtsmQXzEKUf27agrVNjlT8HWpy0VdiuVNaMkg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef27e1487cefaf-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:06.146] Status update completed
+
+[2026-01-16 18:58:12.502] update_status() called
+  Status parameter: uploading (787)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21108)
+
+[2026-01-16 18:58:13.532] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (787)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:14 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=nfH1oQBY%2FD%2BDo%2F1wxIHPvMzB3xIUS%2F1jcEcL5HUzX6ktTTAbR0XaGovnD1vGXnL4Up7yUVQnekCOY8CTC5YVlHPlqox%2FZ5lcD74fTaSH9tNNM8WdytpwAzA5mYA%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef280f89858d8b-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:13.532] Status update completed
+
+[2026-01-16 18:58:14.752] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 9680)
+
+[2026-01-16 18:58:15.801] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:16 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2F3p6jGVQS1kxgNsh%2FqhV8QAYTfBcC2tXSKWhncLME%2BEKfN1cDf%2BaMP7BbS8aEtk5rmUg0r%2B3lndjaH9MfgiYC7wdqm1BJ5X4LO3RI0uEQUpAQTka%2FegHEwELmqqCUw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef281dac05efaf-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:15.801] Status update completed
+
+[2026-01-16 18:58:24.969] update_status() called
+  Status parameter: working (788)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19956)
+
+[2026-01-16 18:58:25.196] update_status() called
+  Status parameter: downloading maps (788)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10416)
+
+[2026-01-16 18:58:25.464] update_status() called
+  Status parameter: rendering (788)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20344)
+
+[2026-01-16 18:58:26.066] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (788)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:26 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=A2HKjuJmi2kgl%2F8zS%2FLGEuweYIcrl9CeJb8%2BCjiPLV7H%2FaA17VDDtPH5GYlgwR4ROLGbhj69UyRhsjk6sBOTy1MhGqGAEjde2eCAaMKrZnqfJmcaFZEh8uk7a5FZIQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef285de996f78c-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:26.066] Status update completed
+
+[2026-01-16 18:58:26.295] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (788)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:27 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=cBPfHaOgWrO5WhlApUlFWrMgHhhqKkFnAuTaSe9BFqbXB6o6DMkAhS%2F4HGuIpIol04ekg7znZQATzEvjsHqXMrvs%2FUJoIz1N1uNQwwuQ%2BjCwlzZkRdw5XG1yzJ0%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef285f4e748d86-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:26.295] Status update completed
+
+[2026-01-16 18:58:26.635] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (788)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:27 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=pbjMTi8Ofe7vz5dMwGw8XKFJ8QwEcjNjBbpanHMJYtfm9GvJS6nHWx3ajq0ISYfKn%2BBZgWgtQnb8OFyupe%2FODzAwkHqyybRn0h1awK1KVRNzhCmriRbBzIIhgYa5%2FA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef28617b331bf4-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:26.635] Status update completed
+
+[2026-01-16 18:58:27.089] update_status() called
+  Status parameter: working (789)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21060)
+
+[2026-01-16 18:58:27.358] update_status() called
+  Status parameter: downloading maps (789)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7812)
+
+[2026-01-16 18:58:27.589] update_status() called
+  Status parameter: rendering (789)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19764)
+
+[2026-01-16 18:58:28.158] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (789)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=5jFMnI1S6goa%2BeDzq27DPLV1dgt%2B74W4vwjWOpyqxVzsc%2FVR%2FFWqPvlYRXAVRTP6XCVg1nwJqL3a4u2l5g0teolAa71uDchAFHsvIquqiCCzpNAITQglIJztq8o%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef286b18958d5a-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:28.158] Status update completed
+
+[2026-01-16 18:58:28.435] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (789)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=gLnJnCkBGSAGriO0VKyVQH6pGuQdTnQ%2Bm1qGwdGd%2F8GmB6yIhWljIamETwnTXIBNIcYTflh87hHHBcbgtAeEMbrz%2BycAYXtLcvet1jFbImyqbeSkiZPBxI%2FzoBOrew%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef286cab9290fb-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:28.435] Status update completed
+
+[2026-01-16 18:58:28.728] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (789)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=oL9px1BfO%2Bxm%2FaJEad37iANtzsn2QqDiQRRMjzNzFc6H1UVQD15t9CkL%2BYul%2FVBfW9uFE9e3YYfBQthkefd9REfr7%2B3%2Fyi2b7LBh73Y9CWTd9HodWstcXSKIQTaBvw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef286e9cea7809-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:28.728] Status update completed
+
+[2026-01-16 18:58:33.765] update_status() called
+  Status parameter: uploading (788)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7700)
+
+[2026-01-16 18:58:34.956] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (788)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:35 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ZCJYhFw1BE%2FXF%2FbxuFdVkrYH3b9pFODuRrqTUv9FcjNsGLve144EGxLWy9Gy%2BFU%2Fk%2FbCIwb6lrx0cl9iJ%2BQqoLVqoT%2BWYlJXUbxLsBLHubx0%2FhUq0FZKunw0JEohdg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef28956f6f3d5f-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:34.956] Status update completed
+
+[2026-01-16 18:58:35.168] update_status() called
+  Status parameter: uploading (789)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21136)
+
+[2026-01-16 18:58:36.110] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 23468)
+
+[2026-01-16 18:58:36.228] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (789)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:37 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=YqcZnY8o4Z4sXm0%2B5gUpC4l2N0%2Byzj%2FNUn5E0spIKsTcEccovMq4TnkgNWoN1E2UDphAa8fLK5QAYoingnIbbo1QNq8yCM%2FM7T%2FBOm%2FCDFOHUKs2wa4fT%2FiKEtPChw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef289d58f00560-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:36.228] Status update completed
+
+[2026-01-16 18:58:37.166] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+[2026-01-16 18:58:37.389] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22684)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:38 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=9M8whoS3LNlTRPSVs%2BhmEkt%2BUYi5Jh9F5%2FO3Ognve1vDuIQ6cgF840dfqpPlr98PrFEt%2FSYhWoAwmZZzNxdbPzDE6eAdBI0a55UFyYceywi7Xu%2BoFcZAizix7AC8UQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef28a37f74e8db-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:37.166] Status update completed
+
+[2026-01-16 18:58:38.428] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 16:58:39 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=070KAwieIrmE0JGFdGT3QSFnmf4nd3TkmWmmltAdikA56X9aPojiC57YvNrbdBXJb3ucRmTKTNGbub0neXmX89oXb2QQnhNdOnDC34yStNbS4SKTcRc2JCilh1RA0Q%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef28ab0ba5af63-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 18:58:38.428] Status update completed
+
+[2026-01-16 19:08:50.282] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 6884)
+
+[2026-01-16 19:08:51.295] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:08:58 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=05LF6I93JolihUzRqbRYZiX7C19OLCewzDBEuVKaPjNwoHjomjuASq%2Frb8FJi0%2FqTNiXa9H081XEdjJ1XwLRo%2BEq%2B9lRiuWRhBF3B6WQYyW2Up0ZZyRV%2BMyqhCo%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef37a1bc658d9e-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:08:51.295] Status update completed
+
+[2026-01-16 19:09:30.662] update_status() called
+  Status parameter: working (790)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21368)
+
+[2026-01-16 19:09:31.079] update_status() called
+  Status parameter: downloading maps (790)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 8780)
+
+[2026-01-16 19:09:31.372] update_status() called
+  Status parameter: rendering (790)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 10900)
+
+[2026-01-16 19:09:31.936] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (790)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:32 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=KeRnyqTIr0Z6BK2MWkn2JWxLHHZ%2FbIb5eMYnBl0ZUeI5se%2FOvjj8Qarpem5Q%2BKUgALKRhzwDJY5jBWAV%2FX71cVrXFhgtxhkv5pMsbkiGmoHQT77tNuGJlXQmNNaktA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef389f68c5554a-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:31.936] Status update completed
+
+[2026-01-16 19:09:32.333] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (790)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:33 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=hgiwo%2F%2BmVcvcVgjyeg2YYq%2By786K3dniqpioH%2B3IViCf9GuttkkHMmmkciJotSq3CGsCu%2BcuHMxphxNPayLl20ktZYqtH7uu%2FHpDYXSHyB5DIhsCQBchiDyYWAY%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef38a23bd78db1-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:32.333] Status update completed
+
+[2026-01-16 19:09:32.615] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (790)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:33 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=O2dStFSRhFTC%2FbsofJ2sZ2PYcwkUF14yESyNtvutrPIdzqgzLbspPV9cXwyLxY0kCb%2FxZPImYaT63KNxBraWoXReMSq5xNL%2BBBomBXHo7dT9pPdVtUROYadsIdwl6g%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef38a3ca56f388-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:32.615] Status update completed
+
+[2026-01-16 19:09:38.967] update_status() called
+  Status parameter: uploading (790)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 12880)
+
+[2026-01-16 19:09:40.020] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (790)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:40 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=z3zIXuPYzbMz6PFHOEf9ZgzQhSLlAEKfrlzXNDhq9nBUAlD6eFsCEeiL4QU3Hbn%2Fp9ufsUtq9xyKfOEVk4nMwIwigS%2BUoMfWpo3el%2F6yIr4vSGIragJBDmVXpr3wlQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef38d22b7bd102-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:40.020] Status update completed
+
+[2026-01-16 19:09:41.519] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 1444)
+
+[2026-01-16 19:09:41.709] update_status() called
+  Status parameter: working (791)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 7604)
+
+[2026-01-16 19:09:41.945] update_status() called
+  Status parameter: downloading maps (791)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19752)
+
+[2026-01-16 19:09:42.611] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Mr4RGH9HKV%2FiGxNRqD8PfD5orBEdZm3kfETh79carDsOUnfpFPXRl7rTWynrDbqU94pJkFRrAT8vS%2BuM2CQQt51q7iATa10fklU4wyrNeo8x0JOno82mPUob710%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef38e24bf48d91-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:42.611] Status update completed
+
+[2026-01-16 19:09:42.799] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (791)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Bx1Hcn%2BVcYQQbOFVUqfd5scsQ8KmERDknBevH7a%2FkCcvJrLreZLAEJ64d6%2FTtIQZnOnmhXReJqd6i3voIsNVy6VSpLKRod3qYtVwkDb3CpugJuP9ed0VSrCN%2FQM%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef38e36b348d87-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:42.799] Status update completed
+
+[2026-01-16 19:09:43.116] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (791)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:43 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=RaelcAemtAnYfvUh1w%2BCpyIRBNOwmP2zuLW%2B%2B1pnG7oRJhZj0nEwHrXF%2F3PiT1coLXmWCOkaAkDh7gMEKjsRNrgYlMqu8BD%2FWUxXw1hohOr41B1lwivyTfQJ0Rg%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef38e56f138dab-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:43.116] Status update completed
+
+[2026-01-16 19:09:45.391] update_status() called
+  Status parameter: uploading (791)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20420)
+
+[2026-01-16 19:09:48.160] update_status() called
+  Status parameter: uploading (791)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 8772)
+
+[2026-01-16 19:09:48.855] update_status() called
+  Status parameter: uploading (791)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 11692)
+
+[2026-01-16 19:09:49.232] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (791)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:50 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=X0rwBQSynSpMzuHhD%2B7sXPwb4fFcDJlQPlN3r%2BvmIxIbFTMOJGAgSckm1JXGMZj0EtUmjAKxtrxkx0codGJA6CDcpZ5kfcUq7NDB6zhgflEG70szLAGeAu8vKW9%2Beg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef390bae97cc81-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:49.232] Status update completed
+
+[2026-01-16 19:09:50.313] update_status() called
+  Status parameter: rendering (791)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 1540)
+
+[2026-01-16 19:09:51.321] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (791)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 19:09:51.443] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20556)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:52 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=MQBDHmxLGnMbsyDvNVB0%2FpAbWIN91fqF%2BxHn4Q50aMeurAtFEC%2FHh9xpKfsoWS7rDkJQ6Cy5XpCR%2FMUWtpOEEcI8T163KsExFN6pxEv2rKfj8ATKuam0wogzyh9v7g%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef3918eaa6b141-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:51.321] Status update completed
+
+[2026-01-16 19:09:52.480] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:09:53 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=cQ82a3i9ZeAIpUjarLAV5QBIqiTPwEKZibtptU1YkBxGiZIZkaQmJHeKmwvdbERQnWzYlhFK1xuePKOrKLJqXZSQ74alKNRLywER9ppYRZmBB5JN7ez%2FPXIQIKU%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef39201afdb9c9-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:09:52.480] Status update completed
+
+[2026-01-16 19:10:21.740] update_status() called
+  Status parameter: working (792)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22960)
+
+[2026-01-16 19:10:21.977] update_status() called
+  Status parameter: downloading maps (792)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 11892)
+
+[2026-01-16 19:10:22.784] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (792)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:10:23 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=yL9DRl%2FbT26csi9Bz9VXem1qQxM0zkC9wsf3XAxTxjeddful9QQD1aOH0R8jOLudG1mAyqZcF12hKuXAjn9L6do7G8f15sAfZ1Xe0vzQXBnSUctU9rvcy80HFsQxdA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef39dd7c10b07c-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:10:22.784] Status update completed
+
+[2026-01-16 19:10:23.116] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (792)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:10:23 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ZRFNEO5%2BTY6cTpYCx1xVaSNia8%2B%2FwPgfGKgsXpHIy7jCso7TCl0BSL6mP6hEHxpf%2Bzp6z99ajt5fWjFjFqcNawY%2FtegjZx5192%2BxhRsyvLbknbo0cElNzsXkARy38Q%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef39df6cf80de5-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:10:23.116] Status update completed
+
+[2026-01-16 19:10:25.424] update_status() called
+  Status parameter: uploading (792)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 17592)
+
+[2026-01-16 19:10:28.358] update_status() called
+  Status parameter: uploading (792)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20760)
+
+[2026-01-16 19:10:28.973] update_status() called
+  Status parameter: uploading (792)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22292)
+
+[2026-01-16 19:10:29.471] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (792)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:10:30 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=KomiDhMZMaLRw6a%2F9TuWiblqEPvmpNAnqVJgsqAmcMnsiEYc%2BVM%2BGHnhIskp1kDqiVrpBF9HYG8SDN%2FvQR0uWLme0KteZhoSpaqEbKoyGQZsyj65Lw%2BFHUCvpfavKw%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef3a0748802970-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:10:29.471] Status update completed
+
+[2026-01-16 19:10:30.267] update_status() called
+  Status parameter: rendering (792)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 18920)
+
+[2026-01-16 19:10:31.337] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (792)
+  API Key: juhgu_de... (truncated)
+[2026-01-16 19:10:31.372] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 1728)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:10:32 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=SpVFDxQy81bdp%2BXn5b1N5eVjRn0BOmhgwpG3c9nBSFrSSIkXQLEKnC1FDLM7jGKIEH%2FZ8G2McIX66Brlv9IzS2I%2B7E%2FzLlus2IEvr7ijloeBdAYwlVruciGiEwKp9Q%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef3a12da3abba2-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:10:31.337] Status update completed
+
+[2026-01-16 19:10:32.415] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Fri, 16 Jan 2026 17:10:33 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=GyFMioOgtrs7zFqEnZRofLZxmRlrJRJAMMJkffVZ4dVzYTVEIllPGkip2PSiSB%2BxHAt4yk%2BzZr45XoHWVN7bxSH8pSWe3DeXg24CB7PBjtIMl9q0%2BmRJv6T6fOhDFA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bef3a1988af32d9-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-16 19:10:32.415] Status update completed
+
+[2026-01-17 15:08:00.328] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20076)
+
+[2026-01-17 15:08:01.325] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 13:08:02 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=0uo%2B7ER1h4L9Ot8hYr41Z7abmPLhtvCoEXNbFKrGb0sLpR1ymAPz6rl1Vchq%2B34RfL7%2BWQLc%2BlvRj7JNXct1nuyF0znJIPIkKzv1v3SNM0BHP0bTXsaQkelFMUk%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf61438fb398d76-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 15:08:01.325] Status update completed
+
+[2026-01-17 17:06:59.328] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 4464)
+
+[2026-01-17 17:07:00.345] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 15:07:00 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=lJHC8GXUbnlKo%2Fb6vCLFYbUB6jNejZRZyIW6Q3GhballIGkr%2F7HG2GnXMmk8f4Wk423m1OHOaxzcjlZBXasLG9cjZqCOiRUKDw60%2Byx1%2FNrxugOnvrLWrnQE20Y%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf6c280c9818d70-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 17:07:00.345] Status update completed
+
+[2026-01-17 17:07:26.869] update_status() called
+  Status parameter: working (793)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 17148)
+
+[2026-01-17 17:07:27.373] update_status() called
+  Status parameter: downloading maps (793)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 11760)
+
+[2026-01-17 17:07:27.945] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (793)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 15:07:28 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Fy7zqmSosCDEtT1qPMlG8F5ph57itnRGFfMeYElVuWEtefcgVXWeuYW%2BE7wefodiiWcfbDHmgpL1gGCOIQqWkvvOIWiyXEo1ornOC7qbGQGU8qnsziYfUyyuEg8%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf6c32d1ee48dcf-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 17:07:27.945] Status update completed
+
+[2026-01-17 17:07:28.709] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (793)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 15:07:29 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=9ZPIH449D7%2Fo3lH%2FC27Z86KrZCDHKlaUdtfkhbKt9xkgjSPIBDtw%2BJegn%2BShSA3xAx8ITOQkdQKaTl2p39NbMrnm5P%2BpuH5Cg3bSLS50MG2gJnD%2FGI7DeBQVldKkwQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf6c331db40967b-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 17:07:28.709] Status update completed
+
+[2026-01-17 17:07:29.105] update_status() called
+  Status parameter: rendering (793)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 22192)
+
+[2026-01-17 17:07:30.233] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (793)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 15:07:30 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=azj%2Fp4wEK1Si%2BvZB7TmKRaqQBHn9T%2B1VCK%2FLK7RHDvqxO6mj5%2BXqjnba4blpqpD3LBErqsF3uZ6KuiGaCsYuNvwCtvJKmfDtTD7kYsNcc3ZXydYsoOncKeFs3SCwUA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf6c33b8c1f3c20-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 17:07:30.233] Status update completed
+
+[2026-01-17 17:09:42.820] update_status() called
+  Status parameter: uploading (793)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21400)
+
+[2026-01-17 17:09:43.854] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (793)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 15:09:44 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=s%2BGbd0V54PEesi6r31ihwM5Lc%2B5ftEoYXHD1oI49Td9v3NIIGJBoBwCICjlLgjz3zJMk422Dp%2BuBb9I%2B8DDxRdYe105G%2FWsrtiXiBMwWL76gqSh3plU8WRrvql0p%2Fg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf6c67f7e5a0560-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 17:09:43.854] Status update completed
+
+[2026-01-17 17:09:46.507] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 19848)
+
+[2026-01-17 17:09:47.530] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sat, 17 Jan 2026 15:09:47 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=EryY8GTCqJfEfzgNZB0gY%2FKTS0eCTKATKsKwDo1W5YZWIBmelk0dgep%2BopvGsCYIqhyhQCoPShss2ZhP3ofVbFSSNlwwFvsa%2BtnCS7t%2FQ%2F8jZXQaRvPaV31czZU%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bf6c695a8838d56-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-17 17:09:47.530] Status update completed
+
+[2026-01-18 17:55:45.285] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 456)
+
+[2026-01-18 17:55:46.314] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sun, 18 Jan 2026 15:55:46 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=Mt1wq%2BnSQNmw08Zz8j2%2BD4A1bl81u29M4xuhqGoEWY%2FK6OYVEoZTOEv7gL03sOJojVEOsqsTPgAGPly%2F%2BkREmDXoA37tWO7EJ4ikFnURZbJcDUqqTAf%2Bblu83l7VAA%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bff474d7baedfd7-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-18 17:55:46.314] Status update completed
+
+[2026-01-18 17:56:15.848] update_status() called
+  Status parameter: working (794)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 1228)
+
+[2026-01-18 17:56:16.697] update_status() called
+  Status parameter: downloading maps (794)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 16032)
+
+[2026-01-18 17:56:16.865] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: working (794)
+  API Key: juhgu_de... (truncated)
+[2026-01-18 17:56:16.974] update_status() called
+  Status parameter: rendering (794)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 20632)
+
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sun, 18 Jan 2026 15:56:16 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=0XOy6tnPeKoPjj5F86v3bUBaHgywbdl5czi%2BCnAhj8oGoacKtTFw0dcdJcLIR%2FuVK%2FqS56WaPM2vAX0%2BfgxzMMDOGyxjniIiJG8pAfjThnDSe1sDy7lKJVC0Dco%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bff480c6bb48daa-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-18 17:56:16.865] Status update completed
+
+[2026-01-18 17:56:17.713] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: downloading maps (794)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sun, 18 Jan 2026 15:56:17 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=nnQMbqmDwvGMUjCEQLQ%2BUnDOpRyI%2BG8Drii5dNwKYKqvArs2SvRLZeVduun1Vn0%2Fldw9LrKPEHPprFoNpRlFVRqCiIVj9WDLgCiloDdjpN4FlbdIHfUT247ipVi5jg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bff48119e780560-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-18 17:56:17.713] Status update completed
+
+[2026-01-18 17:56:18.084] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: rendering (794)
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sun, 18 Jan 2026 15:56:17 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=qKqWLhfwdadVTPRTNOi%2FhanHIBy6K6Bg%2FfAqcq3O5fA%2BpxyFDZ6KmhnfIRlpwCsqXqiJWpSCYksmNJXGaVQMfbB0UAqHiV5TZ1QlEI5HM1VvZVeXbfuAgZe%2B3S9UFQ%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bff4813fbf5dfc8-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-18 17:56:18.084] Status update completed
+
+[2026-01-18 17:56:49.735] update_status() called
+  Status parameter: uploading (794)
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 21528)
+
+[2026-01-18 17:56:50.759] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: uploading (794)
+  API Key: juhgu_de... (truncated)
+[2026-01-18 17:56:50.759] ERROR: RequestException - ConnectionError: HTTPSConnectionPool(host='routesquiggler.com', port=443): Max retries exceeded with url: /rendering_client_status_api/ (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x000000001B7CF860>: Failed to establish a new connection: [Errno 11001] getaddrinfo failed'))
+
+[2026-01-18 17:59:52.770] update_status() called
+  Status parameter: idle
+  API key provided: True
+  Launching worker process...
+  Worker process started (PID: 4104)
+
+[2026-01-18 17:59:53.774] Starting status update
+  URL: https://routesquiggler.com/rendering_client_status_api/
+  Status: idle
+  API Key: juhgu_de... (truncated)
+  Response Status Code: 200
+  Response Headers: {'Date': 'Sun, 18 Jan 2026 15:59:53 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Server': 'cloudflare', 'Nel': '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}', 'X-Frame-Options': 'DENY', 'Vary': 'Cookie', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin', 'cf-cache-status': 'DYNAMIC', 'Report-To': '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=%2FubfMbJ8GhRmqd7iOtkO3y%2BkxVaKRIQwPLqOCOv4%2F%2BDvNdUc%2B2llbX%2BGuIJ%2FQMNhif6WjkDhRb5nBWMm5lK0ZEf9XsUzCfOIiB3Ww5os%2BkIMdB8rejYswJ4cTwlYkg%3D%3D"}]}', 'Content-Encoding': 'br', 'CF-RAY': '9bff4d583ab11579-HEL', 'alt-svc': 'h3=":443"; ma=86400'}
+  Response Body: 
+[2026-01-18 17:59:53.774] Status update completed
+

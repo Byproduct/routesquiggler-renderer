@@ -182,7 +182,10 @@ class ImageGeneratorWorker(QObject):
                     
                     # Get filename from first point
                     filename = combined_route[0].filename if combined_route else 'Unknown'
+                    # Try lookup with filename as-is, then with .gpx extension (track_lookup keys may include .gpx)
                     track_metadata = track_lookup.get(filename, {})
+                    if not track_metadata and not filename.endswith('.gpx'):
+                        track_metadata = track_lookup.get(filename + '.gpx', {})
                     color = track_metadata.get('color', '#2E8B57')
                     name = track_metadata.get('name', 'Unknown Track')
                     
@@ -321,6 +324,11 @@ class ImageGeneratorWorker(QObject):
                 # Lock acquisition failed after 60 minutes - mark job as error
                 raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
             
+            # Update status to "downloading maps (job_id)"
+            job_id = str(self.json_data.get('job_id', ''))
+            from update_status import update_status
+            update_status(f"downloading maps ({job_id})", api_key=self.user)
+            
             try:
                 self.results, _ = generate_images_parallel(
                     zoom_levels=zoom_levels,
@@ -353,6 +361,9 @@ class ImageGeneratorWorker(QObject):
                     log_callback=self.log_message.emit,
                     debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
                 )
+            
+            # Update status to "rendering (job_id)" after map tile download completes
+            update_status(f"rendering ({job_id})", api_key=self.user)
             
             # After all workers have completed, check if we have all results
             if self.results and len(self.results) == len(zoom_levels):

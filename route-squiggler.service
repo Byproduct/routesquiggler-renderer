@@ -1,0 +1,74 @@
+# Systemd service file for Route Squiggler Render Client
+#
+# ============================================================================
+# RECOMMENDED: Use service-setup.sh for automatic installation
+# ============================================================================
+# The service-setup.sh script automatically configures and installs this
+# service with the correct paths. You don't need to edit this file manually.
+#
+# Quick start:
+#   chmod +x service-setup.sh
+#   sudo bash service-setup.sh
+#
+# The script will handle everything automatically!
+#
+# ============================================================================
+# MANUAL INSTALLATION (Only if NOT using service-setup.sh)
+# ============================================================================
+# 1. Edit User= and WorkingDirectory= below with your actual username and path
+# 2. Edit ExecStart= and StandardOutput/StandardError= paths
+# 3. Copy to systemd: sudo cp route-squiggler.service /etc/systemd/system/
+# 4. Reload systemd: sudo systemctl daemon-reload
+# 5. Enable service: sudo systemctl enable route-squiggler.service
+# 6. Start service: sudo systemctl start route-squiggler.service
+#
+# ============================================================================
+# MANAGING THE SERVICE (After installation)
+# ============================================================================
+# Check status:  sudo systemctl status route-squiggler.service
+# View logs:     sudo journalctl -u route-squiggler.service -f
+# View logs:     tail -f /path/to/route-squiggler/output.log
+# Stop service:  sudo systemctl stop route-squiggler.service
+# Restart:       sudo systemctl restart route-squiggler.service
+
+[Unit]
+Description=Route Squiggler Render Client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# User that will run the service (service-setup.sh sets this automatically)
+User=YOUR_USERNAME_HERE
+
+# Working directory for the application (service-setup.sh sets this automatically)
+WorkingDirectory=/path/to/route-squiggler
+
+# Environment variables
+Environment="PYTHONUNBUFFERED=1"
+
+# Command to run the application (service-setup.sh sets this automatically)
+ExecStart=/usr/bin/python3 main.py nogui
+
+# Redirect stdout and stderr to output.log (service-setup.sh sets this automatically)
+StandardOutput=append:/path/to/route-squiggler/output.log
+StandardError=append:/path/to/route-squiggler/output.log
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Graceful shutdown settings
+# Give the application time to finish current job before forcing shutdown
+TimeoutStopSec=300
+KillMode=mixed
+KillSignal=SIGINT
+
+# Security settings (optional, uncomment if desired)
+# NoNewPrivileges=true
+# PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

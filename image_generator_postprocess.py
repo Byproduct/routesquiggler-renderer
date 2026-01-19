@@ -349,7 +349,7 @@ def add_legend_to_plot(ax, track_coords_with_metadata, track_lookup, legend_type
         write_debug_log(f"Legend created with {len(legend_patches)} items")
 
 
-def add_speed_based_color_label_to_plot(ax, json_data: dict, image_width: int, image_height: int, image_scale: int | None = None):
+def add_speed_based_color_label_to_plot(ax, json_data: dict, image_width: int, image_height: int, image_scale: int | None = None, track_coords_with_metadata=None):
     """
     Add color and/or width labels to the plot if enabled.
     Supports displaying both a color label (speed or HR based) and a width label (HR based) side by side.
@@ -360,6 +360,8 @@ def add_speed_based_color_label_to_plot(ax, json_data: dict, image_width: int, i
         image_width: Width of the image in pixels
         image_height: Height of the image in pixels
         image_scale: Optional image scale factor; if None, calculated from resolution
+        track_coords_with_metadata: Optional list of (lats, lons, color, name, filename) tuples.
+            Used to extract the first route color for hr_based_width_label recoloring.
     """
     # Calculate image scale if not provided
     if image_scale is None:
@@ -482,7 +484,19 @@ def add_speed_based_color_label_to_plot(ax, json_data: dict, image_width: int, i
                 from speed_based_color import create_hr_based_width_label
                 hr_min = json_data.get('hr_based_width_min', 50)
                 hr_max = json_data.get('hr_based_width_max', 180)
-                label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale)
+                
+                # Extract first route color for recoloring (if speed_based_color or hr_based_color is not enabled)
+                route_color = None
+                skip_recolor = json_data.get('speed_based_color', False) or json_data.get('hr_based_color', False)  # Skip recoloring if speed_based_color or hr_based_color is enabled
+                
+                if not skip_recolor and track_coords_with_metadata and len(track_coords_with_metadata) > 0:
+                    # Get color from first route (third element in tuple: lats, lons, color, name, filename)
+                    first_route_color = track_coords_with_metadata[0][2]
+                    if first_route_color:
+                        route_color = first_route_color
+                        write_debug_log(f"Using first route color for hr_based_width_label: {route_color}")
+                
+                label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale, route_color=route_color, skip_recolor=skip_recolor)
                 width_label = np.array(label_image)
                 write_debug_log(f"Created HR-based width label on-the-fly using scale {image_scale}x (shape: {width_label.shape})")
             except Exception as e:

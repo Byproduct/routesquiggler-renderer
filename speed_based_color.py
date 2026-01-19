@@ -509,7 +509,7 @@ def create_hr_based_color_label(hr_based_color_min, hr_based_color_max, image_sc
     return create_speed_based_color_label(hr_based_color_min, hr_based_color_max, imperial_units=False, hr_mode=True, image_scale=image_scale)
 
 
-def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_scale=1):
+def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_scale=1, route_color=None, skip_recolor=False):
     """
     Create a labeled width scale image with min, average, and max labels.
     Uses hr_based_width_{scale}x.png as the base image and ♥ as the unit.
@@ -518,6 +518,9 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
         hr_based_width_min (float): Minimum HR value (corresponds to thin line)
         hr_based_width_max (float): Maximum HR value (corresponds to thick line)
         image_scale (int): Scale factor (1, 2, 3, or 4) to determine which base image to use
+        route_color (str or tuple, optional): Route color as hex string (e.g., '#2E8B57') or RGB tuple (0-255 range).
+            If provided and skip_recolor is False, non-transparent pixels will be recolored from blue to this color.
+        skip_recolor (bool): If True, skip recoloring and use original blue color. Default False.
     
     Returns:
         PIL.Image: Image with transparency (RGBA mode) containing the width scale and labels
@@ -539,6 +542,39 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     # Convert to RGBA if not already (to support transparency)
     if base_img.mode != "RGBA":
         base_img = base_img.convert("RGBA")
+    
+    # Recolor non-transparent pixels from blue to route color if route_color is provided and skip_recolor is False
+    if route_color and not skip_recolor:
+        # Convert route_color to RGB tuple (0-255 range) if it's a hex string
+        if isinstance(route_color, str):
+            # Remove '#' if present
+            hex_color = route_color.lstrip('#')
+            if len(hex_color) == 6:
+                route_rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+            else:
+                route_rgb = (0, 0, 255)  # Default to blue if invalid hex
+        elif isinstance(route_color, (tuple, list)) and len(route_color) >= 3:
+            # Assume it's already RGB (0-255 range) or RGBA
+            route_rgb = tuple(int(route_color[i]) for i in range(3))
+        else:
+            route_rgb = (0, 0, 255)  # Default to blue if invalid format
+        
+        # Convert base image to numpy array for pixel manipulation
+        import numpy as np
+        img_array = np.array(base_img)
+        
+        # Create a mask for non-transparent pixels (alpha > 0)
+        non_transparent_mask = img_array[:, :, 3] > 0
+        
+        # Recolor non-transparent pixels: change blue pixels to route color
+        # We'll change any non-transparent pixel (assuming they're all blue in the original)
+        img_array[non_transparent_mask, 0] = route_rgb[0]  # Red channel
+        img_array[non_transparent_mask, 1] = route_rgb[1]  # Green channel
+        img_array[non_transparent_mask, 2] = route_rgb[2]  # Blue channel
+        # Keep alpha channel unchanged
+        
+        # Convert back to PIL Image
+        base_img = Image.fromarray(img_array, 'RGBA')
     
     # Calculate average value
     average = (hr_based_width_min + hr_based_width_max) / 2.0

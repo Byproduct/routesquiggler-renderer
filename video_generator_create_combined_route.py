@@ -590,8 +590,22 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
             hr_min = json_data.get('hr_based_width_min', 50)
             hr_max = json_data.get('hr_based_width_max', 180)
             
+            # Extract first route color for recoloring (if speed_based_color or hr_based_color is not enabled)
+            route_color = None
+            skip_recolor = json_data.get('speed_based_color', False) or json_data.get('hr_based_color', False)  # Skip recoloring if speed_based_color or hr_based_color is enabled
+            
+            if not skip_recolor:
+                # Get first route color from track_objects
+                track_objects = json_data.get('track_objects', [])
+                if track_objects and len(track_objects) > 0:
+                    first_route_color = track_objects[0].get('color')
+                    if first_route_color:
+                        route_color = first_route_color
+                        if debug_callback:
+                            debug_callback(f"Using first route color for hr_based_width_label: {route_color}")
+            
             try:
-                label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale)
+                label_image = create_hr_based_width_label(hr_min, hr_max, image_scale=image_scale, route_color=route_color, skip_recolor=skip_recolor)
                 # Convert PIL Image to numpy array (RGBA) for storage
                 label_array = np.array(label_image)
                 # Store in json_data for use during frame generation

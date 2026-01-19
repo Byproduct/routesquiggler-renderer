@@ -10,6 +10,7 @@ import zipfile
 import requests
 from PySide6.QtCore import QObject, Signal, QThread, QTimer, QMetaObject, Qt
 from image_generator_utils import harmonize_gpx_times
+from network_retry import retry_operation
 
 
 def apply_vertical_video_swap(json_data, log_callback=None):
@@ -42,6 +43,7 @@ def apply_vertical_video_swap(json_data, log_callback=None):
 
 def update_job_status(api_url, user, hardware_id, app_version, job_id, status, log_callback=None):
     """Update job status via API call.
+    Automatically retries up to 15 times with 60 second delays on network failures.
     
     Args:
         api_url (str): The API base URL
@@ -55,38 +57,49 @@ def update_job_status(api_url, user, hardware_id, app_version, job_id, status, l
     Returns:
         bool: True if successful, False otherwise
     """
-    try:
-        if not api_url:
+    def _do_update():
+        """Internal function that performs the actual status update."""
+        try:
+            if not api_url:
+                if log_callback:
+                    log_callback("Cannot update job status: missing api_url")
+                return False
+
+            # Construct URL from config api_url + status endpoint
+            url = f"{api_url.rstrip('/')}/status/"
+            headers = {
+                'X-API-Key': user,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+            body = {
+                'hardware_id': hardware_id,
+                'app_version': app_version,
+                'job_id': str(job_id),
+                'status': status
+            }
+
+            response = requests.post(url, headers=headers, json=body, timeout=10)
+            if response.status_code != 200:
+                if log_callback:
+                    log_callback(f"Failed to update job status: {response.status_code} - {response.text}")
+                return False
+            return True
+
+        except Exception as e:
             if log_callback:
-                log_callback("Cannot update job status: missing api_url")
+                log_callback(f"Error updating job status: {str(e)}")
             return False
-
-        # Construct URL from config api_url + status endpoint
-        url = f"{api_url.rstrip('/')}/status/"
-        headers = {
-            'X-API-Key': user,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-        }
-        body = {
-            'hardware_id': hardware_id,
-            'app_version': app_version,
-            'job_id': str(job_id),
-            'status': status
-        }
-
-        response = requests.post(url, headers=headers, json=body, timeout=10)
-        if response.status_code != 200:
-            if log_callback:
-                log_callback(f"Failed to update job status: {response.status_code} - {response.text}")
-            return False
-        return True
-
-    except Exception as e:
-        if log_callback:
-            log_callback(f"Error updating job status: {str(e)}")
-        return False
+    
+    # Wrap the status update operation with retry logic
+    return retry_operation(
+        operation=_do_update,
+        max_attempts=15,
+        retry_delay=60,
+        log_callback=log_callback,
+        operation_name=f"Status update for job {job_id}"
+    )
 
 class JobRequestWorker(QObject):
     """Worker class to handle job requests in a separate thread."""
@@ -122,6 +135,7 @@ class JobRequestManager:
         self.job_request_worker = None
         self.job_request_thread = None
         self.job_retry_timer = None
+        self.current_status = None  # Track current status to avoid redundant updates
     
     def request_new_job(self):
         """Request a new job from the server using simple synchronous approach (was working)."""
@@ -215,6 +229,31 @@ class JobRequestManager:
             
             self.main_window.log_widget.add_log(f"Processing job #{job_id} (type: {job_type})")
             
+            # CRITICAL: Validate that required attributes are set before processing
+            # This prevents race conditions where job is requested before bootup completes
+            if not self.main_window.hardware_id:
+                error_msg = "Cannot process job: hardware_id not yet available (bootup may not be complete)"
+                self.main_window.log_widget.add_log(f"ERROR: {error_msg}")
+                raise ValueError(error_msg)
+            if not self.main_window.api_url:
+                error_msg = "Cannot process job: api_url not yet available (bootup may not be complete)"
+                self.main_window.log_widget.add_log(f"ERROR: {error_msg}")
+                raise ValueError(error_msg)
+            if not self.main_window.user:
+                error_msg = "Cannot process job: user/api_key not yet available (bootup may not be complete)"
+                self.main_window.log_widget.add_log(f"ERROR: {error_msg}")
+                raise ValueError(error_msg)
+            if not hasattr(self.main_window, 'bootup_manager') or not self.main_window.bootup_manager:
+                error_msg = "Cannot process job: bootup_manager not available"
+                self.main_window.log_widget.add_log(f"ERROR: {error_msg}")
+                raise ValueError(error_msg)
+            
+            # Validate bootup_manager has required credentials
+            if not hasattr(self.main_window.bootup_manager, 'storage_box_credentials'):
+                error_msg = "Cannot process job: storage_box_credentials not available"
+                self.main_window.log_widget.add_log(f"ERROR: {error_msg}")
+                raise ValueError(error_msg)
+            
             # Update header label based on job type
             if job_type == 'video':
                 self.main_window.header_label.setText(f"Creating video #{job_id}")
@@ -292,6 +331,21 @@ class JobRequestManager:
             self.main_window.log_widget.add_log("Starting worker thread...")
             # Start thread
             self.main_window.worker_thread.start()
+            
+            # CRITICAL: Only update status to "working" AFTER worker thread successfully starts
+            # This prevents jobs from being stuck in "working" state if thread fails to start
+            # Verify thread is actually running before updating status
+            # Note: isRunning() returns True immediately after start() if the thread started successfully
+            if not self.main_window.worker_thread.isRunning():
+                error_msg = "Worker thread failed to start"
+                self.main_window.log_widget.add_log(f"ERROR: {error_msg}")
+                raise RuntimeError(error_msg)
+            
+            # Now that we've verified the thread is running, update status to "working"
+            from update_status import update_status
+            update_status(f"working ({job_id})", api_key=self.main_window.user)
+            self.current_status = f"working ({job_id})"
+            
             self.main_window.log_widget.add_log("Worker thread started successfully")
             
             # Immediately clean up the job request worker and thread since we've successfully started processing
@@ -508,6 +562,12 @@ class JobRequestManager:
         
         # Update the play label to show we're working
         self.main_window.play_label.setText("Requesting new job from server...")
+        
+        # Update status to "idle" if not already idle
+        if self.current_status != "idle":
+            from update_status import update_status
+            update_status("idle", api_key=self.main_window.user)
+            self.current_status = "idle"
         
         try:
             from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply

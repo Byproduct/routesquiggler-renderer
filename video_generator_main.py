@@ -21,6 +21,7 @@ from video_generator_cache_map_tiles import cache_map_tiles
 from video_generator_cache_map_images import cache_map_images
 from video_generator_cache_video_frames import cache_video_frames
 from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
+from network_retry import retry_operation
 
 
 def upload_video_to_storage_box(
@@ -38,6 +39,7 @@ def upload_video_to_storage_box(
 ) -> bool:
     """
     Upload a video and its thumbnail to the storage box and verify they exist.
+    Automatically retries up to 15 times with 60 second delays on network failures.
     
     Args:
         video_path: Path to the video file to upload
@@ -77,142 +79,153 @@ def upload_video_to_storage_box(
             else:
                 return super().storbinary(cmd, fp, blocksize, callback, rest)
     
-    ftp = None
-    try:
-        if debug_callback:
-            debug_callback("Starting video upload to storage box...")
-            
-        # Validate video file exists and has sufficient size (> 10KB)
-        if not os.path.exists(video_path):
-            if log_callback:
-                log_callback(f"Error: Video file not found at {video_path}")
-            return False
-            
-        video_size = os.path.getsize(video_path)
-        if video_size < 10240:  # 10KB in bytes
-            if log_callback:
-                log_callback(f"Error: Video file too small ({video_size} bytes), minimum 10KB required")
-            return False
-            
-        if debug_callback:
-            debug_callback(f"Video file validated: {video_size} bytes")
-        
-        # Calculate total upload size
-        total_upload_size = video_size
-        thumbnail_size = 0
-        if os.path.exists(thumbnail_path):
-            thumbnail_size = os.path.getsize(thumbnail_path)
-            total_upload_size += thumbnail_size
-            
-        if progress_callback:
-            progress_callback("progress_bar_upload", 0, "Connecting to storage box...")
-            
-        # Connect to FTP with progress tracking
-        ftp = ProgressFTP(progress_callback, total_upload_size)
-        ftp.connect(storage_box_address)
-        ftp.login(storage_box_user, storage_box_password)
-        
-        # Create or enter media directory
+    def _do_upload():
+        """Internal function that performs the actual upload."""
+        ftp = None
         try:
-            ftp.mkd('media')
-        except ftplib.error_perm:
-            pass  # Directory might already exist
-        ftp.cwd('media')
-        
-        # Create job directory if it doesn't exist
-        try:
-            ftp.mkd(job_id)
-        except ftplib.error_perm:
-            pass  # Directory might already exist
-            
-        # Change to job directory
-        ftp.cwd(job_id)
-        
-        # Create folder if it doesn't exist
-        try:
-            ftp.mkd(folder)
-        except ftplib.error_perm:
-            pass  # Directory might already exist
-            
-        # Change to folder
-        ftp.cwd(folder)
-        
-        # Upload the video file
-        if debug_callback:
-            debug_callback(f"Uploading video file: {filename}")
-            
-        if progress_callback:
-            progress_callback("progress_bar_upload", 0, f"Uploading video: {filename}")
-            
-        with open(video_path, 'rb') as video_file:
-            ftp.storbinary(f'STOR {filename}', video_file)
-        
-        # Verify video file exists and has size
-        file_size = 0
-        try:
-            file_size = ftp.size(filename)
-        except:
-            if log_callback:
-                log_callback(f"Failed to get size for {filename}")
-            return False
-            
-        if file_size <= 0:
-            if log_callback:
-                log_callback(f"File {filename} has zero or negative size")
-            return False
-            
-        if debug_callback:
-            debug_callback(f"Video file uploaded successfully: {file_size} bytes")
-
-        # Upload thumbnail if it exists
-        if os.path.exists(thumbnail_path):
             if debug_callback:
-                debug_callback("Uploading thumbnail file: thumbnail.png")
+                debug_callback("Starting video upload to storage box...")
+                
+            # Validate video file exists and has sufficient size (> 10KB)
+            if not os.path.exists(video_path):
+                if log_callback:
+                    log_callback(f"Error: Video file not found at {video_path}")
+                return False
+                
+            video_size = os.path.getsize(video_path)
+            if video_size < 10240:  # 10KB in bytes
+                if log_callback:
+                    log_callback(f"Error: Video file too small ({video_size} bytes), minimum 10KB required")
+                return False
+                
+            if debug_callback:
+                debug_callback(f"Video file validated: {video_size} bytes")
+            
+            # Calculate total upload size
+            total_upload_size = video_size
+            thumbnail_size = 0
+            if os.path.exists(thumbnail_path):
+                thumbnail_size = os.path.getsize(thumbnail_path)
+                total_upload_size += thumbnail_size
                 
             if progress_callback:
-                progress_callback("progress_bar_upload", int((video_size / total_upload_size) * 100), "Uploading thumbnail...")
+                progress_callback("progress_bar_upload", 0, "Connecting to storage box...")
                 
-            with open(thumbnail_path, 'rb') as thumb_file:
-                ftp.storbinary('STOR thumbnail.png', thumb_file)
+            # Connect to FTP with progress tracking
+            ftp = ProgressFTP(progress_callback, total_upload_size)
+            ftp.connect(storage_box_address)
+            ftp.login(storage_box_user, storage_box_password)
             
-            # Verify thumbnail exists and has size
-            thumb_size = 0
+            # Create or enter media directory
             try:
-                thumb_size = ftp.size('thumbnail.png')
+                ftp.mkd('media')
+            except ftplib.error_perm:
+                pass  # Directory might already exist
+            ftp.cwd('media')
+            
+            # Create job directory if it doesn't exist
+            try:
+                ftp.mkd(job_id)
+            except ftplib.error_perm:
+                pass  # Directory might already exist
+                
+            # Change to job directory
+            ftp.cwd(job_id)
+            
+            # Create folder if it doesn't exist
+            try:
+                ftp.mkd(folder)
+            except ftplib.error_perm:
+                pass  # Directory might already exist
+                
+            # Change to folder
+            ftp.cwd(folder)
+            
+            # Upload the video file
+            if debug_callback:
+                debug_callback(f"Uploading video file: {filename}")
+                
+            if progress_callback:
+                progress_callback("progress_bar_upload", 0, f"Uploading video: {filename}")
+                
+            with open(video_path, 'rb') as video_file:
+                ftp.storbinary(f'STOR {filename}', video_file)
+            
+            # Verify video file exists and has size
+            file_size = 0
+            try:
+                file_size = ftp.size(filename)
             except:
                 if log_callback:
-                    log_callback("Failed to get size for thumbnail.png")
+                    log_callback(f"Failed to get size for {filename}")
                 return False
                 
-            if thumb_size <= 0:
+            if file_size <= 0:
                 if log_callback:
-                    log_callback("File thumbnail.png has zero or negative size")
+                    log_callback(f"File {filename} has zero or negative size")
                 return False
                 
             if debug_callback:
-                debug_callback(f"Thumbnail uploaded successfully: {thumb_size} bytes")
-        else:
+                debug_callback(f"Video file uploaded successfully: {file_size} bytes")
+
+            # Upload thumbnail if it exists
+            if os.path.exists(thumbnail_path):
+                if debug_callback:
+                    debug_callback("Uploading thumbnail file: thumbnail.png")
+                    
+                if progress_callback:
+                    progress_callback("progress_bar_upload", int((video_size / total_upload_size) * 100), "Uploading thumbnail...")
+                    
+                with open(thumbnail_path, 'rb') as thumb_file:
+                    ftp.storbinary('STOR thumbnail.png', thumb_file)
+                
+                # Verify thumbnail exists and has size
+                thumb_size = 0
+                try:
+                    thumb_size = ftp.size('thumbnail.png')
+                except:
+                    if log_callback:
+                        log_callback("Failed to get size for thumbnail.png")
+                    return False
+                    
+                if thumb_size <= 0:
+                    if log_callback:
+                        log_callback("File thumbnail.png has zero or negative size")
+                    return False
+                    
+                if debug_callback:
+                    debug_callback(f"Thumbnail uploaded successfully: {thumb_size} bytes")
+            else:
+                if log_callback:
+                    log_callback("Warning: Thumbnail file not found, skipping thumbnail upload")
+            
+            if progress_callback:
+                progress_callback("progress_bar_upload", 100, "Upload completed")
+            
+            # Note: Final success message is emitted by the caller with checkmark emoji
+            return True
+            
+        except Exception as e:
             if log_callback:
-                log_callback("Warning: Thumbnail file not found, skipping thumbnail upload")
-        
-        if progress_callback:
-            progress_callback("progress_bar_upload", 100, "Upload completed")
-        
-        # Note: Final success message is emitted by the caller with checkmark emoji
-        return True
-        
-    except Exception as e:
-        if log_callback:
-            log_callback(f"Upload failed: {str(e)}")
-        if progress_callback:
-            progress_callback("progress_bar_upload", 0, "Upload failed")
-        return False
-    finally:
-        if ftp:
-            try:
-                ftp.quit()
-            except:
-                pass
+                log_callback(f"Upload failed: {str(e)}")
+            if progress_callback:
+                progress_callback("progress_bar_upload", 0, "Upload failed")
+            return False
+        finally:
+            if ftp:
+                try:
+                    ftp.quit()
+                except:
+                    pass
+    
+    # Wrap the upload operation with retry logic
+    return retry_operation(
+        operation=_do_upload,
+        max_attempts=15,
+        retry_delay=60,
+        log_callback=log_callback,
+        operation_name=f"Video upload ({filename})"
+    )
 
 class VideoGeneratorWorker(QObject):
     """Worker class to handle video generation in a separate thread."""
@@ -335,6 +348,11 @@ class VideoGeneratorWorker(QObject):
                 # Lock acquisition failed after 60 minutes - mark job as error
                 raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
             
+            # Update status to "downloading maps (job_id)"
+            job_id = str(self.json_data.get('job_id', ''))
+            from update_status import update_status
+            update_status(f"downloading maps ({job_id})", api_key=self.user)
+            
             try:
                 cache_result = cache_map_tiles(
                     self.json_data,
@@ -353,6 +371,9 @@ class VideoGeneratorWorker(QObject):
             
             if not cache_result:
                 raise ValueError("Map tile caching failed")
+            
+            # Update status to "rendering (job_id)" after map tile download completes
+            update_status(f"rendering ({job_id})", api_key=self.user)
             
             # Summary already logged in cache_map_tiles function - no need to repeat
             
@@ -450,6 +471,9 @@ class VideoGeneratorWorker(QObject):
                     # Determine thumbnail path
                     video_dir = os.path.dirname(video_path)
                     thumbnail_path = os.path.join(video_dir, 'thumbnail.png')
+                    
+                    # Update status to "uploading (job_id)"
+                    update_status(f"uploading ({job_id})", api_key=self.user)
                     
                     # Upload to storage box
                     upload_success = upload_video_to_storage_box(

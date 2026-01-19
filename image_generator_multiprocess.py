@@ -21,6 +21,7 @@ from image_generator_utils import ImageGenerator, calculate_resolution_scale
 from html_file_generator import generate_image_gallery_html
 from write_log import write_log, write_debug_log
 from speed_based_color import speed_based_color
+from network_retry import retry_operation
 
 class StatusUpdate:
     """Status update message from a worker process."""
@@ -713,7 +714,8 @@ def generate_image_for_zoom_level(
                 json_data=json_data,
                 image_width=resolution_x_value,
                 image_height=resolution_y_value,
-                image_scale=image_scale
+                image_scale=image_scale,
+                track_coords_with_metadata=track_coords_with_metadata
             )
 
         # Add markers (start and finish) if enabled
@@ -997,6 +999,7 @@ def upload_to_storage_box(
 ) -> bool:
     """
     Upload an image and optionally its thumbnail to the storage box and verify they exist.
+    Automatically retries up to 15 times with 60 second delays on network failures.
     
     Args:
         image_bytes: The image data to upload
@@ -1014,102 +1017,123 @@ def upload_to_storage_box(
     Returns:
         bool: True if upload successful and verified, False otherwise
     """
-    ftp = None
-    try:
-        if update_status:
-            update_status("uploading", textfield=False)
-            
-        # Connect to FTP
-        ftp = ftplib.FTP(storage_box_address)
-        ftp.login(storage_box_user, storage_box_password)
-        
-        # Create or enter media directory
+    def _do_upload():
+        """Internal function that performs the actual upload."""
+        ftp = None
         try:
-            ftp.mkd('media')
-        except ftplib.error_perm:
-            pass  # Directory might already exist
-        ftp.cwd('media')
-        
-        # Create job directory if it doesn't exist
-        try:
-            ftp.mkd(job_id)
-        except ftplib.error_perm:
-            pass  # Directory might already exist
-            
-        # Change to job directory
-        ftp.cwd(job_id)
-        
-        # Create folder if it doesn't exist
-        try:
-            ftp.mkd(folder)
-        except ftplib.error_perm:
-            pass  # Directory might already exist
-            
-        # Change to folder
-        ftp.cwd(folder)
-        
-        # Upload the main file
-        ftp.storbinary(f'STOR {filename}', BytesIO(image_bytes))
-        
-        # Verify main file exists and has size
-        file_size = 0
-        try:
-            file_size = ftp.size(filename)
-        except:
-            write_log(f"Failed to get size for {filename}")
-            return False
-            
-        if file_size <= 0:
-            write_log(f"File {filename} has zero or negative size")
-            return False
-
-        # If we have a thumbnail, upload it too
-        if thumbnail_bytes:
-            thumb_filename = "thumbnail.png"
-            ftp.storbinary(f'STOR {thumb_filename}', BytesIO(thumbnail_bytes))
-            
-            # Verify thumbnail exists and has size
-            thumb_size = 0
+            # Update server status to "uploading (job_id)"
             try:
-                thumb_size = ftp.size(thumb_filename)
+                from update_status import update_status as update_server_status
+                from config import config
+                if config.user:
+                    update_server_status(f"uploading ({job_id})", api_key=config.user)
+            except Exception:
+                pass  # Silently ignore if status update fails
+            
+            # Update local UI status (if callback provided)
+            if update_status:
+                update_status("uploading", textfield=False)
+                
+            # Connect to FTP
+            ftp = ftplib.FTP(storage_box_address)
+            ftp.login(storage_box_user, storage_box_password)
+            
+            # Create or enter media directory
+            try:
+                ftp.mkd('media')
+            except ftplib.error_perm:
+                pass  # Directory might already exist
+            ftp.cwd('media')
+            
+            # Create job directory if it doesn't exist
+            try:
+                ftp.mkd(job_id)
+            except ftplib.error_perm:
+                pass  # Directory might already exist
+                
+            # Change to job directory
+            ftp.cwd(job_id)
+            
+            # Create folder if it doesn't exist
+            try:
+                ftp.mkd(folder)
+            except ftplib.error_perm:
+                pass  # Directory might already exist
+                
+            # Change to folder
+            ftp.cwd(folder)
+            
+            # Upload the main file
+            ftp.storbinary(f'STOR {filename}', BytesIO(image_bytes))
+            
+            # Verify main file exists and has size
+            file_size = 0
+            try:
+                file_size = ftp.size(filename)
             except:
-                write_log(f"Failed to get size for {thumb_filename}")
+                write_log(f"Failed to get size for {filename}")
                 return False
                 
-            if thumb_size <= 0:
-                write_log(f"File {thumb_filename} has zero or negative size")
+            if file_size <= 0:
+                write_log(f"File {filename} has zero or negative size")
                 return False
-            
-            # After successful thumbnail upload, generate and upload gallery
-            if route_name and zoom_levels:
+
+            # If we have a thumbnail, upload it too
+            if thumbnail_bytes:
+                thumb_filename = "thumbnail.png"
+                ftp.storbinary(f'STOR {thumb_filename}', BytesIO(thumbnail_bytes))
+                
+                # Verify thumbnail exists and has size
+                thumb_size = 0
                 try:
-                    # Generate HTML content
-                    html_content = generate_image_gallery_html(route_name, zoom_levels)
+                    thumb_size = ftp.size(thumb_filename)
+                except:
+                    write_log(f"Failed to get size for {thumb_filename}")
+                    return False
                     
-                    # Upload HTML file
-                    ftp.storbinary('STOR images.html', BytesIO(html_content.encode('utf-8')))
-                    
-                    # Verify HTML file exists and has size
+                if thumb_size <= 0:
+                    write_log(f"File {thumb_filename} has zero or negative size")
+                    return False
+                
+                # After successful thumbnail upload, generate and upload gallery
+                if route_name and zoom_levels:
                     try:
-                        html_size = ftp.size('images.html')
-                        if html_size <= 0:
-                            write_log("Gallery HTML file has zero or negative size")
-                        else:
-                            write_debug_log(f"Successfully uploaded gallery HTML ({html_size} bytes)")
-                    except:
-                        write_log("Failed to verify gallery HTML file size")
+                        # Generate HTML content
+                        html_content = generate_image_gallery_html(route_name, zoom_levels)
                         
-                except Exception as e:
-                    write_log(f"Error generating/uploading gallery HTML: {str(e)}")
-        
-        return True
-        
-    except Exception as e:
-        write_log(f"Upload failed: {str(e)}")
-        return False
-    finally:
-        if ftp:
-            try:
-                ftp.quit()
-            except:
-                pass
+                        # Upload HTML file
+                        ftp.storbinary('STOR images.html', BytesIO(html_content.encode('utf-8')))
+                        
+                        # Verify HTML file exists and has size
+                        try:
+                            html_size = ftp.size('images.html')
+                            if html_size <= 0:
+                                write_log("Gallery HTML file has zero or negative size")
+                            else:
+                                write_debug_log(f"Successfully uploaded gallery HTML ({html_size} bytes)")
+                        except:
+                            write_log("Failed to verify gallery HTML file size")
+                            
+                    except Exception as e:
+                        write_log(f"Error generating/uploading gallery HTML: {str(e)}")
+            
+            return True
+            
+        except Exception as e:
+            write_log(f"Upload failed: {str(e)}")
+            return False
+        finally:
+            if ftp:
+                try:
+                    ftp.quit()
+                except:
+                    pass
+    
+    # Wrap the upload operation with retry logic
+    return retry_operation(
+        operation=_do_upload,
+        max_attempts=15,
+        retry_delay=60,
+        log_callback=write_log,
+        operation_name=f"Image upload ({filename})"
+    )

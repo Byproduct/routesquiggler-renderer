@@ -24,10 +24,14 @@ from image_generator_multiprocess import StatusUpdate
 from image_generator_utils import harmonize_gpx_times
 from sync_map_tiles import sync_map_tiles
 from job_request import apply_vertical_video_swap
+from update_status import update_status
 
 # Global flags for graceful shutdown
 shutdown_requested = False
 shutdown_force_count = 0  # Count how many times Ctrl+C was pressed
+
+# Global status tracking for status updates
+current_status = None
 
 
 def sync_map_tiles_terminal():
@@ -627,6 +631,8 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
         
         write_log(f"Processing job #{job_id} (type: {job_type})")
         
+        # Create worker first - validate it can be created before updating status
+        worker = None
         if job_type == 'video':
             # Process video job
             from video_generator_main import VideoGeneratorWorker
@@ -653,12 +659,6 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
             def on_progress_update(progress_bar_name, percentage, progress_text):
                 write_debug_log(f"{progress_bar_name}: {percentage}% - {progress_text}")
             worker.progress_update.connect(on_progress_update)
-            
-            # Process events to ensure connections are established
-            app.processEvents()
-            
-            # Run synchronously
-            worker.video_generator_process()
             
         else:
             # Process image job
@@ -689,11 +689,19 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
             def on_zoom_levels_ready(zoom_levels):
                 write_debug_log(f"Processing zoom levels: {zoom_levels}")
             worker.zoom_levels_ready.connect(on_zoom_levels_ready)
-            
-            # Process events to ensure connections are established
-            app.processEvents()
-            
-            # Run synchronously
+        
+        # CRITICAL: Update status to "working" only after worker is successfully created
+        # and connections are established (workers run synchronously in terminal mode)
+        from update_status import update_status
+        update_status(f"working ({job_id})", api_key=bootup_manager.config.user)
+        
+        # Process events to ensure connections are established
+        app.processEvents()
+        
+        # Now run the worker synchronously
+        if job_type == 'video':
+            worker.video_generator_process()
+        else:
             worker.image_generator_process()
         
         # Process any remaining events
@@ -756,6 +764,13 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             
             # Request a new job
             write_debug_log("Calling request_job_terminal()...")
+            # Update status to "idle" if not already idle
+            global current_status
+            if current_status != "idle":
+                from update_status import update_status
+                update_status("idle", api_key=bootup_manager.config.user)
+                current_status = "idle"
+            
             json_data, gpx_files_info = request_job_terminal(
                 bootup_manager.config.api_url,
                 bootup_manager.config.user,
@@ -768,7 +783,29 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             if json_data and gpx_files_info:
                 # Process the job
                 write_debug_log("Job data received, starting processing...")
+                
+                # CRITICAL: Validate that required attributes are set before processing
+                # This prevents race conditions where job is requested before bootup completes
+                job_id = json_data.get('job_id', '?')
+                if not bootup_manager.hardware_id:
+                    write_log(f"ERROR: Cannot process job #{job_id}: hardware_id not yet available (bootup may not be complete)")
+                    # Don't update status to working - job was never accepted
+                    continue
+                if not bootup_manager.config.api_url:
+                    write_log(f"ERROR: Cannot process job #{job_id}: api_url not yet available (bootup may not be complete)")
+                    continue
+                if not bootup_manager.config.user:
+                    write_log(f"ERROR: Cannot process job #{job_id}: user/api_key not yet available (bootup may not be complete)")
+                    continue
+                
+                # Process the job first - status will be updated inside process_job_terminal
+                # after verifying the worker can actually start
                 success = process_job_terminal(json_data, gpx_files_info, bootup_manager, app)
+                
+                # Update status to "working" only after processing starts successfully
+                # (process_job_terminal handles status updates internally)
+                if success:
+                    current_status = f"working ({job_id})"
                 write_debug_log(f"Job processing completed with success={success}")
                 
                 if success:
