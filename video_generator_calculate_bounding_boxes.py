@@ -3,13 +3,16 @@ Video generation bounding box calculation for the Route Squiggler render client.
 This module handles calculating unique bounding boxes needed for video frame generation.
 """
 
-import multiprocessing
+# Standard library imports
 import math
+import multiprocessing
 import pickle
-from pathlib import Path
 from datetime import timedelta
-from write_log import write_log, write_debug_log
+from pathlib import Path
+
+# Local imports
 from video_generator_create_combined_route import RoutePoint
+from write_log import write_debug_log, write_log
 
 
 def split_coordinates_at_longitude_wrap(lats, lons):

@@ -3,17 +3,22 @@ Video generation map tiles caching for the Route Squiggler render client.
 This module handles caching map tiles needed for video frame generation.
 """
 
+# Standard library imports
 import json
 import os
-import numpy as np
+import threading
+import time
+from pathlib import Path
+
+# Third-party imports
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
-import time
-import threading
-from pathlib import Path
-from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
-from image_generator_maptileutils import set_cache_directory, create_map_tiles, detect_zoom_level, calculate_tile_count
+import numpy as np
+
+# Local imports
+from image_generator_maptileutils import calculate_tile_count, create_map_tiles, detect_zoom_level, set_cache_directory
 from sync_map_tiles import sync_map_tiles
+from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 
 STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
 

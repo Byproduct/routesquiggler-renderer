@@ -1,4 +1,4 @@
-# Reworked existing UI logging to use write_log.py. 
+# Reworked existing UI logging to use write_log.py.
 
 import os
 import sys

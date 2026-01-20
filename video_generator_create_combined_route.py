@@ -5,14 +5,26 @@ Supports both single route mode and multiple simultaneous routes
 based on track names from track_objects.
 """
 
+# Standard library imports
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import NamedTuple, Optional
+
+# Third-party imports
 import gpxpy
 import numpy as np
 from PIL import Image
+
+# Local imports
 from image_generator_utils import calculate_haversine_distance
-from speed_based_color import update_speed_based_color_range, create_speed_based_color_label, update_hr_based_color_range, create_hr_based_color_label, update_hr_based_width_range, create_hr_based_width_label
+from speed_based_color import (
+    create_hr_based_color_label,
+    create_hr_based_width_label,
+    create_speed_based_color_label,
+    update_hr_based_color_range,
+    update_hr_based_width_range,
+    update_speed_based_color_range,
+)
 
 # Conversion constants for imperial units
 METERS_TO_MILES = 0.000621371

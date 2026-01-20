@@ -3,25 +3,45 @@ Video generation single frame creation for the Route Squiggler render client.
 This module handles generating individual video frames with route visualization and tail effects.
 """
 
-import numpy as np
+# Standard library imports
+import math
+import os
 
-# Set matplotlib backend before importing pyplot
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for video frame generation
 
-import matplotlib.pyplot as plt
-import matplotlib.patheffects
-import math
-from video_generator_route_statistics import _calculate_video_statistics, _draw_current_speed_at_point, _draw_current_elevation_at_point, _draw_current_hr_at_point, _draw_video_statistics
-from video_generator_coordinate_encoder import encode_coords
-from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
-from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
-from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes, _draw_filename_tags_for_routes)
-from video_generator_create_combined_route import RoutePoint
-from speed_based_color import speed_based_color
-from image_generator_utils import calculate_resolution_scale
-import os
 import matplotlib.image as mpimg
+import matplotlib.patheffects
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Local imports
+from image_generator_utils import calculate_resolution_scale
+from speed_based_color import speed_based_color
+from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
+from video_generator_coordinate_encoder import encode_coords
+from video_generator_create_combined_route import RoutePoint
+from video_generator_create_single_frame_legend import (
+    create_legend,
+    get_day_legend_data,
+    get_filename_legend_data,
+    get_month_legend_data,
+    get_people_legend_data,
+    get_year_legend_data,
+)
+from video_generator_create_single_frame_utils import (
+    _draw_filename_tags_for_routes,
+    _draw_name_tags_for_routes,
+    get_tail_color_for_route,
+)
+from video_generator_route_statistics import (
+    _calculate_video_statistics,
+    _draw_current_elevation_at_point,
+    _draw_current_hr_at_point,
+    _draw_current_speed_at_point,
+    _draw_video_statistics,
+)
 
 
 

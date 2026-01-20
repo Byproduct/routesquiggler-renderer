@@ -3,8 +3,11 @@ Video generation statistics functions.
 This module contains functions for calculating and drawing statistics on video frames.
 """
 
-from datetime import datetime
+# Standard library imports
 import math
+from datetime import datetime
+
+# Local imports
 from video_generator_create_combined_route import RoutePoint
 
 

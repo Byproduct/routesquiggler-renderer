@@ -1,6 +1,11 @@
+# Standard library imports
 from datetime import datetime
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLabel, QPushButton
+
+# Third-party imports
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
+
+# Local imports
 from debug_logger import log_ui_message
 
 

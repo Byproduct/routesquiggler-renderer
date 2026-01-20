@@ -3,28 +3,29 @@
 Terminal-specific functions for Route Squiggler render client
 """
 
+# Standard library imports
+import json
 import os
 import signal
 import sys
 import threading
 import time
-import json
-import zipfile
-import requests
 import traceback
+import zipfile
 from io import BytesIO
 from queue import Empty
 
-# Import configuration
-from config import config
+# Third-party imports
+import requests
 
 # Local imports
-from write_log import write_log, write_debug_log
+from config import config
 from image_generator_multiprocess import StatusUpdate
 from image_generator_utils import harmonize_gpx_times
-from sync_map_tiles import sync_map_tiles
 from job_request import apply_vertical_video_swap
+from sync_map_tiles import sync_map_tiles
 from update_status import update_status
+from write_log import write_debug_log, write_log
 
 # Global flags for graceful shutdown
 shutdown_requested = False

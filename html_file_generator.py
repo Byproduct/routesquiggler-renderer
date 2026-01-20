@@ -3,9 +3,10 @@ HTML file generator for image galleries.
 Creates a simple HTML page that displays resized images linking to their full-size versions.
 """
 
-from typing import List
+# Standard library imports
 import ftplib
 from io import BytesIO
+from typing import List
 
 def generate_image_gallery_html(route_name: str, zoom_levels: List[int]) -> str:
     """

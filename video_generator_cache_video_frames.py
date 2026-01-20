@@ -4,37 +4,40 @@ This file contains things related to preparation and multiprocessing.
 The actual map plotting is in video_generator_create_single_frame.py.
 """
 
+# Standard library imports
+import gc
 import json
+import multiprocessing
 import os
+import re
 import sys
 import time
-import gc
-import multiprocessing
-import numpy as np
 from contextlib import contextmanager
 from io import StringIO
+from multiprocessing import Manager, Pool
+from pathlib import Path
 
-# Set matplotlib backend before importing pyplot
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for video frame caching
 
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import re
+import matplotlib.pyplot as plt
+import numpy as np
+from moviepy import VideoClip
 from PIL import Image
-from pathlib import Path
 
 # Increase PIL image size limit to 200 megapixels to handle large renders
 Image.MAX_IMAGE_PIXELS = 200_000_000
-from multiprocessing import Pool, Manager
-from moviepy import VideoClip
+
+# Local imports
+from config import config
+from image_generator_utils import calculate_resolution_scale
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
+from video_generator_create_combined_route import RoutePoint
 from video_generator_create_single_frame import generate_video_frame_in_memory
 from video_generator_create_single_frame_utils import hex_to_rgba
-from video_generator_create_combined_route import RoutePoint
-from image_generator_utils import calculate_resolution_scale
-from write_log import write_log, write_debug_log
-from config import config
+from write_log import write_debug_log, write_log
 
 
 class MoviePyDebugLogger:

@@ -2,25 +2,28 @@
 Post-processing to the images after they have been plotted.
 """
 
+# Standard library imports
 import os
 import subprocess
 import tempfile
+from collections import OrderedDict
 
-# Set matplotlib backend before importing pyplot
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for image post-processing
 
-import matplotlib.image as mpimg
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-import matplotlib.patches as mpatches
-from matplotlib import patheffects
-from collections import OrderedDict
-import numpy as np
-from PIL import Image as PILImage
 import cartopy.crs as ccrs
-from video_generator_create_single_frame import get_legend_theme_colors
-from write_log import write_log, write_debug_log
+import matplotlib.image as mpimg
+import matplotlib.patches as mpatches
+import numpy as np
+from matplotlib import patheffects
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from PIL import Image as PILImage
+
+# Local imports
 from image_generator_utils import calculate_resolution_scale
+from video_generator_create_single_frame import get_legend_theme_colors
+from write_log import write_debug_log, write_log
 
 
 def optimize_png_bytes(png_data: bytes) -> bytes:

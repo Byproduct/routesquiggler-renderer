@@ -10,13 +10,16 @@ The script looks for cache directories in two locations:
 2. Remote: '/mnt/storage-box/map tile cache' (without progress bar)
 """
 
+# Standard library imports
+import argparse
 import os
 import sys
 import time
-import argparse
-import numpy as np
 from pathlib import Path
-from typing import Tuple, List
+from typing import List, Tuple
+
+# Third-party imports
+import numpy as np
 
 # Try to import tqdm for progress bar (only needed for local directory)
 try:
@@ -25,7 +28,8 @@ try:
 except ImportError:
     TQDM_AVAILABLE = False
 
-from write_log import write_log, write_debug_log
+# Local imports
+from write_log import write_debug_log, write_log
 
 
 def is_blank_or_erroneous_tile(npy_file_path: str) -> bool:

@@ -3,8 +3,9 @@ Utility functions for video generation single frame creation.
 This module contains helper functions for color manipulation, name tags, and resolution scaling.
 """
 
-from video_generator_create_combined_route import RoutePoint
+# Local imports
 from image_generator_utils import draw_tag
+from video_generator_create_combined_route import RoutePoint
 
 
 def hex_to_rgba(hex_color):

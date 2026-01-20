@@ -3,9 +3,10 @@ Cross-platform Hardware ID Module
 Generates a unique hardware identifier for Windows and Linux systems.
 """
 
+# Standard library imports
 import hashlib
-import platform
 import os
+import platform
 import uuid
 
 def get_hardware_id():

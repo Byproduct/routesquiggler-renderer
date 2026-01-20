@@ -24,12 +24,15 @@ The separate process:
 Since status updates are non-critical, failures are silently ignored.
 """
 
-import multiprocessing
-import requests
+# Standard library imports
 import json
+import multiprocessing
 import os
 import sys
 from datetime import datetime
+
+# Third-party imports
+import requests
 
 # Configurable API endpoint URL for status updates
 # Change this value if the status API endpoint changes

@@ -5,4 +5,4 @@ temporary files/
 log/
 config.txt
 ffmpeg.exe
-git-commit.bat
+git-push.bat

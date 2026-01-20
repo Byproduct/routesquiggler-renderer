@@ -2,26 +2,30 @@
 Multiprocessing utilities for generating images at different zoom levels.
 """
 
-import multiprocessing as mp
-from typing import List, Tuple, Dict, Any, Optional
-from queue import Empty
-import traceback
-import time
-import cartopy.crs as ccrs
+# Standard library imports
 import ftplib
+import multiprocessing as mp
+import time
+import traceback
 from io import BytesIO
+from queue import Empty
+from typing import Any, Dict, List, Optional, Tuple
+
+# Third-party imports
+import cartopy.crs as ccrs
 from PIL import Image
 
 # Increase PIL image size limit to 200 megapixels to handle large renders
 Image.MAX_IMAGE_PIXELS = 200_000_000
 
-from image_generator_maptileutils import create_map_tiles, set_cache_directory
-from image_generator_postprocess import add_stamp_to_plot, add_legend_to_plot, optimize_png_bytes, add_title_text_to_plot
-from image_generator_utils import ImageGenerator, calculate_resolution_scale
+# Local imports
 from html_file_generator import generate_image_gallery_html
-from write_log import write_log, write_debug_log
-from speed_based_color import speed_based_color
+from image_generator_maptileutils import create_map_tiles, set_cache_directory
+from image_generator_postprocess import add_legend_to_plot, add_stamp_to_plot, add_title_text_to_plot, optimize_png_bytes
+from image_generator_utils import ImageGenerator, calculate_resolution_scale
 from network_retry import retry_operation
+from speed_based_color import speed_based_color
+from write_log import write_debug_log, write_log
 
 class StatusUpdate:
     """Status update message from a worker process."""

@@ -4,29 +4,41 @@ GUI-specific functionality for the Route Squiggler Render Client.
 This module contains classes and functions that are only used in GUI mode.
 """
 
-import os
+# Standard library imports
 import multiprocessing as mp
+import os
 from queue import Empty
 
-from PySide6.QtCore import QObject, Signal, QThread, QTimer, Qt, Slot
+# Third-party imports
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
-    QApplication, QComboBox, QGridLayout, QHBoxLayout, QLabel, 
-    QMainWindow, QMessageBox, QProgressBar, QPushButton, QSplitter, 
-    QVBoxLayout, QWidget
+    QApplication,
+    QComboBox,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
 )
 
-from sync_map_tiles import sync_map_tiles
+# Local imports
 import map_tile_cache_sweep
-from bootup import BootupManager, BootupWorker, BootupThread
-from image_generator_multiprocess import StatusUpdate
-from job_request import JobRequestManager
-from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
-from image_generator_test import TestImageManager
-from video_generator_test import TestVideoManager
 import video_generator_cache_map_tiles
+from bootup import BootupManager, BootupThread, BootupWorker
+from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
+from image_generator_multiprocess import StatusUpdate
+from image_generator_test import TestImageManager
+from job_request import JobRequestManager
 from log_widget import LogWidget
+from sync_map_tiles import sync_map_tiles
+from video_generator_test import TestVideoManager
 
-# System tray
+# System tray (optional)
 try:
     from tray import SystemTray
     SYSTEM_TRAY_AVAILABLE = True

@@ -2,20 +2,25 @@
 Utility classes and functions for GPX processing and image and also video generation (image-only name is now misleading).
 """
 
-from image_generator_maptileutils import debug_log
-import numpy as np
-import matplotlib.pyplot as plt
+# Standard library imports
+import math
 import os
 import re
 import xml.etree.ElementTree as ET
-from typing import List, Tuple, Dict, Optional
-from datetime import datetime
-import math
 import zipfile
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 
-import cartopy.crs as ccrs
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for server
+
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Local imports
+from image_generator_maptileutils import debug_log
 
 
 current_directory = os.path.dirname(os.path.abspath(__file__))

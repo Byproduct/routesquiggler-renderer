@@ -3,6 +3,7 @@
 Appends program messages to daily log files.
 """
 
+# Standard library imports
 import os
 from datetime import datetime
 

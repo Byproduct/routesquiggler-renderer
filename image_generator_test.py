@@ -3,12 +3,27 @@ Test image generation functionality for the Route Squiggler render client.
 This module handles running test images from local test folders.
 """
 
-import os
+# Standard library imports
 import glob
 import json
+import os
 import traceback
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel
+
+# Third-party imports
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QDialog,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
+
+# Local imports
 from image_generator_utils import load_gpx_files_from_zip
 from job_request import apply_vertical_video_swap
 

@@ -3,8 +3,9 @@ Legend-related functions for video generation single frame creation.
 This module contains functions for creating and managing legends in video frames.
 """
 
-from video_generator_create_single_frame_utils import hex_to_rgba
+# Local imports
 from video_generator_create_combined_route import RoutePoint
+from video_generator_create_single_frame_utils import hex_to_rgba
 
 
 def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width):

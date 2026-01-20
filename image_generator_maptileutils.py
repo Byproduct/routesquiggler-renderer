@@ -2,13 +2,16 @@
 Map tile utilities for handling different map styles and zoom levels.
 """
 
+# Standard library imports
 import os
-import numpy as np
+from datetime import datetime
+from typing import List, Tuple
+
+# Third-party imports
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
-from typing import List, Tuple
-from datetime import datetime
+import numpy as np
 
 STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
 LOGGING_INTO_FILE = False   #render.log

@@ -3,12 +3,17 @@ Job request handling for the Route Squiggler render client.
 This module handles requesting and processing new jobs from the server.
 """
 
+# Standard library imports
 import json
 import traceback
-from io import BytesIO
 import zipfile
+from io import BytesIO
+
+# Third-party imports
 import requests
-from PySide6.QtCore import QObject, Signal, QThread, QTimer, QMetaObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal
+
+# Local imports
 from image_generator_utils import harmonize_gpx_times
 from network_retry import retry_operation
 

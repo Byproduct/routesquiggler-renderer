@@ -4,6 +4,7 @@ This module handles syncing of map tile cache files between local machine and st
 Can be used independently or called from other parts of the application.
 """
 
+# Standard library imports
 import ftplib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path

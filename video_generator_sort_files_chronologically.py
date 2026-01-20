@@ -3,6 +3,7 @@ Video generation chronological file sorting for the Route Squiggler render clien
 This module handles sorting GPX files chronologically based on their timestamps.
 """
 
+# Standard library imports
 import re
 from datetime import datetime
 from pathlib import Path

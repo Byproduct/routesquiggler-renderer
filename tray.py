@@ -1,12 +1,13 @@
+# Standard library imports
 import platform
 import sys
 
-# Conditionally import PySide6 only on Windows
+# Third-party imports (conditionally imported on Windows)
 if platform.system() == "Windows":
     try:
-        from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
-        from PySide6.QtCore import QObject, Signal, Qt
-        from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction
+        from PySide6.QtCore import QObject, Qt, Signal
+        from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
+        from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
         PYSIDE6_AVAILABLE = True
     except ImportError:
         PYSIDE6_AVAILABLE = False

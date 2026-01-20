@@ -4,8 +4,11 @@ This module handles acquiring and releasing locks for map tile services
 to prevent multiple users from downloading from the same service simultaneously.
 """
 
-import requests
+# Standard library imports
 import time
+
+# Third-party imports
+import requests
 
 # API endpoint for map tile locking
 MAP_TILE_LOCK_API_URL = "https://routesquiggler.com/map_tile_lock_api/"

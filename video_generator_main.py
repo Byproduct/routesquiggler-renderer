@@ -3,25 +3,28 @@ Video generation worker classes for the Route Squiggler render client.
 This module handles the main video generation workflow in separate threads.
 """
 
-import time
-import os
+# Standard library imports
 import ftplib
+import os
 import re
+import time
 from io import BytesIO
-from PySide6.QtCore import QObject, Signal, QThread
 
-# Set matplotlib backend before importing pyplot
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for video generation
 
+from PySide6.QtCore import QObject, QThread, Signal
+
+# Local imports
 from job_request import update_job_status
-from video_generator_sort_files_chronologically import get_sorted_gpx_list
-from video_generator_create_combined_route import create_combined_route
-from video_generator_cache_map_tiles import cache_map_tiles
-from video_generator_cache_map_images import cache_map_images
-from video_generator_cache_video_frames import cache_video_frames
 from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 from network_retry import retry_operation
+from video_generator_cache_map_images import cache_map_images
+from video_generator_cache_map_tiles import cache_map_tiles
+from video_generator_cache_video_frames import cache_video_frames
+from video_generator_create_combined_route import create_combined_route
+from video_generator_sort_files_chronologically import get_sorted_gpx_list
 
 
 def upload_video_to_storage_box(

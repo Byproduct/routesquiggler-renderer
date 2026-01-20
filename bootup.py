@@ -3,22 +3,26 @@ Bootup functionality for the Route Squiggler Render Client.
 This module handles initialization tasks like loading config, getting hardware ID, and setting up system tray.
 """
 
-import os
-import random
-import requests
+# Standard library imports
 import ftplib
 import hashlib
+import os
+import random
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 from pathlib import Path
-from get_hardware_id import get_hardware_id
-from PySide6.QtCore import QObject, Signal, QThread
-from sync_map_tiles import sync_map_tiles
-from debug_logger import setup_debug_logging
-import map_tile_cache_sweep
-from write_log import write_log, write_debug_log
 
+# Third-party imports
+import requests
+from PySide6.QtCore import QObject, QThread, Signal
+
+# Local imports
+import map_tile_cache_sweep
+from debug_logger import setup_debug_logging
+from get_hardware_id import get_hardware_id
+from sync_map_tiles import sync_map_tiles
+from write_log import write_debug_log, write_log
 
 # Conditionally import SystemTray - it handles its own platform detection
 try:

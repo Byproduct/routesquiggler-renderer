@@ -3,20 +3,23 @@ Image generation worker classes for the Route Squiggler render client.
 This module handles the main image generation workflow in separate threads.
 """
 
+# Standard library imports
 import multiprocessing as mp
-from PySide6.QtCore import QObject, Signal, QThread
 
-# Set matplotlib backend before any matplotlib imports
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for image generation
 
+from PySide6.QtCore import QObject, QThread, Signal
+
+# Local imports
 import image_generator_utils
-from image_generator_multiprocess import generate_images_parallel
 from image_generator_maptileutils import detect_zoom_level
+from image_generator_multiprocess import generate_images_parallel
 from job_request import update_job_status
-from video_generator_sort_files_chronologically import get_sorted_gpx_list
-from video_generator_create_combined_route import create_combined_route
 from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
+from video_generator_create_combined_route import create_combined_route
+from video_generator_sort_files_chronologically import get_sorted_gpx_list
 
 class ImageGeneratorWorker(QObject):
     """Worker class to handle image generation in a separate thread."""

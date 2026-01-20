@@ -3,11 +3,14 @@
 Route Squiggler render client - main entry point
 """
 
+# Standard library imports
+import argparse
+import multiprocessing as mp
 import os
 import sys
-import argparse
+from queue import Empty
 
-# Import configuration
+# Local imports
 from config import config
 
 # Shared help text to avoid duplication
@@ -22,11 +25,7 @@ Argument examples:
   python main.py testvideo                  # Run test video on first folder (nogui only)
   python main.py testvideo 351              # Run test video on folder "351" (nogui only)
   python main.py nogui debuglog testimage   # Multiple arguments can be combined
-"""
-
-# Standard library imports
-import multiprocessing as mp
-from queue import Empty  
+"""  
 
 # Calculate default thread count (max-2, minimum 1)
 default_threads = max(1, mp.cpu_count() - 2)

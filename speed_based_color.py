@@ -1,6 +1,9 @@
-from PIL import Image, ImageDraw, ImageFont
-import os
+# Standard library imports
 import math
+import os
+
+# Third-party imports
+from PIL import Image, ImageDraw, ImageFont
 
 
 def _draw_text_with_outline(draw, position, text, font, fill_color, outline_color=(0, 0, 0, 255), outline_width=1):

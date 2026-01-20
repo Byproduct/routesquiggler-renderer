@@ -3,24 +3,27 @@ Video generation map image caching for the Route Squiggler render client.
 This module handles caching map images for each unique bounding box needed for video frame generation.
 """
 
+# Standard library imports
 import json
 import os
 import time
-import cartopy.crs as ccrs
+from multiprocessing import Manager, Pool
 from pathlib import Path
-from multiprocessing import Pool, Manager
-from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
-from video_generator_coordinate_encoder import encode_coords
-from image_generator_maptileutils import create_map_tiles, detect_zoom_level, set_cache_directory
-import numpy as np
 
-# Set matplotlib backend before importing pyplot
+# Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for map image caching
 
-import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 import matplotlib.image as mpimg
-from video_generator_create_single_frame import _gps_to_web_mercator, _convert_bbox_to_web_mercator
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Local imports
+from image_generator_maptileutils import create_map_tiles, detect_zoom_level, set_cache_directory
+from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
+from video_generator_coordinate_encoder import encode_coords
+from video_generator_create_single_frame import _convert_bbox_to_web_mercator, _gps_to_web_mercator
 
 
 def create_map_image_worker(args):
