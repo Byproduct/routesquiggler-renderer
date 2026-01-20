@@ -5,29 +5,61 @@ This module provides functions to check available free space on drives.
 
 import os
 import shutil
+import sys
 from pathlib import Path
 
 # Configurable minimum free space threshold (in GB)
 MINIMUM_FREE_SPACE_GB = 20
 
+def _is_windows():
+    """Check if running on Windows."""
+    return sys.platform == 'win32' or os.name == 'nt'
+
+def _get_system_drive_path():
+    """
+    Get the system drive path based on the platform.
+    
+    Returns:
+        str: System drive path ('C:\\' on Windows, '/' on Linux/Unix)
+    """
+    if _is_windows():
+        # On Windows, use SystemDrive environment variable or default to C:
+        system_drive = os.environ.get('SystemDrive', 'C:')
+        return system_drive + "\\"
+    else:
+        # On Linux/Unix, use root filesystem
+        return "/"
+
 def check_current_drive():
     """
-    Check the current working directory's drive for available free space.
+    Check the current working directory's drive/filesystem for available free space.
+    On Windows, checks the drive where the script is running.
+    On Linux, checks the filesystem where the script is running.
     
     Returns:
         bool: True if free space is >= MINIMUM_FREE_SPACE_GB, False otherwise
     """
     try:
-        # Get the current working directory
-        current_dir = os.getcwd()
-        drive_path = Path(current_dir).drive
+        # Get the directory where the script is running (not just cwd, but actual script location)
+        # This ensures we check the drive where the script is located, not just where it was launched from
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        if not drive_path:
-            # If no drive letter (e.g., on Linux), use the root of current directory
-            drive_path = Path(current_dir).root
+        if _is_windows():
+            # On Windows, get the drive letter
+            drive_path = Path(script_dir).drive
+            if drive_path:
+                drive_path = drive_path + "\\"
+            else:
+                # Fallback to current directory drive
+                current_dir = os.getcwd()
+                drive_path = Path(current_dir).drive
+                if drive_path:
+                    drive_path = drive_path + "\\"
+                else:
+                    return False
         else:
-            # Add backslash for Windows drive paths
-            drive_path = drive_path + "\\"
+            # On Linux/Unix, get the root of the filesystem containing the script
+            drive_path = Path(script_dir).root
         
         return check_drive_space(drive_path)
         
@@ -38,15 +70,14 @@ def check_current_drive():
 def check_system_drive():
     """
     Check the system drive (where the OS is installed) for available free space.
+    On Windows, checks the system drive (typically C:\).
+    On Linux, checks the root filesystem (/).
     
     Returns:
         bool: True if free space is >= MINIMUM_FREE_SPACE_GB, False otherwise
     """
     try:
-        # Get the system drive (where the OS is installed)
-        system_drive = os.environ.get('SystemDrive', 'C:')
-        drive_path = system_drive + "\\"
-        
+        drive_path = _get_system_drive_path()
         return check_drive_space(drive_path)
         
     except Exception as e:
@@ -55,10 +86,10 @@ def check_system_drive():
 
 def check_drive_space(drive_path):
     """
-    Check the specified drive for available free space.
+    Check the specified drive/filesystem for available free space.
     
     Args:
-        drive_path (str): Path to the drive to check (e.g., "C:\\")
+        drive_path (str): Path to the drive/filesystem to check (e.g., "C:\\" on Windows, "/" on Linux)
     
     Returns:
         bool: True if free space is >= MINIMUM_FREE_SPACE_GB, False otherwise
@@ -84,23 +115,32 @@ def check_drive_space(drive_path):
 
 def get_free_space_gb(drive_path=None):
     """
-    Get the available free space in GB for a specified drive or current drive.
+    Get the available free space in GB for a specified drive/filesystem or current drive.
     
     Args:
-        drive_path (str, optional): Path to the drive to check. If None, uses current drive.
+        drive_path (str, optional): Path to the drive/filesystem to check. If None, uses script's drive.
     
     Returns:
         float: Free space in GB, or -1 if error
     """
     try:
         if drive_path is None:
-            # Use current drive
-            current_dir = os.getcwd()
-            drive_path = Path(current_dir).drive
-            if not drive_path:
-                drive_path = Path(current_dir).root
+            # Use script's drive/filesystem
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            if _is_windows():
+                drive_path = Path(script_dir).drive
+                if drive_path:
+                    drive_path = drive_path + "\\"
+                else:
+                    # Fallback to current directory
+                    current_dir = os.getcwd()
+                    drive_path = Path(current_dir).drive
+                    if drive_path:
+                        drive_path = drive_path + "\\"
+                    else:
+                        return -1
             else:
-                drive_path = drive_path + "\\"
+                drive_path = Path(script_dir).root
         
         # Get disk usage statistics
         total, used, free = shutil.disk_usage(drive_path)
@@ -116,25 +156,31 @@ def get_free_space_gb(drive_path=None):
 
 def are_current_and_system_drives_same():
     """
-    Check if the current working directory and system drive are the same.
+    Check if the script's drive/filesystem and system drive/filesystem are the same.
     
     Returns:
-        bool: True if both drives are the same, False otherwise
+        bool: True if both are the same, False otherwise
     """
     try:
-        # Get current working directory drive
-        current_dir = os.getcwd()
-        current_drive = Path(current_dir).drive
+        # Get script's directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Get system drive
-        system_drive = os.environ.get('SystemDrive', 'C:')
-        
-        # Compare drives (case-insensitive for Windows)
-        if current_drive and system_drive:
-            return current_drive.upper() == system_drive.upper()
-        else:
-            # If we can't determine drives (e.g., on Linux), assume they're different
+        if _is_windows():
+            # On Windows, compare drive letters
+            script_drive = Path(script_dir).drive
+            system_drive = os.environ.get('SystemDrive', 'C:')
+            
+            if script_drive and system_drive:
+                return script_drive.upper() == system_drive.upper()
             return False
+        else:
+            # On Linux, check if script is on root filesystem
+            # Get the root of the script's filesystem
+            script_root = Path(script_dir).root
+            system_root = "/"
+            
+            # If script is on root filesystem, they're the same
+            return script_root == system_root
             
     except Exception as e:
         print(f"Error checking if drives are the same: {e}")
@@ -142,29 +188,40 @@ def are_current_and_system_drives_same():
 
 def get_current_drive():
     """
-    Get the drive letter of the current working directory.
+    Get the drive/filesystem identifier where the script is located.
     
     Returns:
-        str: Drive letter (e.g., "C:") or empty string if not available
+        str: Drive letter (e.g., "C:") on Windows, or filesystem path on Linux
     """
     try:
-        current_dir = os.getcwd()
-        drive = Path(current_dir).drive
-        return drive if drive else ""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        if _is_windows():
+            drive = Path(script_dir).drive
+            return drive if drive else ""
+        else:
+            # On Linux, return the root of the filesystem
+            return Path(script_dir).root
+            
     except Exception as e:
         print(f"Error getting current drive: {e}")
         return ""
 
 def get_system_drive():
     """
-    Get the system drive letter.
+    Get the system drive/filesystem identifier.
     
     Returns:
-        str: System drive letter (e.g., "C:") or empty string if not available
+        str: System drive letter (e.g., "C:") on Windows, or "/" on Linux
     """
     try:
-        system_drive = os.environ.get('SystemDrive', 'C:')
-        return system_drive if system_drive else ""
+        if _is_windows():
+            # On Windows, return just the drive letter without backslash
+            system_drive = os.environ.get('SystemDrive', 'C:')
+            return system_drive
+        else:
+            # On Linux, return root filesystem
+            return "/"
     except Exception as e:
         print(f"Error getting system drive: {e}")
         return ""
