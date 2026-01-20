@@ -146,6 +146,11 @@ class BootupManager:
             if response.status_code == 200:
                 # Success - show the response and collapse the log
                 self.log_callback(f"Web server connection successful: {response.text}")
+                
+                # Update status to "starting up" immediately after successful server connection
+                from update_status import update_status
+                update_status("starting up", api_key=self.config.user)
+                
                 # Collapse the log since everything is working properly
                 if self.collapse_log_callback:
                     self.collapse_log_callback()

@@ -445,9 +445,10 @@ def _streaming_frame_worker(args):
             frame_number, points_for_frame, json_data, shared_map_cache, filename_to_rgba, gpx_time_per_video_time, stamp_array, target_time_video, shared_route_cache, virtual_leading_time, route_specific_tail_info
         )
         
-        # OPTIMIZED: More aggressive memory cleanup for computationally intensive tasks
-        # Clean up every 5 frames instead of 10 to prevent memory accumulation
-        if frame_number % 5 == 0:
+        # MEMORY MANAGEMENT: Aggressive cleanup to prevent memory accumulation
+        # This is especially important on Linux where memory fragmentation can occur.
+        # Clean up every 3 frames to prevent memory buildup in workers.
+        if frame_number % 3 == 0:
             # Force matplotlib to clean up any lingering figures
             plt.close('all')
             
@@ -455,8 +456,9 @@ def _streaming_frame_worker(args):
             if hasattr(plt, '_pylab_helpers'):
                 plt._pylab_helpers.Gcf.destroy_all()
             
-            # Force garbage collection to free up memory
-            gc.collect()
+            # Force full garbage collection to free up memory
+            # Generation 2 collection cleans up all unreachable objects
+            gc.collect(2)
         
         return frame_number, frame_array
         
@@ -476,7 +478,7 @@ class StreamingFrameGenerator:
     Generator class that yields frames for moviepy using multiprocessing.
     Uses an improved producer-consumer pattern with adaptive buffering and continuous frame generation.
     """
-    def __init__(self, json_data, route_time_per_frame, combined_route_data, max_workers=None, shared_map_cache=None, shared_route_cache=None, progress_callback=None, gpx_time_per_video_time=None, debug_callback=None):
+    def __init__(self, json_data, route_time_per_frame, combined_route_data, max_workers=None, shared_map_cache=None, shared_route_cache=None, progress_callback=None, gpx_time_per_video_time=None, debug_callback=None, user=None):
         self.json_data = json_data
         self.route_time_per_frame = route_time_per_frame
         self.combined_route_data = combined_route_data
@@ -485,6 +487,8 @@ class StreamingFrameGenerator:
         self.progress_callback = progress_callback
         self.gpx_time_per_video_time = gpx_time_per_video_time
         self.debug_callback = debug_callback
+        self.user = user
+        self.job_id = str(json_data.get('job_id', '')) if json_data else ''
         
         # Pre-compute filename-to-RGBA color mapping once for all frames
         self.filename_to_rgba = {}
@@ -637,6 +641,11 @@ class StreamingFrameGenerator:
         self.last_successfully_returned_frame = None  # Track last successfully returned frame for fallback
         self.frames_to_generate = frames_to_generate
         
+        # 10% status update tracking
+        # Calculate frame count for each 10% milestone (total frames are always divisible by 10)
+        self.ten_percent_frame_count = frames_to_generate // 10 if frames_to_generate >= 10 else 0
+        self.last_status_update_milestone = 0  # Track last reported milestone (0, 10, 20, ..., 90)
+        
         # Initialize multiprocessing components with improved buffering
         self.manager = multiprocessing.Manager()
         self.frame_buffer = self.manager.dict()  # {frame_number: frame_array}
@@ -678,11 +687,14 @@ class StreamingFrameGenerator:
         
     def _start_workers(self):
         """Start the multiprocessing pool and begin frame generation"""
-        # OPTIMIZED: Better worker pool configuration for high computational load
-        # Increase maxtasksperchild to reduce worker recycling overhead
-        # Each worker will handle at most 100 frames before being recycled (was 50)
-        # This reduces the overhead of worker recycling for computationally intensive tasks
-        self.pool = Pool(processes=self.num_workers, maxtasksperchild=100)
+        # Worker pool configuration with memory management in mind.
+        # Each worker will handle at most 50 frames before being recycled.
+        # This balances:
+        # - Performance: Avoiding too-frequent worker restarts
+        # - Memory: Preventing memory accumulation in long-running workers
+        # On Linux with 'spawn' start method (set in main.py), workers start fresh,
+        # but matplotlib/numpy can still accumulate memory over many frames.
+        self.pool = Pool(processes=self.num_workers, maxtasksperchild=50)
         
         # Initial progress update
         if self.progress_callback:
@@ -775,6 +787,22 @@ class StreamingFrameGenerator:
             self.pending_results[frame_number] = async_result
             self.frames_requested += 1
     
+    def _check_ten_percent_status_update(self):
+        """Check if we've reached a 10% milestone and update status if so."""
+        if not self.user or not self.job_id or self.ten_percent_frame_count == 0:
+            return
+        
+        # Calculate current milestone (10, 20, 30, ..., 90)
+        current_milestone = (self.frames_generated // self.ten_percent_frame_count) * 10
+        
+        # Only report milestones 10-90 (not 0% or 100%)
+        if current_milestone > self.last_status_update_milestone and 10 <= current_milestone <= 90:
+            # Check if we're exactly at a 10% boundary
+            if self.frames_generated % self.ten_percent_frame_count == 0:
+                from update_status import update_status
+                update_status(f"rendering ({self.job_id}) {current_milestone}%", api_key=self.user)
+                self.last_status_update_milestone = current_milestone
+    
     def _collect_ready_frames(self):
         """Collect any frames that are ready and add them to buffer"""
         completed_frames = []
@@ -833,6 +861,8 @@ class StreamingFrameGenerator:
         # IMPROVED: Always request more frames after collecting to maintain pipeline
         if completed_frames:
             self._request_more_frames()
+            # Check if we've hit a 10% milestone and update server status
+            self._check_ten_percent_status_update()
         
         # NEW: Periodic buffer health monitoring
         if self.frames_generated - self.last_buffer_health_check >= self.buffer_health_check_interval:
@@ -1063,6 +1093,12 @@ class StreamingFrameGenerator:
         # Track the last successfully returned frame for fallback on timeout
         self.last_successfully_returned_frame = frame_array.copy()
         
+        # MEMORY MANAGEMENT: Periodic garbage collection in parent process
+        # This helps clean up frame arrays that have been consumed from the Manager.dict()
+        # and prevents memory fragmentation, especially important on Linux.
+        if frame_number % 100 == 0:
+            gc.collect()
+        
         return frame_array
     
     def cleanup(self):
@@ -1073,7 +1109,7 @@ class StreamingFrameGenerator:
             self.pool = None
 
 
-def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
+def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None):
     """
     Create video by streaming frames directly to ffmpeg without saving to disk.
     
@@ -1088,6 +1124,8 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         shared_map_cache (dict, optional): Shared memory cache for map images
         shared_route_cache (dict, optional): Shared memory cache for route images
         gpx_time_per_video_time (float, optional): GPX time per video time ratio
+        gpu_rendering (bool, optional): Whether to use GPU rendering (default: True)
+        user (str, optional): API key for status updates at 10% intervals (username misleading here, it's the "username" of the renderer used as an API key - not the user to which the job belongs)
     
     Returns:
         str: Path to the created video file, or None if failed
@@ -1199,7 +1237,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 debug_callback(f"Video filename: {output_filename}")
         
         # Create the frame generator
-        frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time, debug_callback)
+        frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time, debug_callback, user)
         
         # Initial progress update
         if progress_callback:
@@ -1395,7 +1433,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         return None
 
 
-def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
+def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None):
     """
     Cache video frames for video generation using streaming approach.
     
@@ -1410,6 +1448,8 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         shared_map_cache (dict, optional): Shared memory cache for map images
         shared_route_cache (dict, optional): Shared memory cache for route images
         gpx_time_per_video_time (float, optional): GPX time per video time ratio
+        gpu_rendering (bool, optional): Whether to use GPU rendering (default: True)
+        user (str, optional): API key for status updates at 10% intervals
     
     Returns:
         dict: Cache results with timing information, or None if error
@@ -1426,7 +1466,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         # Create video using streaming approach
         video_path = create_video_streaming(
             json_data, route_time_per_frame, combined_route_data, 
-            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering
+            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering, user
         )
         
         if video_path:
@@ -1498,7 +1538,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         return None
 
 
-def cache_video_frames(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True):
+def cache_video_frames(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None):
     """
     Cache video frames for video generation.
     
@@ -1513,6 +1553,7 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
         shared_route_cache (dict, optional): Shared memory cache for route images
         gpx_time_per_video_time (float, optional): GPX time per video time ratio
         gpu_rendering (bool, optional): Whether to use GPU rendering (default: True)
+        user (str, optional): API key for status updates at 10% intervals
     
     Returns:
         dict: Cache results with timing information, or None if error
@@ -1565,7 +1606,7 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
         # Create video using streaming approach
         cache_result = cache_video_frames_for_video(
             json_data, route_time_per_frame, combined_route_data, 
-            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering
+            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering, user
         )
         
         if cache_result is None:

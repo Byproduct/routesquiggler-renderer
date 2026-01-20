@@ -10,6 +10,20 @@ import os
 import sys
 from queue import Empty
 
+# CRITICAL: Set multiprocessing start method to 'spawn' on all platforms.
+# This ensures consistent behavior between Windows and Linux:
+# - Windows uses 'spawn' by default (creates fresh Python processes)
+# - Linux uses 'fork' by default (copies parent process memory, causing memory bloat)
+# By forcing 'spawn', we prevent memory accumulation issues on Linux where forked
+# workers inherit the parent's memory state and Manager.dict() behaves poorly.
+# This must be done before any other multiprocessing operations.
+if __name__ == "__main__":
+    try:
+        mp.set_start_method('spawn', force=True)
+    except RuntimeError:
+        # Start method may already be set (e.g., in frozen applications)
+        pass
+
 # Local imports
 from config import config
 

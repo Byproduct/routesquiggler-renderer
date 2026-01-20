@@ -127,14 +127,14 @@ def update_status(status, api_key=None):
     log_file = "status_update_log.txt"
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
-    # Log the function call
-    try:
-        with open(log_file, 'a', encoding='utf-8') as f:
-            f.write(f"[{timestamp}] update_status() called\n")
-            f.write(f"  Status parameter: {status}\n")
-            f.write(f"  API key provided: {api_key is not None}\n")
-    except Exception:
-        pass  # Don't fail if logging fails
+    # # Log the function call
+    # try:
+    #     with open(log_file, 'a', encoding='utf-8') as f:
+    #         f.write(f"[{timestamp}] update_status() called\n")
+    #         f.write(f"  Status parameter: {status}\n")
+    #         f.write(f"  API key provided: {api_key is not None}\n")
+    # except Exception:
+    #     pass  # Don't fail if logging fails
     
     # Load config if api_key not provided
     if api_key is None:

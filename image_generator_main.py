@@ -4,11 +4,15 @@ This module handles the main image generation workflow in separate threads.
 """
 
 # Standard library imports
+import gc
 import multiprocessing as mp
+import time
+import traceback
 
 # Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for image generation
+import matplotlib.pyplot as plt
 
 from PySide6.QtCore import QObject, QThread, Signal
 
@@ -18,6 +22,7 @@ from image_generator_maptileutils import detect_zoom_level
 from image_generator_multiprocess import generate_images_parallel
 from job_request import update_job_status
 from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
+from update_status import update_status
 from video_generator_create_combined_route import create_combined_route
 from video_generator_sort_files_chronologically import get_sorted_gpx_list
 
@@ -48,7 +53,6 @@ class ImageGeneratorWorker(QObject):
     def image_generator_process(self):
         """Main processing method that runs in the worker thread."""
         try:
-            import time
             start_time = time.time()
             
             self.log_message.emit("Starting image generation.")
@@ -329,8 +333,7 @@ class ImageGeneratorWorker(QObject):
             
             # Update status to "downloading maps (job_id)"
             job_id = str(self.json_data.get('job_id', ''))
-            from update_status import update_status
-            update_status(f"downloading maps ({job_id})", api_key=self.user)
+            update_status(f"working ({job_id})", api_key=self.user)
             
             try:
                 self.results, _ = generate_images_parallel(
@@ -364,10 +367,7 @@ class ImageGeneratorWorker(QObject):
                     log_callback=self.log_message.emit,
                     debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
                 )
-            
-            # Update status to "rendering (job_id)" after map tile download completes
-            update_status(f"rendering ({job_id})", api_key=self.user)
-            
+                       
             # After all workers have completed, check if we have all results
             if self.results and len(self.results) == len(zoom_levels):
                 # All workers succeeded
@@ -400,7 +400,6 @@ class ImageGeneratorWorker(QObject):
             self.finished.emit()
             
         except Exception as e:
-            import traceback
             error_msg = f"Error in worker thread: {str(e)}\n{traceback.format_exc()}"
             self.error.emit(error_msg)
             update_job_status(
@@ -419,9 +418,6 @@ class ImageGeneratorWorker(QObject):
     def cleanup_resources(self):
         """Clean up matplotlib and Qt resources to prevent painter conflicts."""
         try:
-            import matplotlib.pyplot as plt
-            import matplotlib
-            
             # Close all matplotlib figures to release Qt painters
             plt.close('all')
             
@@ -430,7 +426,6 @@ class ImageGeneratorWorker(QObject):
             matplotlib.pyplot.cla()
             
             # Force garbage collection to clean up any remaining Qt objects
-            import gc
             gc.collect()
             
             self.debug_message.emit("Matplotlib and Qt resources cleaned up")

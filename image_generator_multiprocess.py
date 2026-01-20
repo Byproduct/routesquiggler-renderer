@@ -13,18 +13,33 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # Third-party imports
 import cartopy.crs as ccrs
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from PIL import Image
 
 # Increase PIL image size limit to 200 megapixels to handle large renders
 Image.MAX_IMAGE_PIXELS = 200_000_000
 
 # Local imports
+from config import config
 from html_file_generator import generate_image_gallery_html
 from image_generator_maptileutils import create_map_tiles, set_cache_directory
-from image_generator_postprocess import add_legend_to_plot, add_stamp_to_plot, add_title_text_to_plot, optimize_png_bytes
-from image_generator_utils import ImageGenerator, calculate_resolution_scale
+from image_generator_postprocess import (
+    add_legend_to_plot,
+    add_markers_to_plot,
+    add_speed_based_color_label_to_plot,
+    add_stamp_to_plot,
+    add_title_text_to_plot,
+    optimize_png_bytes,
+)
+from image_generator_utils import (
+    ImageGenerator,
+    add_filename_tags_to_image,
+    calculate_resolution_scale,
+)
 from network_retry import retry_operation
 from speed_based_color import speed_based_color
+from update_status import update_status
+from video_generator_create_combined_route import RoutePoint
 from write_log import write_debug_log, write_log
 
 class StatusUpdate:
@@ -378,8 +393,8 @@ def generate_image_for_zoom_level(
         Tuple of (zoom_level, image_bytes)
     """
     try:
-        def update_status(status: str, textfield: bool = True):
-            """Helper to send status updates."""
+        def update_debug_output(status: str, textfield: bool = True):
+            """Helper to send status updates to the debug output queue."""
             try:
                 status_queue.put(StatusUpdate(zoom_level, status, error=None, textfield=textfield))
                 # Small sleep to ensure the status is processed
@@ -402,7 +417,7 @@ def generate_image_for_zoom_level(
             resolution_y_value = 1080  # Default fallback
         
         # Calculate bounds with proper aspect ratio
-        update_status("calculating bounds", textfield=False)
+        update_debug_output("calculating bounds", textfield=False)
         lon_min_padded, lon_max_padded, lat_min_padded, lat_max_padded = generator.calculate_aspect_ratio_bounds(
             map_bounds, target_aspect_ratio=resolution_x_value/resolution_y_value
         )
@@ -414,11 +429,11 @@ def generate_image_for_zoom_level(
             write_log(f"Failed to set cache directory for style '{map_style}': {e}")
         
         # Load map tiles (download from server or read from cache)
-        update_status("loading tiles", textfield=False)
+        update_debug_output("loading tiles", textfield=False)
         map_tiles = create_map_tiles(map_style)
         
         # Now set up the figure with the loaded tiles
-        update_status("plotting", textfield=False)
+        update_debug_output("plotting", textfield=False)
         # Ensure map_transparency is numeric to avoid TypeError
         try:
             map_transparency_value = int(map_transparency)
@@ -429,7 +444,7 @@ def generate_image_for_zoom_level(
         # Calculate figure dimensions
         figsize_width, figsize_height = resolution_x_value/100, resolution_y_value/100
         try:
-            update_status(f"fig setup: target_px={resolution_x_value}x{resolution_y_value} figsize_in={figsize_width:.2f}x{figsize_height:.2f} dpi=100", textfield=True)
+            update_debug_output(f"fig setup: target_px={resolution_x_value}x{resolution_y_value} figsize_in={figsize_width:.2f}x{figsize_height:.2f} dpi=100", textfield=True)
         except Exception:
             pass
         
@@ -442,7 +457,7 @@ def generate_image_for_zoom_level(
         )
         try:
             canvas_w, canvas_h = fig.canvas.get_width_height()
-            update_status(f"canvas size px={canvas_w}x{canvas_h}", textfield=True)
+            update_debug_output(f"canvas size px={canvas_w}x{canvas_h}", textfield=True)
         except Exception:
             pass
         
@@ -456,7 +471,7 @@ def generate_image_for_zoom_level(
         image_scale = calculate_resolution_scale(resolution_x_value, resolution_y_value)
         
         # Plot all tracks
-        update_status("drawing tracks", textfield=False)
+        update_debug_output("drawing tracks", textfield=False)
         # Matplotlib linewidth is specified in points (1 pt = 1/72 inch).
         # We want the stroke width in *pixels* to scale with image_scale while
         # remaining visually proportional regardless of figure DPI (100).
@@ -488,10 +503,6 @@ def generate_image_for_zoom_level(
             normalized_hr = (hr_value - hr_min) / hr_range
             return 1.0 + normalized_hr * 9.0
         
-        # Import RoutePoint if needed for data-based coloring or HR-based width
-        if use_data_based_color or use_hr_based_width:
-                from video_generator_create_combined_route import RoutePoint
-                
         if use_data_based_color:
             # DATA-BASED COLORING MODE: Draw segments individually with speed-based or HR-based colors
             if use_speed_based_color:
@@ -661,12 +672,12 @@ def generate_image_for_zoom_level(
         
         # Add statistics if requested
         if statistics != "off":
-            update_status("adding statistics", textfield=False)
+            update_debug_output("adding statistics", textfield=False)
             add_statistics_to_plot(ax, statistics_data, json_data or {}, resolution_x_value, resolution_y_value, image_scale, statistics)
         
         # Add legend if requested
         if legend != "off":
-            update_status("adding legend", textfield=False)
+            update_debug_output("adding legend", textfield=False)
             # Determine legend theme from job JSON (default to light)
             legend_theme = (json_data or {}).get('legend_theme', 'light')
             add_legend_to_plot(
@@ -691,7 +702,7 @@ def generate_image_for_zoom_level(
                 if title_text_setting in ['light', 'dark']:
                     title_text_value = (route_name or json_data.get('route_name') or '').strip()
                     if title_text_value:
-                        update_status("adding title", textfield=False)
+                        update_debug_output("adding title", textfield=False)
                         add_title_text_to_plot(
                             ax=ax,
                             title_text=title_text_value,
@@ -711,8 +722,7 @@ def generate_image_for_zoom_level(
                 label_type = "HR color"
             else:
                 label_type = "speed"
-            update_status(f"adding {label_type} label", textfield=False)
-            from image_generator_postprocess import add_speed_based_color_label_to_plot
+            update_debug_output(f"adding {label_type} label", textfield=False)
             add_speed_based_color_label_to_plot(
                 ax=ax,
                 json_data=json_data,
@@ -724,8 +734,7 @@ def generate_image_for_zoom_level(
 
         # Add markers (start and finish) if enabled
         if json_data and json_data.get('markers', False):
-            update_status("adding markers", textfield=False)
-            from image_generator_postprocess import add_markers_to_plot
+            update_debug_output("adding markers", textfield=False)
             add_markers_to_plot(
                 ax=ax,
                 track_coords_with_metadata=track_coords_with_metadata,
@@ -740,8 +749,7 @@ def generate_image_for_zoom_level(
 
         # Add filename tags if enabled
         if json_data and json_data.get('filename_tags') in ['light', 'dark']:
-            update_status("adding filename tags", textfield=False)
-            from image_generator_utils import add_filename_tags_to_image
+            update_debug_output("adding filename tags", textfield=False)
             add_filename_tags_to_image(
                 ax=ax,
                 track_coords_with_metadata=track_coords_with_metadata,
@@ -756,7 +764,7 @@ def generate_image_for_zoom_level(
             )
 
         # Add stamp
-        update_status("adding stamp", textfield=False)
+        update_debug_output("adding stamp", textfield=False)
         add_stamp_to_plot(
             ax=ax,
             image_width=resolution_x_value,
@@ -765,14 +773,14 @@ def generate_image_for_zoom_level(
         )
         
         # Save to bytes
-        update_status("saving image", textfield=False)
+        update_debug_output("saving image", textfield=False)
         buffer = BytesIO()
         fig.savefig(buffer, format='png', dpi=100, bbox_inches=None, pad_inches=0)
         buffer.seek(0)
         image_bytes = buffer.getvalue()
         try:
             with Image.open(BytesIO(image_bytes)) as im_probe:
-                update_status(f"saved png size px={im_probe.width}x{im_probe.height}", textfield=True)
+                update_debug_output(f"saved png size px={im_probe.width}x{im_probe.height}", textfield=True)
         except Exception:
             pass
         
@@ -780,7 +788,7 @@ def generate_image_for_zoom_level(
         fig.clear()
         
         # Optimize PNG
-        update_status("compressing", textfield=False)
+        update_debug_output("compressing", textfield=False)
         optimized_bytes = optimize_png_bytes(image_bytes)
         
         # Create thumbnail if requested
@@ -822,17 +830,17 @@ def generate_image_for_zoom_level(
             folder=folder,
             filename=filename,
             thumbnail_bytes=thumbnail_bytes if thumbnail else None,
-            update_status=update_status,
+            update_debug_output=update_debug_output,
             route_name=route_name,
             zoom_levels=zoom_levels if thumbnail else None  # Only pass all zoom levels when uploading thumbnail
         )
 
         if not success:
-            update_status("error")
+            update_debug_output("error")
             return zoom_level, None
 
         # Add final status update after successful upload and verification
-        update_status("complete", textfield=False)
+        update_debug_output("complete", textfield=False)
         return zoom_level, optimized_bytes
         
     except Exception as e:
@@ -965,7 +973,6 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
                 renderer = fig.canvas.get_renderer()
             else:
                 # Fallback: create a dummy renderer for measurement
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
                 canvas = FigureCanvasAgg(fig)
                 renderer = canvas.get_renderer()
             
@@ -1014,7 +1021,7 @@ def upload_to_storage_box(
     folder: str,
     filename: str,
     thumbnail_bytes: Optional[bytes] = None,
-    update_status=None,
+    update_debug_output=None,
     route_name: Optional[str] = None,
     zoom_levels: Optional[List[int]] = None
 ) -> bool:
@@ -1031,7 +1038,7 @@ def upload_to_storage_box(
         folder: Subfolder name
         filename: Name of the file to save
         thumbnail_bytes: Optional thumbnail image data to upload
-        update_status: Optional callback for status updates
+        update_debug_output: Optional callback for debug output status updates
         route_name: Optional route name for gallery generation
         zoom_levels: Optional list of zoom levels for gallery generation
         
@@ -1044,16 +1051,14 @@ def upload_to_storage_box(
         try:
             # Update server status to "uploading (job_id)"
             try:
-                from update_status import update_status as update_server_status
-                from config import config
                 if config.user:
-                    update_server_status(f"uploading ({job_id})", api_key=config.user)
+                    update_status(f"uploading ({job_id})", api_key=config.user)
             except Exception:
                 pass  # Silently ignore if status update fails
             
             # Update local UI status (if callback provided)
-            if update_status:
-                update_status("uploading", textfield=False)
+            if update_debug_output:
+                update_debug_output("uploading", textfield=False)
                 
             # Connect to FTP
             ftp = ftplib.FTP(storage_box_address)

@@ -427,7 +427,8 @@ class VideoGeneratorWorker(QObject):
                     shared_map_cache=shared_map_cache,
                     shared_route_cache=shared_route_cache,
                     gpx_time_per_video_time=self.combined_route_data.get('gpx_time_per_video_time', None),
-                    gpu_rendering=self.gpu_rendering
+                    gpu_rendering=self.gpu_rendering,
+                    user=self.user
                 )
                 
                 if not video_frames_result:
