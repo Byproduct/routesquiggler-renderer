@@ -32,6 +32,26 @@ Image.MAX_IMAGE_PIXELS = 200_000_000
 
 # Local imports
 from config import config
+
+
+def get_ffmpeg_executable():
+    """
+    Get the correct ffmpeg executable path for the current platform.
+    
+    Returns:
+        str: Path to ffmpeg executable ('ffmpeg.exe' on Windows, 'ffmpeg' on Linux/Mac)
+    """
+    if os.name == 'nt':  # Windows
+        # Check if ffmpeg.exe exists in the project root (same directory as this script)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        local_ffmpeg = os.path.join(script_dir, 'ffmpeg.exe')
+        if os.path.exists(local_ffmpeg):
+            return local_ffmpeg
+        # Fallback to system ffmpeg.exe (should be in PATH)
+        return 'ffmpeg.exe'
+    else:  # Linux/Mac
+        # On Linux/Mac, ffmpeg should be in PATH
+        return 'ffmpeg'
 from image_generator_utils import calculate_resolution_scale
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
 from video_generator_create_combined_route import RoutePoint
@@ -1338,15 +1358,21 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                     # Create temporary frame file
                     temp_frame_path = os.path.join(output_dir, 'temp_last_frame.png')
                     
+                    # Get the correct ffmpeg executable for the current platform
+                    ffmpeg_executable = get_ffmpeg_executable()
+                    
                     # Use ffmpeg to extract the last frame
                     cmd = [
-                        'ffmpeg',
+                        ffmpeg_executable,
                         '-sseof', '-1',  # Seek to 1 second before end
                         '-i', output_path,
                         '-vframes', '1',
                         '-y',  # Overwrite output file
                         temp_frame_path
                     ]
+                    
+                    if debug_callback:
+                        debug_callback(f"Running FFmpeg command: {' '.join(cmd)}")
                     
                     # Run ffmpeg command
                     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
