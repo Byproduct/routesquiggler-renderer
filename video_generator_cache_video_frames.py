@@ -21,6 +21,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for video frame caching
 
+import imageio_ffmpeg
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,10 +38,22 @@ from config import config
 def get_ffmpeg_executable():
     """
     Get the correct ffmpeg executable path for the current platform.
+    Uses the same ffmpeg binary that MoviePy uses via imageio_ffmpeg for consistency.
     
     Returns:
-        str: Path to ffmpeg executable ('ffmpeg.exe' on Windows, 'ffmpeg' on Linux/Mac)
+        str: Path to ffmpeg executable
     """
+    # First, try to use the same ffmpeg that MoviePy/imageio uses
+    # This ensures consistency with video generation
+    try:
+        ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+        if ffmpeg_path and os.path.exists(ffmpeg_path):
+            return ffmpeg_path
+    except Exception:
+        # If imageio_ffmpeg fails for any reason, fall back to platform defaults
+        pass
+    
+    # Fallback: platform-specific defaults
     if os.name == 'nt':  # Windows
         # Check if ffmpeg.exe exists in the project root (same directory as this script)
         script_dir = os.path.dirname(os.path.abspath(__file__))
