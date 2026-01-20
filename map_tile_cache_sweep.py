@@ -119,7 +119,7 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     
     if total_files == 0:
         write_log("No .npy files found in the directory.")
-        return 0, 0
+        return 0, 0, []
     
     write_log(f"Found {total_files} .npy files to process")
     
