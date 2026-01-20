@@ -110,8 +110,9 @@ Environment="PYTHONUNBUFFERED=1"
 ExecStart=$PYTHON_EXEC main.py nogui
 
 # Log output to output.log in the working directory
-StandardOutput=append:$INSTALL_DIR/output.log
-StandardError=append:$INSTALL_DIR/output.log
+# Commented out - using journalctl instead (sudo journalctl -u route-squiggler.service -f)
+# StandardOutput=append:$INSTALL_DIR/output.log
+# StandardError=append:$INSTALL_DIR/output.log
 
 # Restart policy
 Restart=on-failure
@@ -129,11 +130,12 @@ EOF
 echo -e "${GREEN}✓${NC} Service file created at $SERVICE_FILE"
 
 # Set proper permissions on output.log if it doesn't exist
-if [ ! -f "$INSTALL_DIR/output.log" ]; then
-    touch "$INSTALL_DIR/output.log"
-    chown "$ACTUAL_USER:$ACTUAL_USER" "$INSTALL_DIR/output.log"
-    echo -e "${GREEN}✓${NC} Created output.log file"
-fi
+# Commented out - using journalctl instead
+# if [ ! -f "$INSTALL_DIR/output.log" ]; then
+#     touch "$INSTALL_DIR/output.log"
+#     chown "$ACTUAL_USER:$ACTUAL_USER" "$INSTALL_DIR/output.log"
+#     echo -e "${GREEN}✓${NC} Created output.log file"
+# fi
 
 # Reload systemd
 echo ""
@@ -178,7 +180,7 @@ echo ""
 echo "  View live logs (systemd journal):"
 echo "    sudo journalctl -u route-squiggler.service -f"
 echo ""
-echo "  View output.log file:"
+echo "  View output.log file (if enabled):"
 echo "    tail -f $INSTALL_DIR/output.log"
 echo ""
 echo "  Start service:"
@@ -202,7 +204,6 @@ echo "    sudo systemctl disable route-squiggler.service"
 echo "    sudo rm /etc/systemd/system/route-squiggler.service"
 echo "    sudo systemctl daemon-reload"
 echo ""
-echo -e "${YELLOW}Note:${NC} The service will write output to:"
-echo "  $INSTALL_DIR/output.log"
+echo -e "${YELLOW}Note:${NC} View logs with: sudo journalctl -u route-squiggler.service -f"
 echo ""
 

@@ -1,7 +1,5 @@
 """
-Utility classes and functions for GPX processing and image generation.
-This module provides core utilities used by the multiprocess image generation system,
-including GPX coordinate extraction, image dimensions calculation, and map figure setup.
+Utility classes and functions for GPX processing and image and also video generation (image-only name is now misleading).
 """
 
 from image_generator_maptileutils import debug_log
@@ -779,3 +777,224 @@ class ImageGenerator:
         ax.add_image(map_tiles, zoom_level, alpha=alpha)
 
         return fig, ax
+
+
+def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float, float, float], 
+             background_theme: str = 'light', resolution_scale: float = 1.0,
+             horizontal_offset_points: Optional[float] = None, vertical_offset_points: Optional[float] = None):
+    """
+    Draw a tag/label on a matplotlib axes at the specified coordinates.
+    
+    This function is reusable for both image and video generation modes. It automatically
+    handles coordinate projection:
+    - For cartopy axes (image generation): Uses lat/lon directly
+    - For regular axes in Web Mercator (video generation): Converts lat/lon to Web Mercator
+    
+    Args:
+        ax: Matplotlib axes object (cartopy projection for images, Web Mercator for videos)
+        lon: Longitude in decimal degrees
+        lat: Latitude in decimal degrees
+        text: Text to display in the tag
+        text_color_rgb: RGB color tuple for text (values 0.0-1.0)
+        background_theme: Background theme - 'light' (white bg, colored border/text) 
+                         or 'dark' (dark bg, white text, light border)
+        resolution_scale: Scale factor for resolution (0.7, 1.0, 2.0, 3.0, or 4.0). Default 1.0
+        horizontal_offset_points: Optional horizontal offset in points. If None, uses 6 * resolution_scale
+        vertical_offset_points: Optional vertical offset in points (positive = up). If None, uses 0
+    
+    Example:
+        # Light theme with custom color
+        draw_tag(ax, -122.4, 37.8, "Runner Name", (1.0, 0.0, 0.0), 'light')
+        
+        # Dark theme with 2x resolution
+        draw_tag(ax, -122.4, 37.8, "Runner Name", (1.0, 0.0, 0.0), 'dark', resolution_scale=2.0)
+    """
+    # Convert RGB tuple (0-1 range) to hex for matplotlib
+    r, g, b = text_color_rgb
+    hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+    
+    # Set theme colors
+    if background_theme == 'dark':
+        bg_color = '#2d2d2d'  # Dark gray background
+        border_color = '#cccccc'  # Light gray border
+        text_color = hex_color  # Use route color for text
+    else:  # light theme (default)
+        bg_color = 'white'
+        border_color = hex_color  # Use text color for border
+        text_color = hex_color  # Use text color for text
+    
+    # Calculate resolution-scaled values
+    font_size = 8 * resolution_scale
+    border_width = max(1, resolution_scale)  # At least 1px border
+    
+    # Set defaults if not provided (scale with resolution)
+    if horizontal_offset_points is None:
+        horizontal_offset_points = 6 * resolution_scale
+    if vertical_offset_points is None:
+        vertical_offset_points = 0
+    
+    # Check if axes has a cartopy projection (image generation) or is in Web Mercator (video generation)
+    # Cartopy axes have a 'projection' attribute
+    has_cartopy_projection = hasattr(ax, 'projection') and ax.projection is not None
+    
+    if has_cartopy_projection:
+        # Image generation: Use lat/lon with PlateCarree transform for Cartopy
+        # Cartopy axes need coordinates transformed from PlateCarree (lon/lat) to the axes' native projection
+        x, y = lon, lat
+        xycoords = ccrs.PlateCarree()._as_mpl_transform(ax)
+    else:
+        # Video generation: Convert to Web Mercator coordinates
+        # Web Mercator transformation
+        x = lon * 20037508.34 / 180
+        y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
+        y = y * 20037508.34 / 180
+        xycoords = 'data'
+    
+    # Use annotate with pixel-offset to ensure consistent on-screen spacing regardless of projection
+    ax.annotate(
+        text,
+        xy=(x, y),
+        xycoords=xycoords,
+        xytext=(horizontal_offset_points, vertical_offset_points),
+        textcoords='offset points',
+        color=text_color,
+        fontsize=font_size,
+        fontweight='bold',
+        ha='left',
+        va='center',
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=border_width
+        ),
+        zorder=40,
+    )
+
+
+def add_filename_tags_to_image(ax, track_coords_with_metadata: List[tuple], json_data: Dict, 
+                                resolution_scale: float, image_width: int, image_height: int,
+                                lon_min: float, lon_max: float, lat_min: float, lat_max: float):
+    """
+    Add filename tags to an image at the starting point of each route.
+    
+    Tags are positioned to avoid overlap - if a tag would overlap with an existing tag,
+    it is moved downward until it doesn't overlap.
+    
+    Args:
+        ax: Matplotlib axes object (with cartopy projection)
+        track_coords_with_metadata: List of (lats, lons, color, name, filename) tuples
+        json_data: Job configuration containing filename_tags setting and track_objects
+        resolution_scale: Scale factor for resolution (0.7, 1.0, 2.0, 3.0, or 4.0)
+        image_width: Image width in pixels
+        image_height: Image height in pixels
+        lon_min: Minimum longitude of map bounds
+        lon_max: Maximum longitude of map bounds
+        lat_min: Minimum latitude of map bounds
+        lat_max: Maximum latitude of map bounds
+    """
+    if not track_coords_with_metadata:
+        return
+    
+    # Check filename_tags setting
+    filename_tags_setting = json_data.get('filename_tags', 'off') if json_data else 'off'
+    if filename_tags_setting not in ['light', 'dark']:
+        return
+    
+    # Calculate coordinate spans for converting offsets to coordinate space
+    lon_span = lon_max - lon_min
+    lat_span = lat_max - lat_min
+    
+    # Base tag height in pixels (approximate, for overlap detection)
+    # Font size 8 at scale 1.0, plus padding
+    base_tag_height_pixels = 20 * resolution_scale
+    # Convert to latitude units
+    tag_height_lat = (base_tag_height_pixels / image_height) * lat_span
+    
+    # Base horizontal offset in pixels, converted to longitude
+    base_offset_pixels = 6 * resolution_scale
+    horizontal_offset_lon = (base_offset_pixels / image_width) * lon_span
+    
+    # Track placed tag positions for overlap detection: list of (lon, lat_top, lat_bottom)
+    placed_tags = []
+    
+    for lats, lons, color, name, filename in track_coords_with_metadata:
+        if not lats or not lons or not filename:
+            continue
+        
+        # Get starting point
+        start_lat = lats[0]
+        start_lon = lons[0]
+        
+        # Remove .gpx extension if present for display
+        display_filename = filename
+        if display_filename.endswith('.gpx'):
+            display_filename = display_filename[:-4]
+        
+        # Parse color to RGB tuple (0-1 range)
+        if isinstance(color, str):
+            # Hex color string
+            color_hex = color.lstrip('#')
+            if len(color_hex) == 6:
+                text_color_rgb = tuple(int(color_hex[i:i+2], 16)/255.0 for i in (0, 2, 4))
+            else:
+                text_color_rgb = (1.0, 0.0, 0.0)  # Default red
+        elif isinstance(color, tuple) and len(color) >= 3:
+            text_color_rgb = color[:3]
+        else:
+            text_color_rgb = (1.0, 0.0, 0.0)  # Default red
+        
+        # Calculate initial tag position (to the right of start point)
+        tag_lon = start_lon + horizontal_offset_lon
+        tag_lat = start_lat
+        
+        # Tag bounds (approximate)
+        tag_lat_top = tag_lat + tag_height_lat / 2
+        tag_lat_bottom = tag_lat - tag_height_lat / 2
+        
+        # Check for overlap with existing tags and move down if needed
+        # Only check tags that are horizontally close (within a reasonable range)
+        max_iterations = 50  # Prevent infinite loops
+        iteration = 0
+        
+        while iteration < max_iterations:
+            overlap_found = False
+            for placed_lon, placed_lat_top, placed_lat_bottom in placed_tags:
+                # Check if horizontally close (within ~3x tag width in longitude)
+                lon_distance = abs(tag_lon - placed_lon)
+                if lon_distance < horizontal_offset_lon * 10:
+                    # Check vertical overlap
+                    if not (tag_lat_bottom > placed_lat_top or tag_lat_top < placed_lat_bottom):
+                        # Overlap detected - move this tag down
+                        overlap_found = True
+                        # Move down: 0.5 = just touching (half tag height), + 0.05 = small gap
+                        # (Original was 0.6 = 0.1 gap, now 0.55 = 0.05 gap, halved)
+                        tag_lat = placed_lat_bottom - tag_height_lat * 0.51
+                        tag_lat_top = tag_lat + tag_height_lat / 2
+                        tag_lat_bottom = tag_lat - tag_height_lat / 2
+                        break
+            
+            if not overlap_found:
+                break
+            iteration += 1
+        
+        # Record this tag's position
+        placed_tags.append((tag_lon, tag_lat_top, tag_lat_bottom))
+        
+        # Calculate vertical offset from original position
+        vertical_offset_lat = tag_lat - start_lat
+        # Convert to points (approximate - using image dimensions)
+        vertical_offset_points = (vertical_offset_lat / lat_span) * image_height
+        
+        # Draw the tag using the reusable function
+        draw_tag(
+            ax=ax,
+            lon=start_lon,
+            lat=start_lat,
+            text=display_filename,
+            text_color_rgb=text_color_rgb,
+            background_theme=filename_tags_setting,
+            resolution_scale=resolution_scale,
+            vertical_offset_points=vertical_offset_points
+        )

@@ -16,7 +16,7 @@ from video_generator_route_statistics import _calculate_video_statistics, _draw_
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_create_single_frame_legend import get_filename_legend_data, get_year_legend_data, get_month_legend_data, get_day_legend_data, get_people_legend_data, create_legend
-from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes)
+from video_generator_create_single_frame_utils import (get_tail_color_for_route, _draw_name_tags_for_routes, _draw_filename_tags_for_routes)
 from video_generator_create_combined_route import RoutePoint
 from speed_based_color import speed_based_color
 from image_generator_utils import calculate_resolution_scale
@@ -1561,7 +1561,12 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         
         name_tags_setting = json_data.get('name_tags')
         if name_tags_setting in ['light', 'dark']:
-            _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, effective_line_width, ax)
+            _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax)
+        
+        # Draw filename tags (mutually exclusive with name_tags, so no overlap concern)
+        filename_tags_setting = json_data.get('filename_tags')
+        if filename_tags_setting in ['light', 'dark']:
+            _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax)
 
         # Add legend if requested (zorder=45 - above tails but below statistics)
         legend_type = json_data.get('legend', '')

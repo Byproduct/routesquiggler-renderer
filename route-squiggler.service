@@ -27,7 +27,7 @@
 # ============================================================================
 # Check status:  sudo systemctl status route-squiggler.service
 # View logs:     sudo journalctl -u route-squiggler.service -f
-# View logs:     tail -f /path/to/route-squiggler/output.log
+# View logs:     tail -f /path/to/route-squiggler/output.log  (if output.log is enabled)
 # Stop service:  sudo systemctl stop route-squiggler.service
 # Restart:       sudo systemctl restart route-squiggler.service
 
@@ -52,8 +52,9 @@ Environment="PYTHONUNBUFFERED=1"
 ExecStart=/usr/bin/python3 main.py nogui
 
 # Redirect stdout and stderr to output.log (service-setup.sh sets this automatically)
-StandardOutput=append:/path/to/route-squiggler/output.log
-StandardError=append:/path/to/route-squiggler/output.log
+# Commented out - using journalctl instead (sudo journalctl -u route-squiggler.service -f)
+# StandardOutput=append:/path/to/route-squiggler/output.log
+# StandardError=append:/path/to/route-squiggler/output.log
 
 # Restart policy
 Restart=on-failure

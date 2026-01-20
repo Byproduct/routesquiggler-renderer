@@ -734,6 +734,23 @@ def generate_image_for_zoom_level(
                 image_scale=image_scale
             )
 
+        # Add filename tags if enabled
+        if json_data and json_data.get('filename_tags') in ['light', 'dark']:
+            update_status("adding filename tags", textfield=False)
+            from image_generator_utils import add_filename_tags_to_image
+            add_filename_tags_to_image(
+                ax=ax,
+                track_coords_with_metadata=track_coords_with_metadata,
+                json_data=json_data,
+                resolution_scale=image_scale,
+                image_width=resolution_x_value,
+                image_height=resolution_y_value,
+                lon_min=lon_min_padded,
+                lon_max=lon_max_padded,
+                lat_min=lat_min_padded,
+                lat_max=lat_max_padded
+            )
+
         # Add stamp
         update_status("adding stamp", textfield=False)
         add_stamp_to_plot(

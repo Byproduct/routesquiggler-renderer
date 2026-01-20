@@ -32,6 +32,7 @@ from video_generator_calculate_bounding_boxes import calculate_route_time_per_fr
 from video_generator_create_single_frame import generate_video_frame_in_memory
 from video_generator_create_single_frame_utils import hex_to_rgba
 from video_generator_create_combined_route import RoutePoint
+from image_generator_utils import calculate_resolution_scale
 from write_log import write_log, write_debug_log
 from config import config
 
@@ -503,20 +504,30 @@ class StreamingFrameGenerator:
         # Pre-load stamp array once for all frames
         self.stamp_array = None
         try:
+            width = int(json_data.get('video_resolution_x', 1920))
             height = int(json_data.get('video_resolution_y', 1080))
             
-            # Choose stamp file based on resolution
-            if height == 720:
+            # Calculate resolution scale to determine appropriate stamp size
+            image_scale = calculate_resolution_scale(width, height)
+            
+            # Choose stamp file based on resolution scale
+            if image_scale < 1:
+                # Use stamp_small for resolutions with scale < 1 (less than 1 MP)
+                stamp_file = "img/stamp_small.npy"
+            elif image_scale == 1:
                 stamp_file = "img/stamp_1x.npy"
-            elif height == 1080:
-                stamp_file = "img/stamp_1x.npy"
-            elif height == 2160:
+            elif image_scale == 2:
                 stamp_file = "img/stamp_2x.npy"
+            elif image_scale == 3:
+                stamp_file = "img/stamp_3x.npy"
+            elif image_scale >= 4:
+                stamp_file = "img/stamp_4x.npy"
             else:
+                # Fallback to 1x for any other scale value
                 stamp_file = "img/stamp_1x.npy"
             
             self.stamp_array = np.load(stamp_file)
-            write_debug_log(f"Loaded stamp: {stamp_file}")
+            write_debug_log(f"Loaded stamp: {stamp_file} (scale: {image_scale})")
         except Exception as e:
             write_log(f"Warning: Could not load stamp: {e}")
         
