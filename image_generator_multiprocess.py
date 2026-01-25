@@ -26,6 +26,7 @@ from image_generator_maptileutils import create_map_tiles, set_cache_directory
 from image_generator_postprocess import (
     add_legend_to_plot,
     add_markers_to_plot,
+    add_points_of_interest_to_plot,
     add_speed_based_color_label_to_plot,
     add_stamp_to_plot,
     add_title_text_to_plot,
@@ -746,6 +747,24 @@ def generate_image_for_zoom_level(
                 lat_max=lat_max_padded,
                 image_scale=image_scale
             )
+
+        # Add points of interest if enabled
+        if json_data and json_data.get('points_of_interest') in ['light', 'dark']:
+            poi_data = json_data.get('_points_of_interest_data', [])
+            if poi_data:
+                update_debug_output("adding POIs", textfield=False)
+                add_points_of_interest_to_plot(
+                    ax=ax,
+                    points_of_interest=poi_data,
+                    image_width=resolution_x_value,
+                    image_height=resolution_y_value,
+                    lon_min=lon_min_padded,
+                    lon_max=lon_max_padded,
+                    lat_min=lat_min_padded,
+                    lat_max=lat_max_padded,
+                    image_scale=image_scale,
+                    theme=json_data.get('points_of_interest')  # 'light' or 'dark'
+                )
 
         # Add filename tags if enabled
         if json_data and json_data.get('filename_tags') in ['light', 'dark']:

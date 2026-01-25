@@ -113,6 +113,79 @@ def suppress_moviepy_output():
         yield
 
 
+def _timestamp_to_accumulated_time(poi_timestamp, combined_route):
+    """
+    Convert a POI timestamp to an equivalent accumulated_time by finding where it falls
+    in the route's timeline and interpolating.
+    
+    This is necessary because accumulated_time in the route excludes gaps between GPX files
+    (where recording was paused), while POI timestamps are absolute. By interpolating,
+    we find the "route time" that corresponds to the POI's wall-clock time.
+    
+    Args:
+        poi_timestamp: datetime object representing the POI's timestamp
+        combined_route: List of RoutePoint objects with timestamps and accumulated_time
+    
+    Returns:
+        float: Equivalent accumulated_time, or None if timestamp can't be mapped
+    """
+    if not combined_route or poi_timestamp is None:
+        return None
+    
+    # Find the first point with a valid timestamp to use as reference
+    first_valid_point = None
+    for point in combined_route:
+        if point.timestamp is not None:
+            first_valid_point = point
+            break
+    
+    if first_valid_point is None:
+        return None
+    
+    # If POI timestamp is before or at the first point, return 0
+    if poi_timestamp <= first_valid_point.timestamp:
+        return 0.0
+    
+    # Find the last point with a valid timestamp
+    last_valid_point = None
+    for point in reversed(combined_route):
+        if point.timestamp is not None:
+            last_valid_point = point
+            break
+    
+    # If POI timestamp is at or after the last point, return the last accumulated_time
+    if last_valid_point and poi_timestamp >= last_valid_point.timestamp:
+        return last_valid_point.accumulated_time
+    
+    # Binary search to find the two points that bracket the POI timestamp
+    # Then interpolate between them
+    prev_point = None
+    for point in combined_route:
+        if point.timestamp is None:
+            continue
+        
+        if point.timestamp >= poi_timestamp:
+            if prev_point is None:
+                # POI is at or before the first point
+                return point.accumulated_time
+            
+            # Interpolate between prev_point and point
+            time_span = (point.timestamp - prev_point.timestamp).total_seconds()
+            if time_span <= 0:
+                return prev_point.accumulated_time
+            
+            poi_offset = (poi_timestamp - prev_point.timestamp).total_seconds()
+            fraction = poi_offset / time_span
+            
+            accumulated_time_span = point.accumulated_time - prev_point.accumulated_time
+            return prev_point.accumulated_time + (fraction * accumulated_time_span)
+        
+        prev_point = point
+    
+    # Fallback: return the last point's accumulated_time
+    return last_valid_point.accumulated_time if last_valid_point else None
+
+
 def _binary_search_cutoff_index(route_points, target_time):
     """
     Binary search to find the cutoff index for points up to target_time.
@@ -231,6 +304,19 @@ def _streaming_frame_worker(args):
         # Check if we're in the tail-only phase (extra frames after original route ends)
         is_tail_only_frame = frame_number > original_route_end_frame
         
+        # Get hide_complete_routes parameter (defaults to False if not specified)
+        # Handle both boolean and string values (in case JSON parsing returns string)
+        hide_complete_routes_raw = json_data.get('hide_complete_routes', False)
+        if isinstance(hide_complete_routes_raw, str):
+            # Convert string to boolean
+            hide_complete_routes = hide_complete_routes_raw.lower() in ('true', '1', 'yes')
+        else:
+            hide_complete_routes = bool(hide_complete_routes_raw)
+        
+        # Debug: Log the parameter value (only for first few frames to avoid spam)
+        if frame_number <= 3:
+            print(f"DEBUG Frame {frame_number}: hide_complete_routes = {hide_complete_routes} (raw: {hide_complete_routes_raw}, type: {type(hide_complete_routes_raw)})")
+        
         # SIMULTANEOUS MODE ENDING FIX: Detect if we're in simultaneous mode
         is_simultaneous_mode = False
         if all_routes and len(all_routes) > 1:
@@ -293,10 +379,23 @@ def _streaming_frame_worker(args):
                     # Calculate route-specific target time accounting for start delay
                     route_target_time = target_time_route - route_delay_seconds
                     
+                    # Check if route is complete (all points included)
+                    route_end_time = route_points[-1].accumulated_time if route_points else 0
+                    route_is_complete = route_points and route_target_time >= route_end_time
+                    
+                    # Debug: Log completion status for first few frames
+                    if frame_number <= 3 and hide_complete_routes:
+                        print(f"DEBUG Frame {frame_number} (simultaneous): route_target_time={route_target_time:.2f}, route_end_time={route_end_time:.2f}, complete={route_is_complete}")
+                    
+                    # Skip complete routes if hide_complete_routes is enabled
+                    if hide_complete_routes and route_is_complete:
+                        if frame_number <= 3:
+                            print(f"DEBUG Frame {frame_number}: Skipping complete route (simultaneous mode)")
+                        continue
+                    
                     if is_tail_only_frame:
                         # SIMULTANEOUS MODE TAIL FIX: Each route should have its own individual tail fade-out
                         # Calculate when this specific route ends (accounting for its start delay)
-                        route_end_time = route_points[-1].accumulated_time if route_points else 0
                         route_end_time_with_delay = route_end_time + route_delay_seconds
                         
                         # Calculate how much time has passed since this route ended
@@ -331,29 +430,12 @@ def _streaming_frame_worker(args):
                     # Only add this route's points if it has any points
                     if route_points_for_frame:
                         points_for_frame.append(route_points_for_frame)
-            else:
-                # Single route group with multiple tracks - process all tracks concurrently
-                points_for_frame = []
-                
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    
-                    if is_tail_only_frame:
-                        # For tail-only frames, use the final route coordinates
-                        final_route_target_time = (original_route_end_frame - 1) * route_time_per_frame
-                        
-                        # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-                        cutoff_index = _binary_search_cutoff_index(route_points, final_route_target_time)
-                        route_points_for_frame = route_points[:cutoff_index]
-                    else:
-                        # Normal frame - find the points up to the target time
-                        # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-                        cutoff_index = _binary_search_cutoff_index(route_points, target_time_route)
-                        route_points_for_frame = route_points[:cutoff_index]
-                    
-                    # Only add this route's points if it has any points
-                    if route_points_for_frame:
-                        points_for_frame.append(route_points_for_frame)
+            # else:
+            #     # SEQUENTIAL MODE RENDERING PATH - DISABLED
+            #     # Single route group with multiple tracks - process all tracks sequentially
+            #     # In sequential mode, each route starts after the previous one ends
+            #     # COMMENTED OUT: This path was causing rendering issues. Using single-route path instead.
+            #     pass
         else:
             # Single route mode (backward compatibility)
             combined_route = combined_route_data.get('combined_route', [])
@@ -379,17 +461,55 @@ def _streaming_frame_worker(args):
                 # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
                 cutoff_index = _binary_search_cutoff_index(combined_route, target_time_route)
                 points_for_frame = combined_route[:cutoff_index]
+            
+            # Apply hide_complete_routes filtering if enabled
+            if hide_complete_routes and points_for_frame:
+                # Find which files have completed (all their points are included)
+                # A file is complete if its last point's accumulated_time <= target_time_route
+                filename_to_last_time = {}
+                
+                # First pass: find the last accumulated_time for each filename in the full combined_route
+                for point in combined_route:
+                    if hasattr(point, 'filename') and point.filename:
+                        filename = point.filename
+                        if filename not in filename_to_last_time or point.accumulated_time > filename_to_last_time[filename]:
+                            filename_to_last_time[filename] = point.accumulated_time
+                
+                # Determine which files are complete (their last point's time <= target_time_route)
+                completed_filenames = set()
+                for filename, last_time in filename_to_last_time.items():
+                    if last_time <= target_time_route:
+                        # This file's last point has been reached, so the file is complete
+                        completed_filenames.add(filename)
+                        if frame_number <= 3:
+                            print(f"DEBUG Frame {frame_number}: File '{filename}' is complete (last point time: {last_time:.2f}, target: {target_time_route:.2f})")
+                
+                # Filter out points from completed files
+                if completed_filenames:
+                    original_count = len(points_for_frame)
+                    points_for_frame = [p for p in points_for_frame if not (hasattr(p, 'filename') and p.filename and p.filename in completed_filenames)]
+                    filtered_count = len(points_for_frame)
+                    
+                    if frame_number <= 3:
+                        print(f"DEBUG Frame {frame_number}: Filtered out {original_count - filtered_count} points from {len(completed_filenames)} completed file(s). Remaining: {filtered_count} points")
         
         # Check if we have any points (either as a list of lists or a single list)
         has_points = False
         if all_routes and len(all_routes) > 1:
             # Multiple routes mode - check if any route has points
             has_points = any(len(route_points) > 0 for route_points in points_for_frame)
+            # Enhanced debug for sequential mode
+            if hide_complete_routes and frame_number <= 10:
+                route_count = len(points_for_frame)
+                total_points = sum(len(route_points) for route_points in points_for_frame)
+                print(f"DEBUG Frame {frame_number} FINAL: {route_count} routes in points_for_frame, {total_points} total points, has_points={has_points}")
         else:
             # Single route mode - check if the list has points
             has_points = len(points_for_frame) > 0
         
         if not has_points:
+            if hide_complete_routes and frame_number <= 10:
+                print(f"DEBUG Frame {frame_number}: No points found, returning None")
             return frame_number, None
         
         # Validate that shared map cache is provided
@@ -473,9 +593,34 @@ def _streaming_frame_worker(args):
             route_end_time = (original_route_end_frame - 1) * route_time_per_frame
             virtual_leading_time = route_end_time + (tail_only_frame_offset * route_time_per_frame)
         
+        # Filter points of interest for this frame
+        # POIs without timestamp are always shown; POIs with timestamp appear when their time is reached
+        points_of_interest_for_frame = []
+        poi_setting = json_data.get('points_of_interest', 'off')
+        if poi_setting in ['light', 'dark']:
+            all_pois = json_data.get('_points_of_interest_data', [])
+            
+            # Get the combined route for timestamp-to-accumulated_time conversion
+            # This handles gaps between GPX files correctly
+            combined_route_for_poi = combined_route_data.get('combined_route', [])
+            if not combined_route_for_poi and all_routes:
+                # If no single combined_route, use the first route's data
+                combined_route_for_poi = all_routes[0].get('combined_route', []) if all_routes else []
+            
+            for poi in all_pois:
+                if poi.timestamp is None:
+                    # POIs without timestamp are always included
+                    points_of_interest_for_frame.append(poi)
+                else:
+                    # Convert POI timestamp to equivalent accumulated_time
+                    # This correctly handles gaps between GPX files
+                    poi_accumulated_time = _timestamp_to_accumulated_time(poi.timestamp, combined_route_for_poi)
+                    if poi_accumulated_time is not None and poi_accumulated_time <= target_time_route:
+                        points_of_interest_for_frame.append(poi)
+        
         # Generate frame in memory instead of saving to disk
         frame_array = generate_video_frame_in_memory(
-            frame_number, points_for_frame, json_data, shared_map_cache, filename_to_rgba, gpx_time_per_video_time, stamp_array, target_time_video, shared_route_cache, virtual_leading_time, route_specific_tail_info
+            frame_number, points_for_frame, json_data, shared_map_cache, filename_to_rgba, gpx_time_per_video_time, stamp_array, target_time_video, shared_route_cache, virtual_leading_time, route_specific_tail_info, points_of_interest_for_frame
         )
         
         # MEMORY MANAGEMENT: Aggressive cleanup to prevent memory accumulation

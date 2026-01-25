@@ -124,6 +124,14 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, t
     # Extract RGB from RGBA (drop alpha channel)
     text_color_rgb = rgba_color[:3]
     
+    # Calculate horizontal offset in coordinate space to align with statistics
+    # This matches the offset calculation used in _draw_current_*_at_point functions
+    x_range = ax.get_xlim()[1] - ax.get_xlim()[0]
+    base_offset_pixels = 15  # Baseline for 1080p, matches statistics
+    scaled_offset_pixels = base_offset_pixels * resolution_scale
+    width = int(ax.figure.get_figwidth() * ax.figure.dpi)
+    horizontal_offset_coords = (scaled_offset_pixels / width) * x_range
+    
     # Use the reusable draw_tag function (font size and offsets are scaled internally)
     draw_tag(
         ax=ax,
@@ -133,7 +141,8 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, t
         text_color_rgb=text_color_rgb,
         background_theme=theme,
         resolution_scale=resolution_scale,
-        vertical_offset_points=vertical_offset_points
+        vertical_offset_points=vertical_offset_points,
+        horizontal_offset_coords=horizontal_offset_coords
     )
 
 
@@ -200,7 +209,7 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
             _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting)
 
 
-def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax):
+def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax, hide_in_fade_out=False):
     """
     Draw filename tags for the most recent point of each route.
     
@@ -214,7 +223,12 @@ def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba
         filename_to_rgba (dict): Filename to RGBA color mapping
         resolution_scale (float): Resolution scale factor (0.7, 1.0, 2.0, 3.0, or 4.0)
         ax (matplotlib.axes.Axes): Matplotlib axes for drawing
+        hide_in_fade_out (bool): If True, skip drawing filename tags (for fade-out phase in sequential mode)
     """   
+    # Hide filename tags during fade-out phase in sequential mode
+    if hide_in_fade_out:
+        return
+    
     filename_tags_setting = json_data.get('filename_tags', 'off')
     if filename_tags_setting == 'off' or filename_tags_setting is None:
         return  # Don't draw filename tags when setting is 'off' or not set
@@ -224,18 +238,17 @@ def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba
         return
     
     # Check if realtime statistics are enabled - if so, we need to offset the tag vertically
-    # Count how many realtime stats are enabled to determine offset
-    realtime_stats_count = 0
-    if json_data.get('statistics_current_speed', False):
-        realtime_stats_count += 1
-    if json_data.get('statistics_current_elevation', False):
-        realtime_stats_count += 1
-    if json_data.get('statistics_current_hr', False):
-        realtime_stats_count += 1
+    # Statistics stack downward from the point, so we only need to clear the topmost statistic
+    has_realtime_stats = (
+        json_data.get('statistics_current_speed', False) or
+        json_data.get('statistics_current_elevation', False) or
+        json_data.get('statistics_current_hr', False)
+    )
     
-    # Calculate vertical offset: move up by ~25 points per realtime stat enabled (scaled by resolution)
-    # This matches the base_vertical_offset_pixels used in _draw_current_*_at_point functions
-    vertical_offset = realtime_stats_count * 25 * resolution_scale if realtime_stats_count > 0 else 0
+    # Calculate vertical offset: move up just enough to clear the topmost statistic
+    # Tag font size is 10, statistics font size is 13, both with padding
+    # Offset of ~20 points positions tag just above the topmost statistic
+    vertical_offset = 20 * resolution_scale if has_realtime_stats else 0
     
     # Determine if we have multiple routes or single route
     is_multiple_routes = False

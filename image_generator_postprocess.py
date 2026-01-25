@@ -21,7 +21,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale
+from image_generator_utils import calculate_resolution_scale, PointOfInterest
 from video_generator_create_single_frame import get_legend_theme_colors
 from write_log import write_debug_log, write_log
 
@@ -769,3 +769,169 @@ def add_markers_to_plot(ax, track_coords_with_metadata, image_width: int, image_
             write_debug_log(f"Error placing finish marker: {e}")
             import traceback
             write_debug_log(f"Traceback: {traceback.format_exc()}")
+
+
+def add_points_of_interest_to_plot(
+    ax, 
+    points_of_interest: list, 
+    image_width: int, 
+    image_height: int, 
+    lon_min: float, 
+    lon_max: float, 
+    lat_min: float, 
+    lat_max: float, 
+    image_scale: int | None = None,
+    theme: str = 'light'
+):
+    """
+    Add points of interest (waypoints) to the plot.
+    
+    Each POI is rendered with the poi.png icon with its bottom-left corner at the point
+    coordinates, and the name displayed to the right if not empty.
+    
+    Args:
+        ax: Matplotlib axis object with cartopy projection
+        points_of_interest: List of PointOfInterest named tuples
+        image_width: Width of the image in pixels
+        image_height: Height of the image in pixels
+        lon_min: Minimum longitude in degrees (PlateCarree)
+        lon_max: Maximum longitude in degrees (PlateCarree)
+        lat_min: Minimum latitude in degrees (PlateCarree)
+        lat_max: Maximum latitude in degrees (PlateCarree)
+        image_scale: Optional image scale factor; if None, calculated from resolution
+        theme: 'light' or 'dark' for text styling
+    """
+    if not points_of_interest:
+        write_debug_log("No points of interest to add")
+        return
+    
+    # Calculate image scale if not provided
+    if image_scale is None:
+        image_scale = calculate_resolution_scale(image_width, image_height)
+    
+    write_debug_log(f"add_points_of_interest_to_plot: {len(points_of_interest)} POIs, image_scale={image_scale}, theme={theme}")
+    
+    # Resolve path to the POI icon
+    module_dir = os.path.dirname(os.path.abspath(__file__))
+    poi_file = os.path.join(module_dir, "img", "poi.png")
+    
+    if not os.path.exists(poi_file):
+        write_debug_log(f"POI icon not found: {poi_file}")
+        return
+    
+    # Base size is 35 pixels (same as start/finish markers), multiply by image_scale
+    target_size_pixels = int(35 * image_scale)
+    
+    # Load and resize POI icon
+    try:
+        img = PILImage.open(poi_file)
+        original_width, original_height = img.size
+        
+        # Calculate new size maintaining aspect ratio
+        aspect_ratio = original_width / original_height
+        if original_width >= original_height:
+            new_width = target_size_pixels
+            new_height = int(target_size_pixels / aspect_ratio)
+        else:
+            new_height = target_size_pixels
+            new_width = int(target_size_pixels * aspect_ratio)
+        
+        # Resize image
+        img_resized = img.resize((new_width, new_height), PILImage.Resampling.LANCZOS)
+        
+        # Convert to numpy array for matplotlib
+        poi_array = np.array(img_resized)
+        
+        write_debug_log(f"POI icon loaded and resized: original={original_width}x{original_height}, resized={new_width}x{new_height}")
+        
+    except Exception as e:
+        write_debug_log(f"Error loading POI icon: {e}")
+        return
+    
+    # Calculate spans in degrees (bounds are already in PlateCarree/degrees)
+    lon_span = lon_max - lon_min
+    lat_span = lat_max - lat_min
+    
+    # Set theme colors for text (same as statistics styling)
+    if theme == 'dark':
+        bg_color = '#2d2d2d'      # Dark gray background
+        border_color = '#cccccc'  # Light gray border
+        text_color = '#ffffff'    # White text
+    else:  # light theme (default)
+        bg_color = 'white'        # White background
+        border_color = '#333333'  # Dark gray border
+        text_color = '#333333'    # Dark gray text
+    
+    # Calculate font size based on image scale (base 13 as specified)
+    base_font_size = 13
+    font_size = base_font_size * image_scale
+    
+    # Calculate marker size in figure coordinates
+    marker_width_fig = new_width / image_width
+    marker_height_fig = new_height / image_height
+    
+    # Process each point of interest
+    for poi in points_of_interest:
+        try:
+            poi_lat = poi.lat
+            poi_lon = poi.lon
+            poi_name = poi.name
+            
+            # Convert geographic coordinates to figure coordinates (0-1 range)
+            poi_x_fig = (poi_lon - lon_min) / lon_span
+            poi_y_fig = (poi_lat - lat_min) / lat_span
+            
+            # Skip if POI is outside the visible area
+            if poi_x_fig < 0 or poi_x_fig > 1 or poi_y_fig < 0 or poi_y_fig > 1:
+                write_debug_log(f"POI '{poi_name}' at ({poi_lat:.6f}, {poi_lon:.6f}) is outside visible area, skipping")
+                continue
+            
+            # Position marker so bottom-left corner is at the point
+            marker_x_fig = poi_x_fig
+            marker_y_fig = poi_y_fig
+            
+            # Use inset_axes to place the POI icon
+            marker_ax = ax.inset_axes(
+                [marker_x_fig, marker_y_fig, marker_width_fig, marker_height_fig],
+                transform=ax.transAxes
+            )
+            marker_ax.imshow(poi_array)
+            marker_ax.axis('off')
+            
+            write_debug_log(f"Added POI icon at: lat={poi_lat:.6f}, lon={poi_lon:.6f}")
+            
+            # Add name text to the right of the icon if not empty
+            if poi_name:
+                # Calculate text position (to the right of the icon)
+                # Add a small gap between icon and text
+                gap_pixels = 5 * image_scale
+                gap_fig = gap_pixels / image_width
+                text_x_fig = marker_x_fig + marker_width_fig + gap_fig
+                # Center text vertically with the icon
+                text_y_fig = marker_y_fig + (marker_height_fig / 2)
+                
+                # Add the POI name text with background
+                ax.text(
+                    text_x_fig, text_y_fig, poi_name,
+                    transform=ax.transAxes,
+                    color=text_color,
+                    fontsize=font_size,
+                    fontweight='bold',
+                    ha='left',      # Left align (starting from the icon)
+                    va='center',    # Center vertically
+                    bbox=dict(
+                        boxstyle='round,pad=0.3',
+                        facecolor=bg_color,
+                        edgecolor=border_color,
+                        alpha=0.9,
+                        linewidth=1
+                    ),
+                    zorder=100  # Very top layer - above all other elements
+                )
+                write_debug_log(f"Added POI name '{poi_name}' at ({text_x_fig:.4f}, {text_y_fig:.4f})")
+                
+        except Exception as e:
+            write_debug_log(f"Error placing POI: {e}")
+            import traceback
+            write_debug_log(f"Traceback: {traceback.format_exc()}")
+            continue

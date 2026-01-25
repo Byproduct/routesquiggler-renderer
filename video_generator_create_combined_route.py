@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 
 # Local imports
-from image_generator_utils import calculate_haversine_distance
+from image_generator_utils import calculate_haversine_distance, normalize_timestamp
 from speed_based_color import (
     create_hr_based_color_label,
     create_hr_based_width_label,
@@ -637,6 +637,8 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         if first_route:
             first_route['all_routes'] = all_routes
             first_route['total_routes'] = len(all_routes)
+            # Store earliest_start_time for POI time-based filtering
+            first_route['earliest_start_time'] = earliest_start_time
         
         return first_route
         
@@ -707,7 +709,8 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                             # Get latitude, longitude and timestamp
                             lat = point.latitude
                             lon = point.longitude
-                            timestamp = point.time
+                            # Normalize timestamp to UTC timezone-aware to avoid comparison errors
+                            timestamp = normalize_timestamp(point.time)
                             
                             # Extract elevation if enabled and available
                             elevation = None

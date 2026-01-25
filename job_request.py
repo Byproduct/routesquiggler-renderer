@@ -14,7 +14,7 @@ import requests
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal
 
 # Local imports
-from image_generator_utils import harmonize_gpx_times
+from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
 from network_retry import retry_operation
 
 
@@ -797,6 +797,10 @@ class JobRequestManager:
                     return
                 
                 self.main_window.log_widget.add_log(f"Found {len(gpx_files_info)} GPX files, processing job data...")
+                
+                # Extract points of interest (waypoints) if enabled
+                extract_and_store_points_of_interest(json_data, gpx_files_info, self.main_window.log_widget.add_log)
+                
                 # Process the job data
                 self.on_job_received(json_data, gpx_files_info)
                 

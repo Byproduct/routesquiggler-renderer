@@ -15,9 +15,10 @@ import matplotlib.image as mpimg
 import matplotlib.patheffects
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale
+from image_generator_utils import calculate_resolution_scale, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_coordinate_encoder import encode_coords
@@ -79,6 +80,127 @@ def _convert_bbox_to_web_mercator(bbox):
     x_max, y_max = _gps_to_web_mercator(lon_max, lat_max)
     
     return (x_min, x_max, y_min, y_max)
+
+
+def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale, theme='light'):
+    """
+    Draw points of interest on a video frame.
+    
+    Args:
+        ax: Matplotlib axis object in Web Mercator coordinate space
+        points_of_interest: List of PointOfInterest objects to render
+        mercator_bbox: Tuple (x_min, x_max, y_min, y_max) in Web Mercator coordinates
+        image_scale: Resolution scale factor for sizing
+        theme: 'light' or 'dark' for text styling
+    """
+    if not points_of_interest:
+        return
+    
+    # Resolve path to the POI icon
+    module_dir = os.path.dirname(os.path.abspath(__file__))
+    poi_file = os.path.join(module_dir, "img", "poi.png")
+    
+    if not os.path.exists(poi_file):
+        return
+    
+    # Base size is 35 pixels (same as image mode), multiply by image_scale
+    target_size_pixels = int(35 * image_scale)
+    
+    # Load and resize POI icon
+    try:
+        img = PILImage.open(poi_file)
+        original_width, original_height = img.size
+        
+        # Calculate new size maintaining aspect ratio
+        aspect_ratio = original_width / original_height
+        if original_width >= original_height:
+            new_width = target_size_pixels
+            new_height = int(target_size_pixels / aspect_ratio)
+        else:
+            new_height = target_size_pixels
+            new_width = int(target_size_pixels * aspect_ratio)
+        
+        # Resize image
+        img_resized = img.resize((new_width, new_height), PILImage.Resampling.LANCZOS)
+        poi_array = np.array(img_resized)
+        
+    except Exception as e:
+        print(f"Error loading POI icon: {e}")
+        return
+    
+    # Get mercator bbox bounds
+    x_min, x_max, y_min, y_max = mercator_bbox
+    x_span = x_max - x_min
+    y_span = y_max - y_min
+    
+    # Set theme colors for text (same as statistics styling)
+    if theme == 'dark':
+        bg_color = '#2d2d2d'
+        border_color = '#cccccc'
+        text_color = '#ffffff'
+    else:
+        bg_color = 'white'
+        border_color = '#333333'
+        text_color = '#333333'
+    
+    # Calculate font size based on image scale (base 13 as in image mode)
+    base_font_size = 13
+    font_size = base_font_size * image_scale
+    
+    # Calculate marker size in axes coordinates
+    # Since we're working with mercator coords, we need to calculate pixel-based offsets
+    marker_width_axes = new_width / (ax.figure.get_figwidth() * ax.figure.dpi)
+    marker_height_axes = new_height / (ax.figure.get_figheight() * ax.figure.dpi)
+    
+    for poi in points_of_interest:
+        try:
+            # Convert POI coordinates to Web Mercator
+            poi_x, poi_y = _gps_to_web_mercator(poi.lon, poi.lat)
+            
+            # Skip if POI is outside the visible area
+            if poi_x < x_min or poi_x > x_max or poi_y < y_min or poi_y > y_max:
+                continue
+            
+            # Convert to axes coordinates (0-1 range)
+            poi_x_axes = (poi_x - x_min) / x_span
+            poi_y_axes = (poi_y - y_min) / y_span
+            
+            # Use inset_axes to place the POI icon with bottom-left corner at the point
+            marker_ax = ax.inset_axes(
+                [poi_x_axes, poi_y_axes, marker_width_axes, marker_height_axes],
+                transform=ax.transAxes
+            )
+            marker_ax.imshow(poi_array)
+            marker_ax.axis('off')
+            
+            # Add name text to the right of the icon if not empty
+            if poi.name:
+                # Calculate text position (to the right of the icon)
+                gap_axes = 5 * image_scale / (ax.figure.get_figwidth() * ax.figure.dpi)
+                text_x_axes = poi_x_axes + marker_width_axes + gap_axes
+                text_y_axes = poi_y_axes + (marker_height_axes / 2)
+                
+                ax.text(
+                    text_x_axes, text_y_axes, poi.name,
+                    transform=ax.transAxes,
+                    color=text_color,
+                    fontsize=font_size,
+                    fontweight='bold',
+                    ha='left',
+                    va='center',
+                    bbox=dict(
+                        boxstyle='round,pad=0.3',
+                        facecolor=bg_color,
+                        edgecolor=border_color,
+                        alpha=0.9,
+                        linewidth=1
+                    ),
+                    zorder=100
+                )
+                
+        except Exception as e:
+            print(f"Error placing POI: {e}")
+            continue
 
 
 def _find_track_boundaries(route_points):
@@ -853,7 +975,7 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
     )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -871,6 +993,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         shared_route_cache (dict, optional): Shared memory cache for route images
         virtual_leading_time (float, optional): Virtual leading time for tail-only phase (in route seconds)
         route_specific_tail_info (dict, optional): Dictionary containing route-specific tail information
+        points_of_interest_for_frame (list, optional): List of PointOfInterest objects to render on this frame
     
     Returns:
         numpy array representing the frame image (H, W, 3) or None if failed
@@ -1586,7 +1709,13 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         # Draw filename tags (mutually exclusive with name_tags, so no overlap concern)
         filename_tags_setting = json_data.get('filename_tags')
         if filename_tags_setting in ['light', 'dark']:
-            _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax)
+            # Hide filename tags during fade-out phase in sequential mode only
+            # virtual_leading_time is only set for tail-only frames in sequential mode
+            # In simultaneous mode, tail-only frames don't set virtual_leading_time globally
+            # (they use route_specific_tail_info instead, and is_tail_only_frame is set to False)
+            hide_filename_tags_in_fade_out = virtual_leading_time is not None
+            
+            _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax, hide_in_fade_out=hide_filename_tags_in_fade_out)
 
         # Add legend if requested (zorder=45 - above tails but below statistics)
         legend_type = json_data.get('legend', '')
@@ -1700,6 +1829,17 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 # Also exclude current elevation from top-right display since it's shown at the point
                 exclude_elevation = current_elevation_enabled and current_elevation_value and not at_end_of_route
                 _draw_video_statistics(ax, statistics_data, json_data, effective_line_width, statistics_setting, exclude_current_speed=exclude_speed, exclude_current_elevation=exclude_elevation, resolution_scale=resolution_scale)
+        
+        # Draw points of interest if enabled
+        poi_setting = json_data.get('points_of_interest', 'off') if json_data else 'off'
+        if poi_setting in ['light', 'dark'] and points_of_interest_for_frame:
+            _draw_points_of_interest(
+                ax=ax,
+                points_of_interest=points_of_interest_for_frame,
+                mercator_bbox=mercator_bbox,
+                image_scale=resolution_scale,
+                theme=poi_setting
+            )
         
         # Convert figure to numpy array directly (much faster than PNG buffer)
         # Draw the figure to the canvas

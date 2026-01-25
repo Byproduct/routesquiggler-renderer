@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 # Local imports
-from image_generator_utils import load_gpx_files_from_zip
+from image_generator_utils import extract_and_store_points_of_interest, load_gpx_files_from_zip
 from job_request import apply_vertical_video_swap
 
 class TestFolderSelectionDialog(QDialog):
@@ -253,6 +253,9 @@ class TestImageManager:
                 self.current_test_index += 1
                 self.start_next_test_image_job()
                 return
+            
+            # Extract points of interest (waypoints) if enabled
+            extract_and_store_points_of_interest(json_data, gpx_files_info, self.main_window.log_widget.add_log)
             
             # Update button text before starting job
             self.main_window.test_image_button.setText(f"Processing {self.current_test_index + 1}/{len(self.test_job_folders)}")

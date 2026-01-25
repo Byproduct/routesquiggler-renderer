@@ -371,7 +371,7 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     
     # Calculate vertical offset based on position in the stack
     height = int(ax.figure.get_figheight() * ax.figure.dpi)
-    base_vertical_offset_pixels = 25  # Baseline spacing for 1080p
+    base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
     scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
     y_offset = (scaled_vertical_offset_pixels / height) * y_range
     speed_y = y - y_offset
@@ -498,7 +498,7 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
     
     # Calculate vertical offset based on position in the stack
     height = int(ax.figure.get_figheight() * ax.figure.dpi)
-    base_vertical_offset_pixels = 25  # Baseline spacing for 1080p
+    base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
     scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
     y_offset = (scaled_vertical_offset_pixels / height) * y_range
     elevation_y = y - y_offset
@@ -618,7 +618,7 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     
     # Calculate vertical offset based on position in the stack
     height = int(ax.figure.get_figheight() * ax.figure.dpi)
-    base_vertical_offset_pixels = 25  # Baseline spacing for 1080p
+    base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
     scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
     y_offset = (scaled_vertical_offset_pixels / height) * y_range
     hr_y = y - y_offset
@@ -638,11 +638,8 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     font_size = base_font_size * resolution_scale
     
     # Add the current heart rate text with heart symbol
-    # First draw the full text (number + heart) with bbox for proper sizing
-    number_text = f"{current_hr}"
-    heart_symbol = " ♥"
-    full_text = number_text + heart_symbol
-    text_obj = ax.text(
+    full_text = f"{current_hr} ♥"
+    ax.text(
         hr_x, hr_y, full_text,
         color=text_color,
         fontsize=font_size,
@@ -657,39 +654,6 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
             linewidth=1
         ),
         zorder=100  # Very top layer - above all other elements
-    )
-    
-    # Get the bounding box of the number text to position the heart symbol overlay
-    # We need to get the renderer to measure text
-    fig = ax.figure
-    if fig.canvas is not None:
-        renderer = fig.canvas.get_renderer()
-    else:
-        # Fallback: create a dummy renderer for measurement
-        from matplotlib.backends.backend_agg import FigureCanvasAgg
-        canvas = FigureCanvasAgg(fig)
-        renderer = canvas.get_renderer()
-    
-    # Measure just the number text to find where heart symbol starts
-    temp_text = ax.text(hr_x, hr_y, number_text, fontsize=font_size, fontweight='bold', 
-                       ha='left', va='center', visible=False)
-    bbox_number = temp_text.get_window_extent(renderer=renderer)
-    temp_text.remove()
-    
-    # Convert bbox to data coordinates to get the right edge
-    transform = ax.transData.inverted()
-    bbox_data = bbox_number.transformed(transform)
-    heart_x = bbox_data.x1  # Right edge of the number text
-    
-    # Draw the heart symbol in red, positioned right after the number (overlay)
-    ax.text(
-        heart_x, hr_y, heart_symbol,
-        color='red',  # Red color for heart symbol
-        fontsize=font_size,
-        fontweight='bold',
-        ha='left',
-        va='center',
-        zorder=101  # Slightly above the number text to overlay
     )
 
 

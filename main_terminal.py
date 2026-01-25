@@ -21,7 +21,7 @@ import requests
 # Local imports
 from config import config
 from image_generator_multiprocess import StatusUpdate
-from image_generator_utils import harmonize_gpx_times
+from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
 from job_request import apply_vertical_video_swap
 from sync_map_tiles import sync_map_tiles
 from update_status import update_status
@@ -176,6 +176,9 @@ def run_test_image_terminal(bootup_manager, folder_name=None, app=None):
             return False
         
         write_debug_log(f"Loaded {len(gpx_files_info)} GPX file(s)")
+        
+        # Extract points of interest (waypoints) if enabled
+        extract_and_store_points_of_interest(json_data, gpx_files_info, write_log)
         
         # Start the image generation worker with same parameters as GUI version
         worker = ImageGeneratorWorker(
@@ -589,6 +592,10 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
                 return None, None
             
             write_debug_log(f"Successfully processed {len(gpx_files_info)} GPX files")
+            
+            # Extract points of interest (waypoints) if enabled
+            extract_and_store_points_of_interest(json_data, gpx_files_info, write_log)
+            
             return json_data, gpx_files_info
             
     except zipfile.BadZipFile as e:

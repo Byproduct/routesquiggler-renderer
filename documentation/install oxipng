@@ -1,0 +1,7 @@
+oxipng on linux:
+
+curl -L -o oxipng.tar.gz "https://github.com/oxipng/oxipng/releases/download/v$VER/oxipng-$VER-x86_64-unknown-linux-musl.tar.gz"
+tar -xzf oxipng.tar.gz
+sudo install -m 0755 oxipng /usr/local/bin/oxipng
+oxipng --version
+

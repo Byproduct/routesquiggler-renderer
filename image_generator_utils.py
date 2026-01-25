@@ -8,8 +8,8 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import zipfile
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 # Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
@@ -53,6 +53,145 @@ def harmonize_gpx_times(gpx_text: str) -> str:
 
     # Neither format found: return unchanged
     return gpx_text
+
+
+# --- Points of Interest ---
+
+def normalize_timestamp(dt: Optional[datetime]) -> Optional[datetime]:
+    """
+    Normalize a datetime to be timezone-aware (UTC).
+    
+    This ensures consistent datetime comparisons by converting all timestamps
+    to UTC timezone-aware datetimes. Handles:
+    - None values (returns None)
+    - Timezone-naive datetimes (assumes UTC)
+    - Timezone-aware datetimes (converts to UTC)
+    
+    Args:
+        dt: A datetime object (may be naive or aware) or None
+    
+    Returns:
+        A timezone-aware datetime in UTC, or None if input is None
+    """
+    if dt is None:
+        return None
+    
+    if dt.tzinfo is None:
+        # Naive datetime - assume UTC
+        return dt.replace(tzinfo=timezone.utc)
+    else:
+        # Already timezone-aware - convert to UTC for consistency
+        return dt.astimezone(timezone.utc)
+
+
+class PointOfInterest(NamedTuple):
+    """
+    Named tuple representing a point of interest (waypoint) from GPX data.
+    
+    Used for rendering waypoints/POIs on images with optional name labels.
+    """
+    lat: float                           # Latitude
+    lon: float                           # Longitude
+    name: str                            # Name of the POI (can be empty string)
+    timestamp: Optional[datetime]        # Timestamp (can be None)
+
+
+def extract_points_of_interest(
+    gpx_files_info: List[Dict],
+    max_points: Optional[int] = None,
+    log_callback=None
+) -> List[PointOfInterest]:
+    """
+    Extract points of interest (waypoints) from GPX files.
+    
+    Args:
+        gpx_files_info: List of dictionaries with 'content' key containing GPX text
+        max_points: Maximum number of POIs to extract (None for unlimited)
+        log_callback: Optional function to call for logging messages
+    
+    Returns:
+        List of PointOfInterest named tuples
+    """
+    import gpxpy
+    
+    points_of_interest = []
+    
+    for gpx_info in gpx_files_info:
+        content = gpx_info.get('content', '')
+        if not content:
+            continue
+        
+        try:
+            gpx = gpxpy.parse(content)
+            
+            for waypoint in gpx.waypoints:
+                # Extract name (can be None or empty)
+                name = waypoint.name if waypoint.name else ''
+                
+                # Extract and normalize timestamp (can be None)
+                # Normalization ensures timezone-aware UTC for consistent comparisons
+                timestamp = normalize_timestamp(waypoint.time)
+                
+                poi = PointOfInterest(
+                    lat=waypoint.latitude,
+                    lon=waypoint.longitude,
+                    name=name,
+                    timestamp=timestamp
+                )
+                points_of_interest.append(poi)
+                
+                # Check if we've reached the maximum
+                if max_points is not None and len(points_of_interest) >= max_points:
+                    if log_callback:
+                        log_callback(f"Reached maximum of {max_points} points of interest, stopping extraction")
+                    return points_of_interest
+                    
+        except Exception as e:
+            if log_callback:
+                log_callback(f"Warning: Error extracting waypoints from GPX file: {str(e)}")
+            continue
+    
+    if log_callback and points_of_interest:
+        log_callback(f"Extracted {len(points_of_interest)} points of interest from GPX files")
+    
+    return points_of_interest
+
+
+def extract_and_store_points_of_interest(
+    json_data: Dict,
+    gpx_files_info: List[Dict],
+    log_callback=None
+) -> None:
+    """
+    Extract points of interest from GPX files and store them in json_data.
+    
+    This is a convenience function that handles the common pattern of checking
+    the points_of_interest setting, extracting POIs, and storing them in json_data.
+    
+    Args:
+        json_data: Job data dictionary (will be modified in place)
+        gpx_files_info: List of dictionaries with 'content' key containing GPX text
+        log_callback: Optional function to call for logging messages
+    """
+    points_of_interest_setting = json_data.get('points_of_interest', 'off')
+    
+    if points_of_interest_setting in ['light', 'dark']:
+        max_poi = json_data.get('points_of_interest_max', None)
+        # Ensure max_poi is an integer if provided
+        if max_poi is not None:
+            try:
+                max_poi = int(max_poi)
+            except (ValueError, TypeError):
+                max_poi = None
+        
+        pois = extract_points_of_interest(
+            gpx_files_info,
+            max_points=max_poi,
+            log_callback=log_callback
+        )
+        json_data['_points_of_interest_data'] = pois
+    else:
+        json_data['_points_of_interest_data'] = []
 
 
 def load_gpx_files_from_zip(zip_path: str, log_callback=None) -> List[Dict]:
@@ -786,7 +925,8 @@ class ImageGenerator:
 
 def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float, float, float], 
              background_theme: str = 'light', resolution_scale: float = 1.0,
-             horizontal_offset_points: Optional[float] = None, vertical_offset_points: Optional[float] = None):
+             horizontal_offset_points: Optional[float] = None, vertical_offset_points: Optional[float] = None,
+             horizontal_offset_coords: Optional[float] = None):
     """
     Draw a tag/label on a matplotlib axes at the specified coordinates.
     
@@ -806,6 +946,8 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         resolution_scale: Scale factor for resolution (0.7, 1.0, 2.0, 3.0, or 4.0). Default 1.0
         horizontal_offset_points: Optional horizontal offset in points. If None, uses 6 * resolution_scale
         vertical_offset_points: Optional vertical offset in points (positive = up). If None, uses 0
+        horizontal_offset_coords: Optional horizontal offset in coordinate space (for video mode alignment).
+                                  If provided in video mode, takes precedence over horizontal_offset_points
     
     Example:
         # Light theme with custom color
@@ -829,7 +971,7 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         text_color = hex_color  # Use text color for text
     
     # Calculate resolution-scaled values
-    font_size = 8 * resolution_scale
+    font_size = 13 * resolution_scale
     border_width = max(1, resolution_scale)  # At least 1px border
     
     # Set defaults if not provided (scale with resolution)
@@ -847,6 +989,8 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         # Cartopy axes need coordinates transformed from PlateCarree (lon/lat) to the axes' native projection
         x, y = lon, lat
         xycoords = ccrs.PlateCarree()._as_mpl_transform(ax)
+        # For image mode, always use points-based offset
+        use_coord_offset = False
     else:
         # Video generation: Convert to Web Mercator coordinates
         # Web Mercator transformation
@@ -854,28 +998,55 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
         y = y * 20037508.34 / 180
         xycoords = 'data'
+        # For video mode, use coordinate offset if provided (for alignment with statistics)
+        use_coord_offset = horizontal_offset_coords is not None
     
-    # Use annotate with pixel-offset to ensure consistent on-screen spacing regardless of projection
-    ax.annotate(
-        text,
-        xy=(x, y),
-        xycoords=xycoords,
-        xytext=(horizontal_offset_points, vertical_offset_points),
-        textcoords='offset points',
-        color=text_color,
-        fontsize=font_size,
-        fontweight='bold',
-        ha='left',
-        va='center',
-        bbox=dict(
-            boxstyle='round,pad=0.3',
-            facecolor=bg_color,
-            edgecolor=border_color,
-            alpha=0.9,
-            linewidth=border_width
-        ),
-        zorder=40,
-    )
+    # Use annotate with appropriate offset system
+    if use_coord_offset:
+        # Use coordinate-based offset for horizontal alignment with statistics
+        tag_x = x + horizontal_offset_coords
+        ax.annotate(
+            text,
+            xy=(tag_x, y),
+            xycoords='data',
+            xytext=(0, vertical_offset_points),
+            textcoords='offset points',
+            color=text_color,
+            fontsize=font_size,
+            fontweight='bold',
+            ha='left',
+            va='center',
+            bbox=dict(
+                boxstyle='round,pad=0.3',
+                facecolor=bg_color,
+                edgecolor=border_color,
+                alpha=0.9,
+                linewidth=border_width
+            ),
+            zorder=40,
+        )
+    else:
+        # Use pixel-offset for consistent on-screen spacing
+        ax.annotate(
+            text,
+            xy=(x, y),
+            xycoords=xycoords,
+            xytext=(horizontal_offset_points, vertical_offset_points),
+            textcoords='offset points',
+            color=text_color,
+            fontsize=font_size,
+            fontweight='bold',
+            ha='left',
+            va='center',
+            bbox=dict(
+                boxstyle='round,pad=0.3',
+                facecolor=bg_color,
+                edgecolor=border_color,
+                alpha=0.9,
+                linewidth=border_width
+            ),
+            zorder=40,
+        )
 
 
 def add_filename_tags_to_image(ax, track_coords_with_metadata: List[tuple], json_data: Dict, 
@@ -912,7 +1083,7 @@ def add_filename_tags_to_image(ax, track_coords_with_metadata: List[tuple], json
     lat_span = lat_max - lat_min
     
     # Base tag height in pixels (approximate, for overlap detection)
-    # Font size 8 at scale 1.0, plus padding
+    # Font size 10 at scale 1.0, plus padding
     base_tag_height_pixels = 20 * resolution_scale
     # Convert to latitude units
     tag_height_lat = (base_tag_height_pixels / image_height) * lat_span

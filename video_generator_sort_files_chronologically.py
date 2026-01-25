@@ -5,7 +5,7 @@ This module handles sorting GPX files chronologically based on their timestamps.
 
 # Standard library imports
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -47,21 +47,28 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None, debug_call
                     time_str = match.group(1)
                     
                     # Parse the datetime - handle different timestamp formats
+                    # All datetimes are normalized to timezone-aware UTC to avoid comparison errors
                     try:
                         if time_str.endswith('Z'):
                             # Handle both with and without milliseconds
                             if '.' in time_str:
-                                # Has milliseconds, use fromisoformat
+                                # Has milliseconds: 2026-01-21T13:45:00.000Z
                                 dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
                             else:
-                                # No milliseconds, use strptime
+                                # No milliseconds: 2026-01-21T12:15:13Z
                                 dt = datetime.strptime(time_str, '%Y-%m-%dT%H:%M:%SZ')
-                        elif '+' in time_str:
-                            # Handle timezone offset
-                            dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
-                        else:
-                            # Use fromisoformat for other formats
+                                # Make timezone-aware (UTC) to match millisecond format
+                                dt = dt.replace(tzinfo=timezone.utc)
+                        elif '+' in time_str or '-' in time_str[10:]:  # Check for timezone offset after date
+                            # Handle explicit timezone offset
                             dt = datetime.fromisoformat(time_str)
+                            # If somehow still naive, assume UTC
+                            if dt.tzinfo is None:
+                                dt = dt.replace(tzinfo=timezone.utc)
+                        else:
+                            # No timezone info, assume UTC
+                            dt = datetime.fromisoformat(time_str)
+                            dt = dt.replace(tzinfo=timezone.utc)
                         
                         # Add to chronological list
                         chronological_files.append((dt, gpx_info))
