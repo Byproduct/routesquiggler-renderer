@@ -5,6 +5,7 @@ temporary files/
 log/
 config.txt
 ffmpeg.exe
+ffprobe.exe
 git-push.bat
 status_update_log.txt
 debug.log
