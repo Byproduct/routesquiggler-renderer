@@ -596,6 +596,23 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
             # Extract points of interest (waypoints) if enabled
             extract_and_store_points_of_interest(json_data, gpx_files_info, write_log)
             
+            # Confirm job receipt to server before starting processing
+            if job_id:
+                write_log(f"Confirming job receipt for job #{job_id}...")
+                from job_request import confirm_job_receipt
+                confirmation_success = confirm_job_receipt(
+                    api_url,
+                    user,
+                    hardware_id,
+                    app_version,
+                    job_id,
+                    write_log
+                )
+                if not confirmation_success:
+                    write_log(f"Warning: Failed to confirm job receipt for job #{job_id}, but continuing with processing")
+                else:
+                    write_log(f"Job #{job_id} confirmed successfully")
+            
             return json_data, gpx_files_info
             
     except zipfile.BadZipFile as e:

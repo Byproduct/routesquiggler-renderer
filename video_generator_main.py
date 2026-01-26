@@ -67,6 +67,7 @@ def upload_video_to_storage_box(
             self.progress_callback = progress_callback
             self.total_size = total_size
             self.uploaded_size = 0
+            self.last_reported_percentage = -1  # Track last reported percentage to only update every 10%
             
         def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
             """Override storbinary to track progress."""
@@ -75,7 +76,10 @@ def upload_video_to_storage_box(
                     self.uploaded_size += len(data)
                     if self.total_size > 0:
                         percentage = int((self.uploaded_size / self.total_size) * 100)
-                        self.progress_callback("progress_bar_upload", percentage, f"Uploading: {self.uploaded_size}/{self.total_size} bytes")
+                        # Only update progress every 10% to reduce debug log spam
+                        if percentage >= self.last_reported_percentage + 10 or percentage >= 100:
+                            self.progress_callback("progress_bar_upload", percentage, f"Uploading: {self.uploaded_size}/{self.total_size} bytes")
+                            self.last_reported_percentage = percentage
                     if callback:
                         callback(data)
                 return super().storbinary(cmd, fp, blocksize, progress_callback_wrapper, rest)
@@ -445,6 +449,81 @@ class VideoGeneratorWorker(QObject):
                 self.debug_message.emit(f"  - Frames failed: {total_frames_failed}")
                 self.debug_message.emit(f"  - Total frames: {total_frames}")
                 self.debug_message.emit(f"  - Video file: {video_path}")
+                
+                # Step 5.5: Remove black frames if hide_complete_routes is enabled
+                hide_complete_routes_raw = self.json_data.get('hide_complete_routes', False)
+                if isinstance(hide_complete_routes_raw, str):
+                    hide_complete_routes = hide_complete_routes_raw.lower() in ('true', '1', 'yes')
+                else:
+                    hide_complete_routes = bool(hide_complete_routes_raw)
+                
+                if hide_complete_routes:
+                    self.debug_message.emit("Step 5.5: Removing black frames from video (hide_complete_routes enabled)")
+                    from video_generator_remove_empty_frames import remove_empty_frames_from_video
+                    
+                    processed_video_path = remove_empty_frames_from_video(
+                        video_path=video_path,
+                        json_data=self.json_data,
+                        debug_callback=self.debug_message.emit,
+                        log_callback=self.log_message.emit,
+                        max_workers=self.max_workers,
+                        gpu_rendering=self.gpu_rendering
+                    )
+                    
+                    if processed_video_path:
+                        video_path = processed_video_path
+                        self.debug_message.emit("✅ Black frames removed successfully")
+                        
+                        # Generate thumbnail from the processed video (after black frame removal)
+                        # This ensures the thumbnail is from the last non-black frame
+                        try:
+                            self.debug_message.emit("Generating thumbnail from processed video (after black frame removal)...")
+                            
+                            import subprocess
+                            from PIL import Image
+                            
+                            video_dir = os.path.dirname(video_path)
+                            temp_frame_path = os.path.join(video_dir, 'temp_last_frame.png')
+                            
+                            # Get the correct ffmpeg executable
+                            from video_generator_cache_video_frames import get_ffmpeg_executable
+                            ffmpeg_executable = get_ffmpeg_executable()
+                            
+                            # Extract the last frame from the processed video
+                            cmd = [
+                                ffmpeg_executable,
+                                '-sseof', '-1',  # Seek to 1 second before end
+                                '-i', video_path,
+                                '-vframes', '1',
+                                '-y',  # Overwrite output file
+                                temp_frame_path
+                            ]
+                            
+                            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                            
+                            # Load and resize the extracted frame
+                            pil_image = Image.open(temp_frame_path)
+                            original_width, original_height = pil_image.size
+                            new_height = 320
+                            new_width = int((original_width / original_height) * new_height)
+                            
+                            # Resize and save as thumbnail
+                            resized_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                            thumbnail_path = os.path.join(video_dir, 'thumbnail.png')
+                            resized_image.save(thumbnail_path, 'PNG')
+                            
+                            # Clean up temporary file
+                            try:
+                                os.remove(temp_frame_path)
+                            except:
+                                pass
+                            
+                            self.debug_message.emit(f"Thumbnail generated from processed video: {thumbnail_path} ({new_width}x{new_height})")
+                            
+                        except Exception as e:
+                            self.log_message.emit(f"Warning: Failed to generate thumbnail from processed video: {str(e)}")
+                    else:
+                        self.debug_message.emit("⚠️ Warning: Failed to remove black frames, using original video")
                 
                 # STOP TIMER: End timing and log total rendering time
                 render_end_time = time.time()

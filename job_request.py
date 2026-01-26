@@ -46,6 +46,76 @@ def apply_vertical_video_swap(json_data, log_callback=None):
     return json_data
 
 
+def confirm_job_receipt(api_url, user, hardware_id, app_version, job_id, log_callback=None):
+    """Confirm job receipt via API call.
+    Automatically retries up to 15 times with 60 second delays on network failures.
+    
+    Args:
+        api_url (str): The API base URL
+        user (str): The API user/key
+        hardware_id (str): The hardware ID
+        app_version (str): The application version
+        job_id (str): The job ID to confirm
+        log_callback (callable, optional): Function to call for logging messages
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    def _do_confirm():
+        """Internal function that performs the actual confirmation."""
+        try:
+            if not api_url:
+                if log_callback:
+                    log_callback("Cannot confirm job receipt: missing api_url")
+                return False
+
+            # Construct URL from config api_url + confirm_job endpoint
+            url = f"{api_url.rstrip('/')}/jobs_api/v1/confirm_job/"
+            headers = {
+                'X-API-Key': user,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+            # Ensure job_id is an integer (API expects integer, not string)
+            try:
+                job_id_int = int(job_id) if not isinstance(job_id, int) else job_id
+            except (ValueError, TypeError):
+                if log_callback:
+                    log_callback(f"Warning: job_id '{job_id}' is not a valid integer, sending as-is")
+                job_id_int = job_id
+            
+            body = {
+                'hardware_id': hardware_id,
+                'app_version': app_version,
+                'job_id': job_id_int
+            }
+
+            response = requests.post(url, headers=headers, json=body, timeout=10)
+            if response.status_code == 200:
+                if log_callback:
+                    log_callback(f"Job #{job_id} confirmed successfully")
+                return True
+            else:
+                if log_callback:
+                    log_callback(f"Failed to confirm job receipt: {response.status_code} - {response.text}")
+                return False
+
+        except Exception as e:
+            if log_callback:
+                log_callback(f"Error confirming job receipt: {str(e)}")
+            return False
+    
+    # Wrap the confirmation operation with retry logic
+    return retry_operation(
+        operation=_do_confirm,
+        max_attempts=5,
+        retry_delay=5,
+        log_callback=log_callback,
+        operation_name=f"Job confirmation for job {job_id}"
+    )
+
+
 def update_job_status(api_url, user, hardware_id, app_version, job_id, status, log_callback=None):
     """Update job status via API call.
     Automatically retries up to 15 times with 60 second delays on network failures.
@@ -800,6 +870,22 @@ class JobRequestManager:
                 
                 # Extract points of interest (waypoints) if enabled
                 extract_and_store_points_of_interest(json_data, gpx_files_info, self.main_window.log_widget.add_log)
+                
+                # Confirm job receipt to server before starting processing
+                if job_id:
+                    self.main_window.log_widget.add_log(f"Confirming job receipt for job #{job_id}...")
+                    confirmation_success = confirm_job_receipt(
+                        self.main_window.api_url,
+                        self.main_window.user,
+                        self.main_window.hardware_id,
+                        self.main_window.app_version,
+                        job_id,
+                        self.main_window.log_widget.add_log
+                    )
+                    if not confirmation_success:
+                        self.main_window.log_widget.add_log(f"Warning: Failed to confirm job receipt for job #{job_id}, but continuing with processing")
+                    else:
+                        self.main_window.log_widget.add_log(f"Job #{job_id} confirmed successfully")
                 
                 # Process the job data
                 self.on_job_received(json_data, gpx_files_info)

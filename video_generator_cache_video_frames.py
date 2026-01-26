@@ -313,10 +313,6 @@ def _streaming_frame_worker(args):
         else:
             hide_complete_routes = bool(hide_complete_routes_raw)
         
-        # Debug: Log the parameter value (only for first few frames to avoid spam)
-        if frame_number <= 3:
-            print(f"DEBUG Frame {frame_number}: hide_complete_routes = {hide_complete_routes} (raw: {hide_complete_routes_raw}, type: {type(hide_complete_routes_raw)})")
-        
         # SIMULTANEOUS MODE ENDING FIX: Detect if we're in simultaneous mode
         is_simultaneous_mode = False
         if all_routes and len(all_routes) > 1:
@@ -383,14 +379,14 @@ def _streaming_frame_worker(args):
                     route_end_time = route_points[-1].accumulated_time if route_points else 0
                     route_is_complete = route_points and route_target_time >= route_end_time
                     
-                    # Debug: Log completion status for first few frames
-                    if frame_number <= 3 and hide_complete_routes:
-                        print(f"DEBUG Frame {frame_number} (simultaneous): route_target_time={route_target_time:.2f}, route_end_time={route_end_time:.2f}, complete={route_is_complete}")
+                    # Debug: Log completion status for first few frames (only if debug logging and hide_complete_routes are enabled)
+                    if frame_number <= 3 and hide_complete_routes and config.debug_logging:
+                        write_debug_log(f"Frame {frame_number} (simultaneous): route_target_time={route_target_time:.2f}, route_end_time={route_end_time:.2f}, complete={route_is_complete}")
                     
                     # Skip complete routes if hide_complete_routes is enabled
                     if hide_complete_routes and route_is_complete:
-                        if frame_number <= 3:
-                            print(f"DEBUG Frame {frame_number}: Skipping complete route (simultaneous mode)")
+                        if frame_number <= 3 and config.debug_logging:
+                            write_debug_log(f"Frame {frame_number}: Skipping complete route (simultaneous mode)")
                         continue
                     
                     if is_tail_only_frame:
@@ -481,8 +477,8 @@ def _streaming_frame_worker(args):
                     if last_time <= target_time_route:
                         # This file's last point has been reached, so the file is complete
                         completed_filenames.add(filename)
-                        if frame_number <= 3:
-                            print(f"DEBUG Frame {frame_number}: File '{filename}' is complete (last point time: {last_time:.2f}, target: {target_time_route:.2f})")
+                        if frame_number <= 3 and config.debug_logging:
+                            write_debug_log(f"Frame {frame_number}: File '{filename}' is complete (last point time: {last_time:.2f}, target: {target_time_route:.2f})")
                 
                 # Filter out points from completed files
                 if completed_filenames:
@@ -490,26 +486,26 @@ def _streaming_frame_worker(args):
                     points_for_frame = [p for p in points_for_frame if not (hasattr(p, 'filename') and p.filename and p.filename in completed_filenames)]
                     filtered_count = len(points_for_frame)
                     
-                    if frame_number <= 3:
-                        print(f"DEBUG Frame {frame_number}: Filtered out {original_count - filtered_count} points from {len(completed_filenames)} completed file(s). Remaining: {filtered_count} points")
+                    if frame_number <= 3 and config.debug_logging:
+                        write_debug_log(f"Frame {frame_number}: Filtered out {original_count - filtered_count} points from {len(completed_filenames)} completed file(s). Remaining: {filtered_count} points")
         
         # Check if we have any points (either as a list of lists or a single list)
         has_points = False
         if all_routes and len(all_routes) > 1:
             # Multiple routes mode - check if any route has points
             has_points = any(len(route_points) > 0 for route_points in points_for_frame)
-            # Enhanced debug for sequential mode
-            if hide_complete_routes and frame_number <= 10:
+            # Enhanced debug for multiple routes mode (only if debug logging and hide_complete_routes are enabled)
+            if hide_complete_routes and frame_number <= 10 and config.debug_logging:
                 route_count = len(points_for_frame)
                 total_points = sum(len(route_points) for route_points in points_for_frame)
-                print(f"DEBUG Frame {frame_number} FINAL: {route_count} routes in points_for_frame, {total_points} total points, has_points={has_points}")
+                write_debug_log(f"Frame {frame_number} FINAL: {route_count} routes in points_for_frame, {total_points} total points, has_points={has_points}")
         else:
             # Single route mode - check if the list has points
             has_points = len(points_for_frame) > 0
         
         if not has_points:
-            if hide_complete_routes and frame_number <= 10:
-                print(f"DEBUG Frame {frame_number}: No points found, returning None")
+            if hide_complete_routes and frame_number <= 10 and config.debug_logging:
+                write_debug_log(f"Frame {frame_number}: No points found, returning None")
             return frame_number, None
         
         # Validate that shared map cache is provided
@@ -849,6 +845,7 @@ class StreamingFrameGenerator:
         self.next_frame_to_request = 1
         self.frames_requested = 0
         self.frames_generated = 0  # Track total frames generated
+        self.last_reported_progress_percent = -1  # Track last reported progress to only update every 5%
         
         # NEW: Track buffer health and performance metrics
         self.buffer_health_check_interval = 50  # Check buffer health every 50 frames
@@ -994,11 +991,14 @@ class StreamingFrameGenerator:
                         # Increment frames generated counter
                         self.frames_generated += 1
                         
-                        # Update progress if callback is provided
+                        # Update progress if callback is provided (only every 5% to reduce debug log spam)
                         if self.progress_callback:
                             progress_percent = int((self.frames_generated / self.frames_to_generate) * 100)  # Use frames_to_generate
-                            progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
-                            self.progress_callback("progress_bar_frames", progress_percent, progress_text)
+                            # Only update progress every 5% or at 100%
+                            if progress_percent >= self.last_reported_progress_percent + 5 or progress_percent >= 100:
+                                progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
+                                self.progress_callback("progress_bar_frames", progress_percent, progress_text)
+                                self.last_reported_progress_percent = progress_percent
                     else:
                         # Create black frame if generation failed
                         height = int(self.json_data.get('video_resolution_y', 1080))
@@ -1007,11 +1007,14 @@ class StreamingFrameGenerator:
                         # Still count as generated (even if it's a black frame)
                         self.frames_generated += 1
                         
-                        # Update progress if callback is provided
+                        # Update progress if callback is provided (only every 5% to reduce debug log spam)
                         if self.progress_callback:
                             progress_percent = int((self.frames_generated / self.frames_to_generate) * 100)  # Use frames_to_generate
-                            progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
-                            self.progress_callback("progress_bar_frames", progress_percent, progress_text)
+                            # Only update progress every 5% or at 100%
+                            if progress_percent >= self.last_reported_progress_percent + 5 or progress_percent >= 100:
+                                progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
+                                self.progress_callback("progress_bar_frames", progress_percent, progress_text)
+                                self.last_reported_progress_percent = progress_percent
                     
                     completed_frames.append(frame_number)
                     
@@ -1024,11 +1027,14 @@ class StreamingFrameGenerator:
                     # Still count as generated (even if it's a black frame)
                     self.frames_generated += 1
                     
-                    # Update progress if callback is provided
+                    # Update progress if callback is provided (only every 5% to reduce debug log spam)
                     if self.progress_callback:
                         progress_percent = int((self.frames_generated / self.frames_to_generate) * 100)  # Use frames_to_generate
-                        progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
-                        self.progress_callback("progress_bar_frames", progress_percent, progress_text)
+                        # Only update progress every 5% or at 100%
+                        if progress_percent >= self.last_reported_progress_percent + 5 or progress_percent >= 100:
+                            progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
+                            self.progress_callback("progress_bar_frames", progress_percent, progress_text)
+                            self.last_reported_progress_percent = progress_percent
                     
                     completed_frames.append(frame_number)
         
@@ -1505,7 +1511,14 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 debug_callback(f"Streaming video creation complete: {output_path}")
             
             # Generate thumbnail for non-test jobs
-            if not is_test_job:
+            # Skip thumbnail generation if hide_complete_routes is enabled (will be generated after black frame removal)
+            hide_complete_routes_raw = json_data.get('hide_complete_routes', False)
+            if isinstance(hide_complete_routes_raw, str):
+                hide_complete_routes = hide_complete_routes_raw.lower() in ('true', '1', 'yes')
+            else:
+                hide_complete_routes = bool(hide_complete_routes_raw)
+            
+            if not is_test_job and not hide_complete_routes:
                 try:
                     if debug_callback:
                         debug_callback("Generating thumbnail from last frame...")
