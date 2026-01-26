@@ -78,7 +78,7 @@ def detect_keyframes(video_path, fps, debug_callback=None):
         ]
         
         if debug_callback:
-            debug_callback("Detecting keyframes in video...")
+            debug_callback("Detecting keyframes in video")
         
         result = subprocess.run(
             cmd,
@@ -191,7 +191,7 @@ def detect_black_frames(video_path, fps, debug_callback=None, max_workers=None):
         list: Sorted list of frame numbers that are black
     """
     if debug_callback:
-        debug_callback("Starting black frame detection...")
+        debug_callback("Starting black frame detection")
     
     # Get video properties
     cap = cv2.VideoCapture(video_path)
@@ -204,7 +204,7 @@ def detect_black_frames(video_path, fps, debug_callback=None, max_workers=None):
     cap.release()
     
     if debug_callback:
-        debug_callback(f"Analyzing {total_frames} frames for black frames...")
+        debug_callback(f"Analyzing {total_frames} frames for black frames")
     
     # Determine number of workers
     if max_workers is None:
@@ -297,7 +297,7 @@ def remove_black_frames_ffmpeg(video_path, black_frames, output_path, debug_call
         return False
     
     if debug_callback:
-        debug_callback(f"Removing {len(black_frames)} black frames from video...")
+        debug_callback(f"Removing {len(black_frames)} black frames from video")
     
     try:
         # Get ffmpeg executable
@@ -555,7 +555,7 @@ def remove_black_frames_ffmpeg(video_path, black_frames, output_path, debug_call
                     f.write(f"file '{abs_path}'\n")
             
             if debug_callback:
-                debug_callback(f"Concatenating {len(segment_files)} segments...")
+                debug_callback(f"Concatenating {len(segment_files)} segments")
             
             # Concatenate segments using ffmpeg concat demuxer
             # Since segments are already re-encoded, we can use copy codec for concatenation

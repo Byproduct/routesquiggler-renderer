@@ -91,7 +91,7 @@ def upload_video_to_storage_box(
         ftp = None
         try:
             if debug_callback:
-                debug_callback("Starting video upload to storage box...")
+                debug_callback("Starting video upload to storage box")
                 
             # Validate video file exists and has sufficient size (> 10KB)
             if not os.path.exists(video_path):
@@ -116,7 +116,7 @@ def upload_video_to_storage_box(
                 total_upload_size += thumbnail_size
                 
             if progress_callback:
-                progress_callback("progress_bar_upload", 0, "Connecting to storage box...")
+                progress_callback("progress_bar_upload", 0, "Connecting to storage box")
                 
             # Connect to FTP with progress tracking
             ftp = ProgressFTP(progress_callback, total_upload_size)
@@ -181,7 +181,7 @@ def upload_video_to_storage_box(
                     debug_callback("Uploading thumbnail file: thumbnail.png")
                     
                 if progress_callback:
-                    progress_callback("progress_bar_upload", int((video_size / total_upload_size) * 100), "Uploading thumbnail...")
+                    progress_callback("progress_bar_upload", int((video_size / total_upload_size) * 100), "Uploading thumbnail")
                     
                 with open(thumbnail_path, 'rb') as thumb_file:
                     ftp.storbinary('STOR thumbnail.png', thumb_file)
@@ -477,7 +477,7 @@ class VideoGeneratorWorker(QObject):
                         # Generate thumbnail from the processed video (after black frame removal)
                         # This ensures the thumbnail is from the last non-black frame
                         try:
-                            self.debug_message.emit("Generating thumbnail from processed video (after black frame removal)...")
+                            self.debug_message.emit("Generating thumbnail from processed video (after black frame removal)")
                             
                             import subprocess
                             from PIL import Image

@@ -112,7 +112,7 @@ class ImageGeneratorWorker(QObject):
                     if self.json_data:
                         self.json_data['route_accuracy'] = 'maximum'  # Disable pruning for images
                     
-                    self.log_message.emit(f"Creating combined route for {feature_type.lower()}...")
+                    self.log_message.emit(f"Creating combined route for {feature_type.lower()}")
                     route_points_data = create_combined_route(
                         sorted_gpx_files,
                         self.json_data,  # Pass original json_data so label gets stored correctly
@@ -207,7 +207,7 @@ class ImageGeneratorWorker(QObject):
             statistics_setting = self.json_data.get('statistics', 'off')
             if statistics_setting in ['light', 'dark'] and self.json_data.get('job_type') == 'image':
                 try:
-                    self.debug_message.emit("Calculating statistics from GPX files...")
+                    self.debug_message.emit("Calculating statistics from GPX files")
                     statistics_data = processor.calculate_statistics_from_gpx_files(self.gpx_files_info, track_lookup, self.json_data)
                     if statistics_data:
                         self.debug_message.emit("Statistics calculated successfully")

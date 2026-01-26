@@ -46,7 +46,7 @@ def trigger_background_sync(log_callback=None, debug_callback=None):
         """Background worker to perform tile syncing."""
         try:
             if debug_callback:
-                debug_callback("Starting background tile sync...")
+                debug_callback("Starting background tile sync")
             
             success, uploaded_count, downloaded_count = sync_map_tiles(
                 storage_box_address=STORAGE_BOX_CREDENTIALS['address'],
@@ -198,7 +198,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         
         # Phase 1: Gather all required tiles
         if debug_callback:
-            debug_callback("Phase 1: Gathering all required tiles...")
+            debug_callback("Phase 1: Gathering all required tiles")
         
         all_required_tiles = set()  # Use set to automatically remove duplicates
         
@@ -265,7 +265,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         
         # Phase 2: Filter out existing tiles
         if debug_callback:
-            debug_callback("Phase 2: Checking which tiles are already cached...")
+            debug_callback("Phase 2: Checking which tiles are already cached")
         
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, "Determining files to download")
@@ -307,7 +307,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             
             # Stop debug output after first few tiles
             if MAP_TILE_CACHING_DEBUG and tile_index == 2:
-                print(f"\n... (showing first 3 tiles only)")
+                print(f"\n(showing first 3 tiles only)")
                 # Continue checking all tiles, just stop debug output
         
         total_to_download = len(tiles_to_download)
@@ -331,7 +331,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             }
         
         if debug_callback:
-            debug_callback(f"Phase 3: Downloading {total_to_download} missing tiles...")
+            debug_callback(f"Phase 3: Downloading {total_to_download} missing tiles")
         
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, f"Downloading {total_to_download} tiles")
@@ -392,7 +392,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             # If too many consecutive errors, pause longer
             if consecutive_errors >= max_consecutive_errors:
                 if log_callback:
-                    log_callback(f"Too many consecutive errors ({consecutive_errors}). Pausing for 10 seconds...")
+                    log_callback(f"Too many consecutive errors ({consecutive_errors}). Pausing for 10 seconds")
                 time.sleep(10)  # Longer pause when many errors
                 consecutive_errors = 0
             

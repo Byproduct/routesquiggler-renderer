@@ -105,7 +105,7 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None):
                 remaining_time = MAX_LOCK_WAIT_TIME - elapsed_time
                 remaining_minutes = int(remaining_time / 60)
                 if debug_callback:
-                    debug_callback(f"Service {service} is locked by another user. Retrying in {LOCK_RETRY_INTERVAL} seconds... (max wait: {remaining_minutes} minutes remaining)")
+                    debug_callback(f"Service {service} is locked by another user. Retrying in {LOCK_RETRY_INTERVAL} seconds (max wait: {remaining_minutes} minutes remaining)")
                 time.sleep(LOCK_RETRY_INTERVAL)
                 continue
             

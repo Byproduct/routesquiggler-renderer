@@ -33,7 +33,7 @@ if [ ! -d ".git" ]; then
 fi
 
 # Check current git status
-echo -e "${BLUE}Checking git status...${NC}"
+echo -e "${BLUE}Checking git status${NC}"
 if [ -n "$(git status --porcelain)" ]; then
     echo -e "${YELLOW}WARNING: You have uncommitted changes!${NC}"
     echo "The following files have been modified:"
@@ -56,7 +56,7 @@ echo -e "Current commit: ${BLUE}$CURRENT_COMMIT${NC}"
 echo ""
 
 # Perform git pull
-echo -e "${BLUE}Pulling latest changes from git...${NC}"
+echo -e "${BLUE}Pulling latest changes from git${NC}"
 set +e  # Temporarily disable exit on error to handle git pull failures
 GIT_OUTPUT=$(git pull 2>&1)
 GIT_EXIT_CODE=$?
@@ -113,7 +113,7 @@ if [ ! -f "/etc/systemd/system/route-squiggler.service" ]; then
 fi
 
 # Restart the service
-echo -e "${BLUE}Restarting route-squiggler.service...${NC}"
+echo -e "${BLUE}Restarting route-squiggler.service${NC}"
 if sudo systemctl restart route-squiggler.service; then
     echo -e "${GREEN}✓${NC} Service restarted successfully"
     echo ""

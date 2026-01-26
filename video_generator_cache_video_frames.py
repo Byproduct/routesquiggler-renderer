@@ -379,10 +379,6 @@ def _streaming_frame_worker(args):
                     route_end_time = route_points[-1].accumulated_time if route_points else 0
                     route_is_complete = route_points and route_target_time >= route_end_time
                     
-                    # Debug: Log completion status for first few frames (only if debug logging and hide_complete_routes are enabled)
-                    if frame_number <= 3 and hide_complete_routes and config.debug_logging:
-                        write_debug_log(f"Frame {frame_number} (simultaneous): route_target_time={route_target_time:.2f}, route_end_time={route_end_time:.2f}, complete={route_is_complete}")
-                    
                     # Skip complete routes if hide_complete_routes is enabled
                     if hide_complete_routes and route_is_complete:
                         if frame_number <= 3 and config.debug_logging:
@@ -1521,7 +1517,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
             if not is_test_job and not hide_complete_routes:
                 try:
                     if debug_callback:
-                        debug_callback("Generating thumbnail from last frame...")
+                        debug_callback("Generating thumbnail from last frame")
                     
                     # Extract the last frame using ffmpeg
                     import subprocess
@@ -1653,7 +1649,7 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
     """
     try:
         if debug_callback:
-            debug_callback("Starting video frame generation with streaming approach...")
+            debug_callback("Starting video frame generation with streaming approach")
         
         # Use provided shared map cache or create new one if not provided
         if shared_map_cache is None:

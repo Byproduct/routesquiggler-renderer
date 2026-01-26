@@ -29,7 +29,7 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None, debug_call
         time_pattern = r'<time>(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z)</time>'
         
         if debug_callback:
-            debug_callback(f"Sorting {len(gpx_files_info)} GPX files chronologically...")
+            debug_callback(f"Sorting {len(gpx_files_info)} GPX files chronologically")
         
         for gpx_info in gpx_files_info:
             try:

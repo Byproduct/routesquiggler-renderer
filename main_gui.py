@@ -376,7 +376,7 @@ class MainWindow(QMainWindow):
         self.play_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # Add bootup status label (will replace play_label initially)
-        self.bootup_status_label = QLabel("Starting bootup sequence...")
+        self.bootup_status_label = QLabel("Starting bootup sequence")
         self.bootup_status_label.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -637,7 +637,7 @@ class MainWindow(QMainWindow):
     def quit_application(self):
         """Quit the application immediately."""
         self.intentionally_quitting = True  # Set flag to bypass closeEvent sync check
-        self.log_widget.add_log("Application closing...")
+        self.log_widget.add_log("Application closing")
         if hasattr(self, 'system_tray') and self.system_tray:
             self.system_tray.hide_tray_icon()
         self.close()  # Close the window directly instead of QApplication.quit()
@@ -659,7 +659,7 @@ class MainWindow(QMainWindow):
         # Show a "checking files" dialog
         self.checking_dialog = QMessageBox(self)
         self.checking_dialog.setWindowTitle("Checking Files")
-        self.checking_dialog.setText("Checking for files to sync...")
+        self.checking_dialog.setText("Checking for files to sync")
         self.checking_dialog.setStandardButtons(QMessageBox.StandardButton.NoButton)
         self.checking_dialog.show()
         
@@ -740,7 +740,7 @@ class MainWindow(QMainWindow):
         # Show a simple progress dialog
         self.sync_progress_dialog = QMessageBox(self)
         self.sync_progress_dialog.setWindowTitle("Syncing Map Tiles")
-        self.sync_progress_dialog.setText("Syncing map tiles before exit...")
+        self.sync_progress_dialog.setText("Syncing map tiles before exit")
         self.sync_progress_dialog.setStandardButtons(QMessageBox.StandardButton.NoButton)
         self.sync_progress_dialog.show()
         
@@ -1443,7 +1443,7 @@ class MainWindow(QMainWindow):
             self.show_exit_sync_dialog(files_to_upload)
         else:
             # No files to upload, close immediately
-            self.log_widget.add_log("Application closing...")
+            self.log_widget.add_log("Application closing")
             if hasattr(self, 'system_tray') and self.system_tray:
                 self.system_tray.hide_tray_icon()
             self.intentionally_quitting = True  # Set flag to bypass closeEvent sync check

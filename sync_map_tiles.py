@@ -63,11 +63,11 @@ class MapTileSyncer:
             self.sync_state_callback('start')
             
             if dry_run:
-                self.log_callback("Starting map tile cache file count check...")
+                self.log_callback("Starting map tile cache file count check")
             elif upload_only:
-                self.log_callback("Starting map tile cache upload-only sync...")
+                self.log_callback("Starting map tile cache upload-only sync")
             else:
-                self.log_callback("Starting map tile cache sync...")
+                self.log_callback("Starting map tile cache sync")
             
             # Ensure local cache directory exists
             if not self.local_cache_dir.exists():
@@ -205,8 +205,8 @@ class MapTileSyncer:
 
     def _upload_files_parallel(self, files_to_upload, max_workers):
         """Upload files in parallel."""
-        self.log_callback("Starting parallel upload...")
-        self.progress_callback("Syncing map tile cache: Starting upload...")
+        self.log_callback("Starting parallel upload")
+        self.progress_callback("Syncing map tile cache: Starting upload")
         
         uploaded_count = 0
         with ThreadPoolExecutor(max_workers=max_workers) as executor:

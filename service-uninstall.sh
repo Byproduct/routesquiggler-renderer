@@ -49,7 +49,7 @@ fi
 echo ""
 
 # Stop the service
-echo "Stopping service..."
+echo "Stopping service"
 if systemctl is-active --quiet route-squiggler.service; then
     systemctl stop route-squiggler.service
     echo -e "${GREEN}✓${NC} Service stopped"
@@ -58,7 +58,7 @@ else
 fi
 
 # Disable the service
-echo "Disabling service..."
+echo "Disabling service"
 if systemctl is-enabled --quiet route-squiggler.service 2>/dev/null; then
     systemctl disable route-squiggler.service
     echo -e "${GREEN}✓${NC} Service disabled"
@@ -67,12 +67,12 @@ else
 fi
 
 # Remove the service file
-echo "Removing service file..."
+echo "Removing service file"
 rm "$SERVICE_FILE"
 echo -e "${GREEN}✓${NC} Service file removed"
 
 # Reload systemd
-echo "Reloading systemd daemon..."
+echo "Reloading systemd daemon"
 systemctl daemon-reload
 systemctl reset-failed 2>/dev/null || true
 echo -e "${GREEN}✓${NC} Systemd daemon reloaded"

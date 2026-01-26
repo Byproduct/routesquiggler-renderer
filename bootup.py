@@ -360,7 +360,7 @@ class BootupManager:
             if hasattr(self.main_window, 'pause_button'):
                 self.main_window.pause_button.hide()
             if hasattr(self.main_window, 'play_label'):
-                self.main_window.play_label.setText("Syncing map tile cache...")
+                self.main_window.play_label.setText("Syncing map tile cache")
                 self.main_window.play_label.show()
         elif state == 'complete':
             # Show play/pause buttons again and restore normal state
@@ -460,7 +460,7 @@ class BootupWorker(QObject):
         overall_success = True
         
         for step_name, step_func in steps:
-            self.progress.emit(f"Running: {step_name}...")
+            self.progress.emit(f"Running: {step_name}")
             success = step_func()
             self.step_completed.emit(step_name, success)
             

@@ -174,7 +174,7 @@ def _collect_hr_values_with_255_fix(all_routes, debug_callback=None):
     # Check if max is 255 (Garmin error value)
     if calculated_max == 255:
         if debug_callback:
-            debug_callback("Detected HR value 255 (Garmin error value), cleaning data...")
+            debug_callback("Detected HR value 255 (Garmin error value), cleaning data")
         
         # Second pass: collect HR values with 255 replacement
         cleaned_hrs = []

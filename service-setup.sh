@@ -72,11 +72,11 @@ fi
 
 # Check if requirements are installed
 echo ""
-echo "Checking Python dependencies..."
+echo "Checking Python dependencies"
 if $PYTHON_EXEC -c "import PySide6" 2>/dev/null; then
     echo -e "${GREEN}✓${NC} PySide6 is installed"
 else
-    echo -e "${YELLOW}!${NC} PySide6 not found. Installing dependencies..."
+    echo -e "${YELLOW}!${NC} PySide6 not found. Installing dependencies"
     if [ "$PYTHON_EXEC" = "/usr/bin/python3" ]; then
         pip3 install -r "$INSTALL_DIR/requirements.txt"
     else
@@ -86,7 +86,7 @@ fi
 
 # Create the service file
 echo ""
-echo "Creating systemd service file..."
+echo "Creating systemd service file"
 SERVICE_FILE="/etc/systemd/system/route-squiggler.service"
 
 cat > "$SERVICE_FILE" << EOF
@@ -139,7 +139,7 @@ echo -e "${GREEN}✓${NC} Service file created at $SERVICE_FILE"
 
 # Reload systemd
 echo ""
-echo "Reloading systemd daemon..."
+echo "Reloading systemd daemon"
 systemctl daemon-reload
 echo -e "${GREEN}✓${NC} Systemd daemon reloaded"
 

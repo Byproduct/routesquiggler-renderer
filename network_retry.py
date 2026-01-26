@@ -51,7 +51,7 @@ def with_network_retry(
                             # Function returned False - treat as failure
                             if attempt < max_attempts:
                                 if func_log_callback:
-                                    func_log_callback(f"⚠️ Attempt {attempt}/{max_attempts} failed. Retrying in {retry_delay} seconds...")
+                                    func_log_callback(f"⚠️ Attempt {attempt}/{max_attempts} failed. Retrying in {retry_delay} seconds")
                                 time.sleep(retry_delay)
                                 continue
                             else:
@@ -71,7 +71,7 @@ def with_network_retry(
                         error_msg = str(e)
                         if attempt < max_attempts:
                             func_log_callback(f"⚠️ Attempt {attempt}/{max_attempts} failed with {error_type}: {error_msg}")
-                            func_log_callback(f"   Retrying in {retry_delay} seconds...")
+                            func_log_callback(f"   Retrying in {retry_delay} seconds")
                         else:
                             func_log_callback(f"❌ All {max_attempts} attempts failed. Last error: {error_type}: {error_msg}")
                     
@@ -133,7 +133,7 @@ def retry_operation(
                     # Function returned False - treat as failure
                     if log_callback:
                         if attempt < max_attempts:
-                            log_callback(f"⚠️ {operation_name} attempt {attempt}/{max_attempts} failed. Retrying in {retry_delay} seconds...")
+                            log_callback(f"⚠️ {operation_name} attempt {attempt}/{max_attempts} failed. Retrying in {retry_delay} seconds")
                             time.sleep(retry_delay)
                             continue
                         else:
@@ -152,7 +152,7 @@ def retry_operation(
                 error_msg = str(e)
                 if attempt < max_attempts:
                     log_callback(f"⚠️ {operation_name} attempt {attempt}/{max_attempts} failed with {error_type}: {error_msg}")
-                    log_callback(f"   Retrying in {retry_delay} seconds...")
+                    log_callback(f"   Retrying in {retry_delay} seconds")
                 else:
                     log_callback(f"❌ {operation_name}: All {max_attempts} attempts failed. Last error: {error_type}: {error_msg}")
             

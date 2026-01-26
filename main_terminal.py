@@ -359,11 +359,11 @@ def signal_handler(signum, frame):
     shutdown_force_count += 1
     
     if shutdown_force_count == 1:
-        write_log("\nShutdown requested. Will exit after current operation completes...")
+        write_log("\nShutdown requested. Will exit after current operation completes")
         write_log("(Press Ctrl+C again to force immediate exit)")
         shutdown_requested = True
     elif shutdown_force_count == 2:
-        write_log("\nForcing immediate exit...")
+        write_log("\nForcing immediate exit")
         sys.exit(0)
     else:
         # Third time - really force it
@@ -407,7 +407,7 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
             write_debug_log(f"Request body: {body}")
             
             # Make the request with a long timeout (95 seconds like the GUI version)
-            write_debug_log("Sending POST request (may take up to 95 seconds)...")
+            write_debug_log("Sending POST request (may take up to 95 seconds)")
             response = requests.post(url, headers=headers, json=body, timeout=95)
             result_container['response'] = response
             
@@ -419,7 +419,7 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
     request_thread.start()
     
     # Wait for request to complete, checking shutdown flag periodically
-    write_debug_log("Waiting for job request to complete (press Ctrl+C to cancel)...")
+    write_debug_log("Waiting for job request to complete (press Ctrl+C to cancel)")
     while request_thread.is_alive():
         request_thread.join(timeout=0.5)  # Check every 0.5 seconds
         if shutdown_requested:
@@ -463,7 +463,7 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
         
         if 'application/json' in content_type.lower():
             # No jobs available
-            write_debug_log("Response is JSON, checking status...")
+            write_debug_log("Response is JSON, checking status")
             json_response = response.json()
             write_debug_log(f"JSON response: {json_response}")
             if json_response.get('status') == 'no_job':
@@ -472,7 +472,7 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
                 return None, None
         
         # Process as ZIP data
-        write_debug_log(f"Processing job ZIP data (size: {len(response.content)} bytes)...")
+        write_debug_log(f"Processing job ZIP data (size: {len(response.content)} bytes)")
         result = process_job_zip_terminal(
             response.content, 
             api_url, 
@@ -505,14 +505,14 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
     job_id = None  # Track job_id so we can report errors if processing fails
     
     try:
-        write_debug_log("Creating ZipFile object from response data...")
+        write_debug_log("Creating ZipFile object from response data")
         # Process the outer ZIP file which contains data.json and gpx_files.zip
         with zipfile.ZipFile(BytesIO(zip_data), 'r') as outer_zip:
             write_debug_log(f"ZIP file opened successfully. Contents: {outer_zip.namelist()}")
             
             # Read job parameters from data.json
             try:
-                write_debug_log("Reading data.json from ZIP...")
+                write_debug_log("Reading data.json from ZIP")
                 with outer_zip.open('data.json') as data_file:
                     json_data = json.loads(data_file.read().decode('utf-8'))
                 job_id = json_data.get('job_id', '?')
@@ -528,7 +528,7 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
             
             # Read the inner gpx_files.zip
             try:
-                write_debug_log("Reading gpx_files.zip from outer ZIP...")
+                write_debug_log("Reading gpx_files.zip from outer ZIP")
                 with outer_zip.open('gpx_files.zip') as gpx_zip_file:
                     gpx_zip_data = gpx_zip_file.read()
                 write_debug_log(f"gpx_files.zip read successfully (size: {len(gpx_zip_data)} bytes)")
@@ -545,7 +545,7 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
             # Process GPX files from the inner ZIP
             gpx_files_info = []
             try:
-                write_debug_log("Opening inner gpx_files.zip...")
+                write_debug_log("Opening inner gpx_files.zip")
                 with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
                     gpx_files_list = gpx_zip.namelist()
                     write_debug_log(f"Processing {len(gpx_files_list)} GPX files: {gpx_files_list}")
@@ -598,7 +598,7 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
             
             # Confirm job receipt to server before starting processing
             if job_id:
-                write_log(f"Confirming job receipt for job #{job_id}...")
+                write_debug_log(f"Confirming job receipt for job #{job_id}")
                 from job_request import confirm_job_receipt
                 confirmation_success = confirm_job_receipt(
                     api_url,
@@ -611,7 +611,7 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
                 if not confirmation_success:
                     write_log(f"Warning: Failed to confirm job receipt for job #{job_id}, but continuing with processing")
                 else:
-                    write_log(f"Job #{job_id} confirmed successfully")
+                    write_debug_log(f"Job #{job_id} confirmed successfully")
             
             return json_data, gpx_files_info
             
@@ -784,11 +784,11 @@ def run_job_processing_loop_terminal(bootup_manager, app):
     while not shutdown_requested:
         try:
             # Process Qt events to keep things responsive
-            write_debug_log("Processing Qt events...")
+            write_debug_log("Processing Qt events")
             app.processEvents()
             
             # Request a new job
-            write_debug_log("Calling request_job_terminal()...")
+            write_debug_log("Calling request_job_terminal()")
             # Update status to "idle" if not already idle
             global current_status
             if current_status != "idle":
@@ -807,7 +807,7 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             
             if json_data and gpx_files_info:
                 # Process the job
-                write_debug_log("Job data received, starting processing...")
+                write_debug_log("Job data received, starting processing")
                 
                 # CRITICAL: Validate that required attributes are set before processing
                 # This prevents race conditions where job is requested before bootup completes
@@ -835,7 +835,7 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                 
                 if success:
                     if not shutdown_requested:
-                        write_log("Job completed. Requesting next job...")
+                        write_log("Job completed. Requesting next job")
                         # Small delay before requesting next job
                         time.sleep(0.5)
                         app.processEvents()
@@ -843,7 +843,7 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                         write_log("Job completed. Exiting as shutdown was requested.")
                         break
                 else:
-                    write_log(f"Job processing failed. Retrying in {retry_delay} seconds...")
+                    write_log(f"Job processing failed. Retrying in {retry_delay} seconds")
                     if not shutdown_requested:
                         time.sleep(retry_delay)
                         app.processEvents()
@@ -853,7 +853,7 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             else:
                 # No jobs available
                 if not shutdown_requested:
-                    write_debug_log(f"No jobs available. Checking again in {retry_delay} seconds...")
+                    write_debug_log(f"No jobs available. Checking again in {retry_delay} seconds")
                     # Sleep in small increments to allow quick response to shutdown
                     for i in range(retry_delay * 10):
                         if shutdown_requested:
@@ -863,19 +863,19 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                         app.processEvents()
                 else:
                     # Shutdown was requested during job request
-                    write_debug_log("Shutdown flag detected, exiting loop...")
+                    write_debug_log("Shutdown flag detected, exiting loop")
                     break
         
         except KeyboardInterrupt:
             # Handle Ctrl+C directly for immediate response
-            write_log("\nShutdown requested (Ctrl+C). Exiting...")
+            write_log("\nShutdown requested (Ctrl+C). Exiting")
             break
         
         except Exception as e:
             write_log(f"Error in job processing loop: {str(e)}")
             write_log(traceback.format_exc())
             if not shutdown_requested:
-                write_log(f"Retrying in {retry_delay} seconds...")
+                write_log(f"Retrying in {retry_delay} seconds")
                 time.sleep(retry_delay)
                 app.processEvents()
     

@@ -61,7 +61,7 @@ def _update_status_worker(status, api_key, api_url):
             f.write(f"[{timestamp}] Starting status update\n")
             f.write(f"  URL: {api_url}\n")
             f.write(f"  Status: {status}\n")
-            f.write(f"  API Key: {api_key[:8]}... (truncated)\n")
+            f.write(f"  API Key: {api_key[:8]} (truncated)\n")
         
         # Prepare the request payload
         payload = {
@@ -143,7 +143,7 @@ def update_status(status, api_key=None):
             api_key = config.user
             try:
                 with open(log_file, 'a', encoding='utf-8') as f:
-                    f.write(f"  Loaded API key from config: {api_key[:8] if api_key else 'None'}...\n")
+                    f.write(f"  Loaded API key from config: {api_key[:8] if api_key else 'None'}\n")
             except Exception:
                 pass
             if not api_key:
@@ -176,7 +176,7 @@ def update_status(status, api_key=None):
     # This ensures the main program doesn't block on network I/O
     try:
         with open(log_file, 'a', encoding='utf-8') as f:
-            f.write(f"  Launching worker process...\n")
+            f.write(f"  Launching worker process\n")
     except Exception:
         pass
     

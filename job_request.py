@@ -16,6 +16,7 @@ from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal
 # Local imports
 from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
 from network_retry import retry_operation
+from write_log import write_debug_log
 
 
 def apply_vertical_video_swap(json_data, log_callback=None):
@@ -70,7 +71,18 @@ def confirm_job_receipt(api_url, user, hardware_id, app_version, job_id, log_cal
                 return False
 
             # Construct URL from config api_url + confirm_job endpoint
-            url = f"{api_url.rstrip('/')}/jobs_api/v1/confirm_job/"
+            # The api_url might be just the base domain or might already include /jobs_api/v1/
+            # We'll use the full path as specified by the API
+            base_url = api_url.rstrip('/')
+            # Check if base_url already contains /jobs_api/v1
+            if '/jobs_api/v1' in base_url:
+                url = f"{base_url}/confirm_job/"
+            else:
+                url = f"{base_url}/jobs_api/v1/confirm_job/"
+            
+            # Log URL to debug only (not regular output)
+            write_debug_log(f"Confirming job receipt at URL: {url}")
+            
             headers = {
                 'X-API-Key': user,
                 'Content-Type': 'application/json',
@@ -93,8 +105,8 @@ def confirm_job_receipt(api_url, user, hardware_id, app_version, job_id, log_cal
 
             response = requests.post(url, headers=headers, json=body, timeout=10)
             if response.status_code == 200:
-                if log_callback:
-                    log_callback(f"Job #{job_id} confirmed successfully")
+                # Log success to debug only (not regular output)
+                write_debug_log(f"Job #{job_id} confirmed successfully")
                 return True
             else:
                 if log_callback:
@@ -403,7 +415,7 @@ class JobRequestManager:
                 self.main_window.worker.status_queue_ready.connect(self.main_window.setup_status_monitoring)
                 self.main_window.worker.zoom_levels_ready.connect(self.main_window.create_status_labels)
             
-            self.main_window.log_widget.add_log("Starting worker thread...")
+            self.main_window.log_widget.add_log("Starting worker thread")
             # Start thread
             self.main_window.worker_thread.start()
             
@@ -633,10 +645,10 @@ class JobRequestManager:
         self.main_window.no_jobs_label.show()
         
         # Show a progress indicator for the long API call
-        self.main_window.log_widget.add_log("Starting long API call (may take up to 95 seconds)...")
+        self.main_window.log_widget.add_log("Starting long API call (may take up to 95 seconds)")
         
         # Update the play label to show we're working
-        self.main_window.play_label.setText("Requesting new job from server...")
+        self.main_window.play_label.setText("Requesting new job from server")
         
         # Update status to "idle" if not already idle
         if self.current_status != "idle":
@@ -700,7 +712,7 @@ class JobRequestManager:
                 self.main_window.log_widget.add_log(f"Response status: {status_code}")
                 
                 if status_code == 200:
-                    self.main_window.log_widget.add_log("Processing 200 response...")
+                    self.main_window.log_widget.add_log("Processing 200 response")
                     
                     # Get response data
                     response_data = reply.readAll()
@@ -709,7 +721,7 @@ class JobRequestManager:
                     content_type = reply.header(QNetworkRequest.ContentTypeHeader)
                     
                     if content_type and 'application/json' in content_type.lower():
-                        self.main_window.log_widget.add_log("Detected JSON response, checking for no_job status...")
+                        self.main_window.log_widget.add_log("Detected JSON response, checking for no_job status")
                         try:
                             import json
                             json_response = json.loads(response_data.data().decode())
@@ -723,7 +735,7 @@ class JobRequestManager:
                             self.main_window.log_widget.add_log(f"Error parsing JSON response: {str(e)}")
                     
                     # Process as ZIP data
-                    self.main_window.log_widget.add_log("Processing job ZIP data...")
+                    self.main_window.log_widget.add_log("Processing job ZIP data")
                     self.process_qt_network_zip_response(response_data.data())
                 else:
                     self.main_window.log_widget.add_log(f"Job request failed: {status_code}")
@@ -808,7 +820,7 @@ class JobRequestManager:
                 gpx_files_info = []
                 try:
                     with zipfile.ZipFile(BytesIO(gpx_zip_data), 'r') as gpx_zip:
-                        self.main_window.log_widget.add_log("Processing GPX files...")
+                        self.main_window.log_widget.add_log("Processing GPX files")
                         for file_name in gpx_zip.namelist():
                             with gpx_zip.open(file_name) as gpx_file:
                                 gpx_content = gpx_file.read()
@@ -866,14 +878,14 @@ class JobRequestManager:
                     self.on_job_request_error("No valid GPX files found")
                     return
                 
-                self.main_window.log_widget.add_log(f"Found {len(gpx_files_info)} GPX files, processing job data...")
+                self.main_window.log_widget.add_log(f"Found {len(gpx_files_info)} GPX files, processing job data")
                 
                 # Extract points of interest (waypoints) if enabled
                 extract_and_store_points_of_interest(json_data, gpx_files_info, self.main_window.log_widget.add_log)
                 
                 # Confirm job receipt to server before starting processing
                 if job_id:
-                    self.main_window.log_widget.add_log(f"Confirming job receipt for job #{job_id}...")
+                    self.main_window.log_widget.add_debug_log(f"Confirming job receipt for job #{job_id}")
                     confirmation_success = confirm_job_receipt(
                         self.main_window.api_url,
                         self.main_window.user,
@@ -885,7 +897,7 @@ class JobRequestManager:
                     if not confirmation_success:
                         self.main_window.log_widget.add_log(f"Warning: Failed to confirm job receipt for job #{job_id}, but continuing with processing")
                     else:
-                        self.main_window.log_widget.add_log(f"Job #{job_id} confirmed successfully")
+                        self.main_window.log_widget.add_debug_log(f"Job #{job_id} confirmed successfully")
                 
                 # Process the job data
                 self.on_job_received(json_data, gpx_files_info)

@@ -133,7 +133,7 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     else:
         iterator = npy_files
         if not use_progress_bar:
-            write_log("Processing files (no progress bar for remote directory)...")
+            write_log("Processing files (no progress bar for remote directory)")
     
     # Process each file
     for npy_file in iterator:
