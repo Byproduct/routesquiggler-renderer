@@ -1211,20 +1211,20 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             hr_width_max = float(json_data.get('hr_based_width_max', 180)) if use_hr_based_width else None
             
             if use_speed_based_color:
-            # SPEED-BASED COLORING: Draw each segment individually with speed-based colors
-            speed_min = float(json_data.get('speed_based_color_min', 5))
-            speed_max = float(json_data.get('speed_based_color_max', 35))
-            speed_range = speed_max - speed_min
-            
-            # Validate speed range to prevent division by zero
-            if speed_range <= 0:
-                print(f"WARNING: Invalid speed range ({speed_min} to {speed_max}). Disabling speed-based coloring.")
-                use_speed_based_color = False
-            
-            if use_speed_based_color:
-                # Draw each segment individually with speed-based color
-                for track_info in active_tracks:
-                    route_index, track_index, track = track_info
+                # SPEED-BASED COLORING: Draw each segment individually with speed-based colors
+                speed_min = float(json_data.get('speed_based_color_min', 5))
+                speed_max = float(json_data.get('speed_based_color_max', 35))
+                speed_range = speed_max - speed_min
+                
+                # Validate speed range to prevent division by zero
+                if speed_range <= 0:
+                    print(f"WARNING: Invalid speed range ({speed_min} to {speed_max}). Disabling speed-based coloring.")
+                    use_speed_based_color = False
+                
+                if use_speed_based_color:
+                    # Draw each segment individually with speed-based color
+                    for track_info in active_tracks:
+                        route_index, track_index, track = track_info
                     
                     if len(track) < 2:
                         continue
@@ -1279,19 +1279,19 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                         )
             
             elif use_hr_based_color:
-            # HR-BASED COLORING: Draw each segment individually with HR-based colors
-            hr_min = float(json_data.get('hr_based_color_min', 50))
-            hr_max = float(json_data.get('hr_based_color_max', 180))
-            hr_range = hr_max - hr_min
-            
-            # Validate HR range to prevent division by zero
-            if hr_range <= 0:
-                print(f"WARNING: Invalid HR range ({hr_min} to {hr_max}). Disabling HR-based coloring.")
-                use_hr_based_color = False
-            
-            if use_hr_based_color:
-                # Draw each segment individually with HR-based color
-                for track_info in active_tracks:
+                # HR-BASED COLORING: Draw each segment individually with HR-based colors
+                hr_min = float(json_data.get('hr_based_color_min', 50))
+                hr_max = float(json_data.get('hr_based_color_max', 180))
+                hr_range = hr_max - hr_min
+                
+                # Validate HR range to prevent division by zero
+                if hr_range <= 0:
+                    print(f"WARNING: Invalid HR range ({hr_min} to {hr_max}). Disabling HR-based coloring.")
+                    use_hr_based_color = False
+                
+                if use_hr_based_color:
+                    # Draw each segment individually with HR-based color
+                    for track_info in active_tracks:
                     route_index, track_index, track = track_info
                     
                     if len(track) < 2:
