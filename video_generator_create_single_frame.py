@@ -1225,58 +1225,58 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                     # Draw each segment individually with speed-based color
                     for track_info in active_tracks:
                         route_index, track_index, track = track_info
-                    
-                    if len(track) < 2:
-                        continue
-                    
-                    # Convert GPS coordinates to Web Mercator for plotting
-                    track_lats = [point.lat for point in track]
-                    track_lons = [point.lon for point in track]
-                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
-                    
-                    # Draw each segment between consecutive points with speed-based color
-                    for j in range(len(track) - 1):
-                        current_point = track[j]
-                        next_point = track[j + 1]
                         
-                        # Skip segments that cross track boundaries
-                        if current_point.new_route_flag or next_point.new_route_flag:
+                        if len(track) < 2:
                             continue
                         
-                        # Get speed from current point
-                        speed_value = current_point.current_speed_smoothed
+                        # Convert GPS coordinates to Web Mercator for plotting
+                        track_lats = [point.lat for point in track]
+                        track_lons = [point.lon for point in track]
+                        mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
                         
-                        if speed_value is None:
-                            # If no speed data, use default color (red)
-                            segment_color = (1.0, 0.0, 0.0, 1.0)
-                        else:
-                            # Normalize speed to 0-1 range
-                            normalized_speed = (speed_value - speed_min) / speed_range
-                            normalized_speed = max(0.0, min(1.0, normalized_speed))  # Clamp to 0-1
+                        # Draw each segment between consecutive points with speed-based color
+                        for j in range(len(track) - 1):
+                            current_point = track[j]
+                            next_point = track[j + 1]
                             
-                            # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
-                            rgb = speed_based_color(normalized_speed)
+                            # Skip segments that cross track boundaries
+                            if current_point.new_route_flag or next_point.new_route_flag:
+                                continue
                             
-                            # Use directly as matplotlib color (add alpha channel)
-                            segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
-                        
-                        # Calculate line width (HR-based or fixed)
-                        if use_hr_based_width:
-                            segment_width = _calculate_hr_based_width(current_point.heart_rate_smoothed, hr_width_min, hr_width_max) * image_scale
-                        else:
-                            segment_width = effective_line_width
-                        
-                        # Draw this segment
-                        x1, y1 = mercator_coords[j]
-                        x2, y2 = mercator_coords[j + 1]
-                        
-                        ax.plot(
-                            [x1, x2],
-                            [y1, y2],
-                            color=segment_color,
-                            linewidth=segment_width,
-                            zorder=20  # Middle layer for active routes (below tails)
-                        )
+                            # Get speed from current point
+                            speed_value = current_point.current_speed_smoothed
+                            
+                            if speed_value is None:
+                                # If no speed data, use default color (red)
+                                segment_color = (1.0, 0.0, 0.0, 1.0)
+                            else:
+                                # Normalize speed to 0-1 range
+                                normalized_speed = (speed_value - speed_min) / speed_range
+                                normalized_speed = max(0.0, min(1.0, normalized_speed))  # Clamp to 0-1
+                                
+                                # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
+                                rgb = speed_based_color(normalized_speed)
+                                
+                                # Use directly as matplotlib color (add alpha channel)
+                                segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
+                            
+                            # Calculate line width (HR-based or fixed)
+                            if use_hr_based_width:
+                                segment_width = _calculate_hr_based_width(current_point.heart_rate_smoothed, hr_width_min, hr_width_max) * image_scale
+                            else:
+                                segment_width = effective_line_width
+                            
+                            # Draw this segment
+                            x1, y1 = mercator_coords[j]
+                            x2, y2 = mercator_coords[j + 1]
+                            
+                            ax.plot(
+                                [x1, x2],
+                                [y1, y2],
+                                color=segment_color,
+                                linewidth=segment_width,
+                                zorder=20  # Middle layer for active routes (below tails)
+                            )
             
             elif use_hr_based_color:
                 # HR-BASED COLORING: Draw each segment individually with HR-based colors
@@ -1292,59 +1292,59 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 if use_hr_based_color:
                     # Draw each segment individually with HR-based color
                     for track_info in active_tracks:
-                    route_index, track_index, track = track_info
-                    
-                    if len(track) < 2:
-                        continue
-                    
-                    # Convert GPS coordinates to Web Mercator for plotting
-                    track_lats = [point.lat for point in track]
-                    track_lons = [point.lon for point in track]
-                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
-                    
-                    # Draw each segment between consecutive points with HR-based color
-                    for j in range(len(track) - 1):
-                        current_point = track[j]
-                        next_point = track[j + 1]
+                        route_index, track_index, track = track_info
                         
-                        # Skip segments that cross track boundaries
-                        if current_point.new_route_flag or next_point.new_route_flag:
+                        if len(track) < 2:
                             continue
                         
-                        # Get heart rate from current point
-                        hr_value = current_point.heart_rate_smoothed
+                        # Convert GPS coordinates to Web Mercator for plotting
+                        track_lats = [point.lat for point in track]
+                        track_lons = [point.lon for point in track]
+                        mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
                         
-                        if hr_value is None:
-                            # If no HR data, use default color (red)
-                            segment_color = (1.0, 0.0, 0.0, 1.0)
-                        else:
-                            # Normalize HR to 0-1 range
-                            normalized_hr = (hr_value - hr_min) / hr_range
-                            normalized_hr = max(0.0, min(1.0, normalized_hr))  # Clamp to 0-1
+                        # Draw each segment between consecutive points with HR-based color
+                        for j in range(len(track) - 1):
+                            current_point = track[j]
+                            next_point = track[j + 1]
                             
-                            # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
-                            rgb = speed_based_color(normalized_hr)
+                            # Skip segments that cross track boundaries
+                            if current_point.new_route_flag or next_point.new_route_flag:
+                                continue
                             
-                            # Use directly as matplotlib color (add alpha channel)
-                            segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
-                        
-                        # Calculate line width (HR-based or fixed)
-                        if use_hr_based_width:
-                            segment_width = _calculate_hr_based_width(hr_value, hr_width_min, hr_width_max) * image_scale
-                        else:
-                            segment_width = effective_line_width
-                        
-                        # Draw this segment
-                        x1, y1 = mercator_coords[j]
-                        x2, y2 = mercator_coords[j + 1]
-                        
-                        ax.plot(
-                            [x1, x2],
-                            [y1, y2],
-                            color=segment_color,
-                            linewidth=segment_width,
-                            zorder=20  # Middle layer for active routes (below tails)
-                        )
+                            # Get heart rate from current point
+                            hr_value = current_point.heart_rate_smoothed
+                            
+                            if hr_value is None:
+                                # If no HR data, use default color (red)
+                                segment_color = (1.0, 0.0, 0.0, 1.0)
+                            else:
+                                # Normalize HR to 0-1 range
+                                normalized_hr = (hr_value - hr_min) / hr_range
+                                normalized_hr = max(0.0, min(1.0, normalized_hr))  # Clamp to 0-1
+                                
+                                # Get RGB color from speed_based_color function (returns 0-1 range, matplotlib format)
+                                rgb = speed_based_color(normalized_hr)
+                                
+                                # Use directly as matplotlib color (add alpha channel)
+                                segment_color = (rgb[0], rgb[1], rgb[2], 1.0)
+                            
+                            # Calculate line width (HR-based or fixed)
+                            if use_hr_based_width:
+                                segment_width = _calculate_hr_based_width(hr_value, hr_width_min, hr_width_max) * image_scale
+                            else:
+                                segment_width = effective_line_width
+                            
+                            # Draw this segment
+                            x1, y1 = mercator_coords[j]
+                            x2, y2 = mercator_coords[j + 1]
+                            
+                            ax.plot(
+                                [x1, x2],
+                                [y1, y2],
+                                color=segment_color,
+                                linewidth=segment_width,
+                                zorder=20  # Middle layer for active routes (below tails)
+                            )
             
             if not use_speed_based_color and not use_hr_based_color:
                 # STANDARD COLORING: Use LineCollection if no HR-based width, otherwise draw segments individually
