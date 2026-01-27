@@ -1190,18 +1190,27 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
 
                 # Just add all tracks to active tracks (used to be a failed attempt at caching full routes - plotting is still faster than overlaying image)               
                 active_tracks.append((route_index, track_index, track))
+        
+        # Parse tail_only parameter (can be omitted, false, or true)
+        tail_only_raw = json_data.get('tail_only', False)
+        if isinstance(tail_only_raw, str):
+            tail_only = tail_only_raw.lower() in ('true', '1', 'yes')
+        else:
+            tail_only = bool(tail_only_raw)
                       
         # PHASE 2: Draw active routes and their tails (top layer)
-        # Check if speed-based or HR-based coloring is enabled
-        use_speed_based_color = json_data.get('speed_based_color', False)
-        use_hr_based_color = json_data.get('hr_based_color', False)
-        
-        # Check if HR-based width is enabled
-        use_hr_based_width = json_data.get('hr_based_width', False)
-        hr_width_min = float(json_data.get('hr_based_width_min', 50)) if use_hr_based_width else None
-        hr_width_max = float(json_data.get('hr_based_width_max', 180)) if use_hr_based_width else None
-        
-        if use_speed_based_color:
+        # Skip route line drawing if tail_only is enabled (tails still need route points for calculation)
+        if not tail_only:
+            # Check if speed-based or HR-based coloring is enabled
+            use_speed_based_color = json_data.get('speed_based_color', False)
+            use_hr_based_color = json_data.get('hr_based_color', False)
+            
+            # Check if HR-based width is enabled
+            use_hr_based_width = json_data.get('hr_based_width', False)
+            hr_width_min = float(json_data.get('hr_based_width_min', 50)) if use_hr_based_width else None
+            hr_width_max = float(json_data.get('hr_based_width_max', 180)) if use_hr_based_width else None
+            
+            if use_speed_based_color:
             # SPEED-BASED COLORING: Draw each segment individually with speed-based colors
             speed_min = float(json_data.get('speed_based_color_min', 5))
             speed_max = float(json_data.get('speed_based_color_max', 35))
@@ -1268,8 +1277,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                             linewidth=segment_width,
                             zorder=20  # Middle layer for active routes (below tails)
                         )
-        
-        elif use_hr_based_color:
+            
+            elif use_hr_based_color:
             # HR-BASED COLORING: Draw each segment individually with HR-based colors
             hr_min = float(json_data.get('hr_based_color_min', 50))
             hr_max = float(json_data.get('hr_based_color_max', 180))
@@ -1336,123 +1345,123 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                             linewidth=segment_width,
                             zorder=20  # Middle layer for active routes (below tails)
                         )
-        
-        if not use_speed_based_color and not use_hr_based_color:
-            # STANDARD COLORING: Use LineCollection if no HR-based width, otherwise draw segments individually
-            from matplotlib.collections import LineCollection
             
-            if use_hr_based_width:
-                # HR-BASED WIDTH MODE: Draw segments individually with varying widths
-                for track_info in active_tracks:
-                    route_index, track_index, track = track_info
-                    
-                    if len(track) < 2:
-                        continue
-                    
-                    # Get filename from first point of the track
-                    filename = track[0].filename if track else None
-                    
-                    # Look up pre-computed RGBA color for this filename
-                    if filename and filename_to_rgba:
-                        if filename in filename_to_rgba:
-                            rgba_color = filename_to_rgba[filename]
-                        else:
-                            matching_key = next((k for k in filename_to_rgba.keys() 
-                                              if k and filename and k.lower() == filename.lower()), None)
-                            if matching_key:
-                                rgba_color = filename_to_rgba[matching_key]
-                            else:
-                                rgba_color = (1.0, 0.0, 0.0, 1.0)
-                    else:
-                        rgba_color = (1.0, 0.0, 0.0, 1.0)
-                    
-                    # Convert GPS coordinates to Web Mercator for plotting
-                    track_lats = [point.lat for point in track]
-                    track_lons = [point.lon for point in track]
-                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
-                    
-                    # Draw each segment with HR-based width
-                    for j in range(len(track) - 1):
-                        current_point = track[j]
-                        next_point = track[j + 1]
+            if not use_speed_based_color and not use_hr_based_color:
+                # STANDARD COLORING: Use LineCollection if no HR-based width, otherwise draw segments individually
+                from matplotlib.collections import LineCollection
+                
+                if use_hr_based_width:
+                    # HR-BASED WIDTH MODE: Draw segments individually with varying widths
+                    for track_info in active_tracks:
+                        route_index, track_index, track = track_info
                         
-                        # Skip segments that cross track boundaries
-                        if current_point.new_route_flag or next_point.new_route_flag:
+                        if len(track) < 2:
                             continue
                         
-                        # Calculate HR-based width (multiply by image_scale for resolution scaling)
-                        segment_width = _calculate_hr_based_width(current_point.heart_rate_smoothed, hr_width_min, hr_width_max) * image_scale
+                        # Get filename from first point of the track
+                        filename = track[0].filename if track else None
                         
-                        # Draw this segment
-                        x1, y1 = mercator_coords[j]
-                        x2, y2 = mercator_coords[j + 1]
-                        
-                        ax.plot(
-                            [x1, x2],
-                            [y1, y2],
-                            color=rgba_color,
-                            linewidth=segment_width,
-                            zorder=20
-                        )
-            else:
-                # STANDARD MODE: Group active routes by filename for better LineCollection performance
-                # Since all active routes have the same width, we can create separate LineCollections per filename
-                filename_tracks = {}  # {filename: [track_segments]}
-                
-                for track_info in active_tracks:
-                    route_index, track_index, track = track_info
-                    
-                    # Draw the main track line using named attributes
-                    track_lats = [point.lat for point in track]
-                    track_lons = [point.lon for point in track]
-
-                    # Get filename from first point of the track
-                    filename = track[0].filename if track else None
-                              
-                    # Look up pre-computed RGBA color for this filename
-                    if filename and filename_to_rgba:
-                        if filename in filename_to_rgba:
-                            rgba_color = filename_to_rgba[filename]
-                        else:
-                            # Try to find a matching filename with different case or whitespace
-                            matching_key = next((k for k in filename_to_rgba.keys() 
-                                              if k and filename and k.lower() == filename.lower()), None)
-                            if matching_key:
-                                rgba_color = filename_to_rgba[matching_key]
+                        # Look up pre-computed RGBA color for this filename
+                        if filename and filename_to_rgba:
+                            if filename in filename_to_rgba:
+                                rgba_color = filename_to_rgba[filename]
                             else:
-                                print(f"WARNING: No color mapping found for filename: '{filename}'. Using default red.")
-                                rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
-                    else:
-                        print(f"WARNING: No filename or no filename_to_rgba mapping. Using default red for track.")
-                        rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
+                                matching_key = next((k for k in filename_to_rgba.keys() 
+                                                  if k and filename and k.lower() == filename.lower()), None)
+                                if matching_key:
+                                    rgba_color = filename_to_rgba[matching_key]
+                                else:
+                                    rgba_color = (1.0, 0.0, 0.0, 1.0)
+                        else:
+                            rgba_color = (1.0, 0.0, 0.0, 1.0)
+                        
+                        # Convert GPS coordinates to Web Mercator for plotting
+                        track_lats = [point.lat for point in track]
+                        track_lons = [point.lon for point in track]
+                        mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
+                        
+                        # Draw each segment with HR-based width
+                        for j in range(len(track) - 1):
+                            current_point = track[j]
+                            next_point = track[j + 1]
+                            
+                            # Skip segments that cross track boundaries
+                            if current_point.new_route_flag or next_point.new_route_flag:
+                                continue
+                            
+                            # Calculate HR-based width (multiply by image_scale for resolution scaling)
+                            segment_width = _calculate_hr_based_width(current_point.heart_rate_smoothed, hr_width_min, hr_width_max) * image_scale
+                            
+                            # Draw this segment
+                            x1, y1 = mercator_coords[j]
+                            x2, y2 = mercator_coords[j + 1]
+                            
+                            ax.plot(
+                                [x1, x2],
+                                [y1, y2],
+                                color=rgba_color,
+                                linewidth=segment_width,
+                                zorder=20
+                            )
+                else:
+                    # STANDARD MODE: Group active routes by filename for better LineCollection performance
+                    # Since all active routes have the same width, we can create separate LineCollections per filename
+                    filename_tracks = {}  # {filename: [track_segments]}
                     
-                    # Convert GPS coordinates to Web Mercator for plotting (same coordinate system as cached images)
-                    mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
-                    mercator_track_lons = [coord[0] for coord in mercator_coords]
-                    mercator_track_lats = [coord[1] for coord in mercator_coords]
+                    for track_info in active_tracks:
+                        route_index, track_index, track = track_info
+                        
+                        # Draw the main track line using named attributes
+                        track_lats = [point.lat for point in track]
+                        track_lons = [point.lon for point in track]
 
-                    # Create line segment for this track
-                    # LineCollection expects segments as [(x1, y1), (x2, y2), ...] format
-                    segment = list(zip(mercator_track_lons, mercator_track_lats))
+                        # Get filename from first point of the track
+                        filename = track[0].filename if track else None
+                                  
+                        # Look up pre-computed RGBA color for this filename
+                        if filename and filename_to_rgba:
+                            if filename in filename_to_rgba:
+                                rgba_color = filename_to_rgba[filename]
+                            else:
+                                # Try to find a matching filename with different case or whitespace
+                                matching_key = next((k for k in filename_to_rgba.keys() 
+                                                  if k and filename and k.lower() == filename.lower()), None)
+                                if matching_key:
+                                    rgba_color = filename_to_rgba[matching_key]
+                                else:
+                                    print(f"WARNING: No color mapping found for filename: '{filename}'. Using default red.")
+                                    rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
+                        else:
+                            print(f"WARNING: No filename or no filename_to_rgba mapping. Using default red for track.")
+                            rgba_color = (1.0, 0.0, 0.0, 1.0)  # Default red if no color mapping found
+                        
+                        # Convert GPS coordinates to Web Mercator for plotting (same coordinate system as cached images)
+                        mercator_coords = [_gps_to_web_mercator(lon, lat) for lon, lat in zip(track_lons, track_lats)]
+                        mercator_track_lons = [coord[0] for coord in mercator_coords]
+                        mercator_track_lats = [coord[1] for coord in mercator_coords]
+
+                        # Create line segment for this track
+                        # LineCollection expects segments as [(x1, y1), (x2, y2), ...] format
+                        segment = list(zip(mercator_track_lons, mercator_track_lats))
+                        
+                        # Group by filename for optimized LineCollection creation
+                        if filename not in filename_tracks:
+                            filename_tracks[filename] = {
+                                'segments': [],
+                                'color': rgba_color
+                            }
+                        filename_tracks[filename]['segments'].append(segment)
                     
-                    # Group by filename for optimized LineCollection creation
-                    if filename not in filename_tracks:
-                        filename_tracks[filename] = {
-                            'segments': [],
-                            'color': rgba_color
-                        }
-                    filename_tracks[filename]['segments'].append(segment)
-                
-                # Create separate LineCollection for each filename (better performance)
-                for filename, track_data in filename_tracks.items():
-                    if track_data['segments']:
-                        line_collection = LineCollection(
-                            track_data['segments'],
-                            color=track_data['color'],  # Single color for all segments in this filename
-                            linewidth=effective_line_width,  # Single width for all active routes
-                            zorder=20  # Middle layer for active routes (below tails)
-                        )
-                        ax.add_collection(line_collection)
+                    # Create separate LineCollection for each filename (better performance)
+                    for filename, track_data in filename_tracks.items():
+                        if track_data['segments']:
+                            line_collection = LineCollection(
+                                track_data['segments'],
+                                color=track_data['color'],  # Single color for all segments in this filename
+                                linewidth=effective_line_width,  # Single width for all active routes
+                                zorder=20  # Middle layer for active routes (below tails)
+                            )
+                            ax.add_collection(line_collection)
         
         # PHASE 3: Draw tails for all routes (top layer - drawn after all route lines)
         if tail_length > 0 and gpx_time_per_video_time is not None:
