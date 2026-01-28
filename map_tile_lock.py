@@ -28,7 +28,7 @@ def get_service_from_map_style(map_style):
         map_style (str): The map style from json_data
         
     Returns:
-        str: The service name ("osm", "otm", "cyclosm", "stadia", or "geoapify")
+        str: The service name ("osm", "otm", "cyclosm", "stadia", "geoapify", or "thunderforest")
     """
     if map_style == "osm":
         return "osm"
@@ -40,6 +40,8 @@ def get_service_from_map_style(map_style):
         return "stadia"
     elif map_style.startswith("geoapify_"):
         return "geoapify"
+    elif map_style.startswith("thunderforest_"):
+        return "thunderforest"
     else:
         # Default to osm for unknown styles
         return "osm"

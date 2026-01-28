@@ -111,6 +111,9 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
             elif map_style.startswith('geoapify'):
                 # For Geoapify maps, check the CustomGeoapifyTiles subdirectory
                 tile_file = os.path.join(cache_dir, 'CustomGeoapifyTiles', f"{x}_{y}_{zoom}.npy")
+            elif map_style.startswith('thunderforest'):
+                # For Thunderforest maps, check the CustomThunderforestTiles subdirectory
+                tile_file = os.path.join(cache_dir, 'CustomThunderforestTiles', f"{x}_{y}_{zoom}.npy")
             else:
                 # For non-Stadia maps, check if there's a nested subdirectory
                 # This handles cases like OSM/OSM structure
@@ -135,7 +138,17 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
                     'geoapify_grey': 'GeoapifyGrey',
                     'geoapify_purple': 'GeoapifyPurple',
                     'geoapify_purple_roads': 'GeoapifyPurpleRoads',
-                    'geoapify_yellow_roads': 'GeoapifyYellowRoads'
+                    'geoapify_yellow_roads': 'GeoapifyYellowRoads',
+                    'thunderforest_atlas': 'ThunderforestAtlas',
+                    'thunderforest_mobile_atlas': 'ThunderforestMobileAtlas',
+                    'thunderforest_cycle': 'ThunderforestCycle',
+                    'thunderforest_landscape': 'ThunderforestLandscape',
+                    'thunderforest_neighbourhood': 'ThunderforestNeighbourhood',
+                    'thunderforest_outdoors': 'ThunderforestOutdoors',
+                    'thunderforest_pioneer': 'ThunderforestPioneer',
+                    'thunderforest_spinal': 'ThunderforestSpinal',
+                    'thunderforest_transport': 'ThunderforestTransport',
+                    'thunderforest_transport_dark': 'ThunderforestTransportDark'
                 }
                 subdir = style_subdir_mapping.get(map_style, map_style.upper())
                 tile_file = os.path.join(cache_dir, subdir, f"{x}_{y}_{zoom}.npy")
@@ -234,6 +247,16 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             'geoapify_purple': 100,
             'geoapify_purple_roads': 100,
             'geoapify_yellow_roads': 100,
+            'thunderforest_atlas': 100,
+            'thunderforest_mobile_atlas': 100,
+            'thunderforest_cycle': 100,
+            'thunderforest_landscape': 100,
+            'thunderforest_neighbourhood': 100,
+            'thunderforest_outdoors': 100,
+            'thunderforest_pioneer': 100,
+            'thunderforest_spinal': 100,
+            'thunderforest_transport': 100,
+            'thunderforest_transport_dark': 100,
         }
         max_tiles = max_tiles_config.get(map_style, 100)
         

@@ -15,6 +15,7 @@ import numpy as np
 
 STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
 GEOAPIFY_API_KEY = "1180c192019b43b9a366c498deadcc4b"
+THUNDERFOREST_API_KEY = "43413e30756b4dd489d7e62d5c0a9245"
 LOGGING_INTO_FILE = False   #render.log
 
 # Import the debug flag from the main file
@@ -71,7 +72,17 @@ def set_cache_directory(map_style: str):
         'geoapify_grey': 'GeoapifyGrey',
         'geoapify_purple': 'GeoapifyPurple',
         'geoapify_purple_roads': 'GeoapifyPurpleRoads',
-        'geoapify_yellow_roads': 'GeoapifyYellowRoads'
+        'geoapify_yellow_roads': 'GeoapifyYellowRoads',
+        'thunderforest_atlas': 'ThunderforestAtlas',
+        'thunderforest_mobile_atlas': 'ThunderforestMobileAtlas',
+        'thunderforest_cycle': 'ThunderforestCycle',
+        'thunderforest_landscape': 'ThunderforestLandscape',
+        'thunderforest_neighbourhood': 'ThunderforestNeighbourhood',
+        'thunderforest_outdoors': 'ThunderforestOutdoors',
+        'thunderforest_pioneer': 'ThunderforestPioneer',
+        'thunderforest_spinal': 'ThunderforestSpinal',
+        'thunderforest_transport': 'ThunderforestTransport',
+        'thunderforest_transport_dark': 'ThunderforestTransportDark'
     }
     
     cache_subdir = style_cache_mapping.get(map_style, 'OSM')
@@ -135,6 +146,20 @@ def create_map_tiles(map_style: str):
         "geoapify_purple": "dark-matter-dark-purple",
         "geoapify_purple_roads": "dark-matter-purple-roads",
         "geoapify_yellow_roads": "dark-matter-yellow-roads"
+    }
+    
+    # Thunderforest style URL mapping (map_style -> tile style name in URL)
+    thunderforest_style_url_mapping = {
+        "thunderforest_atlas": "atlas",
+        "thunderforest_mobile_atlas": "mobile-atlas",
+        "thunderforest_cycle": "cycle",
+        "thunderforest_landscape": "landscape",
+        "thunderforest_neighbourhood": "neighbourhood",
+        "thunderforest_outdoors": "outdoors",
+        "thunderforest_pioneer": "pioneer",
+        "thunderforest_spinal": "spinal-map",
+        "thunderforest_transport": "transport",
+        "thunderforest_transport_dark": "transport-dark"
     }
     
     debug_log(f"Available Stadia styles: {list(stadia_style_url_mapping.keys())}")
@@ -227,6 +252,37 @@ def create_map_tiles(map_style: str):
             
             tiles = CustomGeoapifyTiles(cache=True)
             debug_log(f"Created fallback CustomGeoapifyTiles object: {type(tiles)}")
+            return tiles
+        
+    elif map_style.startswith('thunderforest_'):
+        debug_log(f"Processing Thunderforest map style: {map_style}")
+        if map_style in thunderforest_style_url_mapping:
+            tile_style = thunderforest_style_url_mapping[map_style]
+            debug_log(f"Mapped {map_style} to Thunderforest tile style: {tile_style}")
+            
+            class CustomThunderforestTiles(cimgt.GoogleTiles):
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://tile.thunderforest.com/{tile_style}/{z}/{x}/{y}.png?apikey={THUNDERFOREST_API_KEY}'
+                    debug_log(f"Generated Thunderforest URL: {url}")
+                    return url
+            
+            tiles = CustomThunderforestTiles(cache=True)
+            debug_log(f"Created CustomThunderforestTiles object: {type(tiles)}")
+            return tiles
+        else:
+            debug_log(f"Unknown Thunderforest style: {map_style}, defaulting to thunderforest_atlas")
+            tile_style = thunderforest_style_url_mapping["thunderforest_atlas"]
+            
+            class CustomThunderforestTiles(cimgt.GoogleTiles):
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://tile.thunderforest.com/{tile_style}/{z}/{x}/{y}.png?apikey={THUNDERFOREST_API_KEY}'
+                    debug_log(f"Generated fallback Thunderforest URL: {url}")
+                    return url
+            
+            tiles = CustomThunderforestTiles(cache=True)
+            debug_log(f"Created fallback CustomThunderforestTiles object: {type(tiles)}")
             return tiles
         
     elif map_style == "osm":
