@@ -3,3 +3,14 @@ restart (exec bash)
 cargo install oxipng
 
 Windowsille rustup: rust-lang.org
+
+# System dependencies for map tile cache syncing (NOT installable via pip):
+
+rsync:
+Linux: sudo apt-get install rsync sshpass (or equivalent)
+macOS: brew install rsync sshpass
+Windows: Install rsync via WSL, Cygwin, or Git for Windows (recommended: set up SSH keys for passwordless auth)
+
+sshpass:
+Linux: sudo apt-get install sshpass (or equivalent)
+Windows WSL: wsl sudo apt-get update && wsl sudo apt-get install -y sshpass

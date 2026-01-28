@@ -14,6 +14,7 @@ import cartopy.io.img_tiles as cimgt
 import numpy as np
 
 STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
+GEOAPIFY_API_KEY = "1180c192019b43b9a366c498deadcc4b"
 LOGGING_INTO_FILE = False   #render.log
 
 # Import the debug flag from the main file
@@ -46,12 +47,31 @@ def set_cache_directory(map_style: str):
     # Map styles to their cache subdirectories
     style_cache_mapping = {
         'osm': 'OSM',
-        'otm': 'OpenTopoMap', 
+        'otm': 'OpenTopoMap',
+        'cyclosm': 'CyclOSM',
         'stadia_light': 'StadiaLight',
         'stadia_dark': 'StadiaDark',
         'stadia_outdoors': 'StadiaOutdoors',
         'stadia_toner': 'StadiaToner',
-        'stadia_watercolor': 'StadiaWatercolor'
+        'stadia_watercolor': 'StadiaWatercolor',
+        'geoapify_carto': 'GeoapifyCarto',
+        'geoapify_bright': 'GeoapifyBright',
+        'geoapify_bright_grey': 'GeoapifyBrightGrey',
+        'geoapify_bright_smooth': 'GeoapifyBrightSmooth',
+        'geoapify_klockantech': 'GeoapifyKlokantech',
+        'geoapify_liberty': 'GeoapifyLiberty',
+        'geoapify_maptiler': 'GeoapifyMaptiler',
+        'geoapify_toner': 'GeoapifyToner',
+        'geoapify_toner_grey': 'GeoapifyTonerGrey',
+        'geoapify_positron': 'GeoapifyPositron',
+        'geoapify_positron_blue': 'GeoapifyPositronBlue',
+        'geoapify_positron_red': 'GeoapifyPositronRed',
+        'geoapify_dark': 'GeoapifyDark',
+        'geoapify_dark_brown': 'GeoapifyDarkBrown',
+        'geoapify_grey': 'GeoapifyGrey',
+        'geoapify_purple': 'GeoapifyPurple',
+        'geoapify_purple_roads': 'GeoapifyPurpleRoads',
+        'geoapify_yellow_roads': 'GeoapifyYellowRoads'
     }
     
     cache_subdir = style_cache_mapping.get(map_style, 'OSM')
@@ -78,15 +98,16 @@ def create_map_tiles(map_style: str):
     Create map tiles based on the selected style.
     
     Args:
-        map_style: String, one of 'osm', 'otm', 'stadia_light', 'stadia_dark', 
-                  'stadia_outdoors', 'stadia_toner', 'stadia_watercolor'
+        map_style: String, one of 'osm', 'otm', 'cyclosm', 'stadia_light', 'stadia_dark', 
+                  'stadia_outdoors', 'stadia_toner', 'stadia_watercolor', or various 'geoapify_*' styles
     
     Returns:
         CartoPy image tiles object
     """
     debug_log(f"create_map_tiles called with map_style: '{map_style}'")
     
-    style_url_mapping = {
+    # Stadia style URL mapping
+    stadia_style_url_mapping = {
         "stadia_light": "alidade_smooth",
         "stadia_dark": "alidade_smooth_dark", 
         "stadia_outdoors": "outdoors",
@@ -94,12 +115,34 @@ def create_map_tiles(map_style: str):
         "stadia_watercolor": "stamen_watercolor"
     }
     
-    debug_log(f"Available Stadia styles: {list(style_url_mapping.keys())}")
+    # Geoapify style URL mapping (map_style -> tile style name in URL)
+    geoapify_style_url_mapping = {
+        "geoapify_carto": "osm-carto",
+        "geoapify_bright": "osm-bright",
+        "geoapify_bright_grey": "osm-bright-grey",
+        "geoapify_bright_smooth": "osm-bright-smooth",
+        "geoapify_klockantech": "klokantech-basic",
+        "geoapify_liberty": "osm-liberty",
+        "geoapify_maptiler": "maptiler-3d",
+        "geoapify_toner": "toner",
+        "geoapify_toner_grey": "toner-grey",
+        "geoapify_positron": "positron",
+        "geoapify_positron_blue": "positron-blue",
+        "geoapify_positron_red": "positron-red",
+        "geoapify_dark": "dark-matter",
+        "geoapify_dark_brown": "dark-matter-brown",
+        "geoapify_grey": "dark-matter-dark-grey",
+        "geoapify_purple": "dark-matter-dark-purple",
+        "geoapify_purple_roads": "dark-matter-purple-roads",
+        "geoapify_yellow_roads": "dark-matter-yellow-roads"
+    }
+    
+    debug_log(f"Available Stadia styles: {list(stadia_style_url_mapping.keys())}")
     
     if map_style.startswith('stadia_'):
         debug_log(f"Processing Stadia map style: {map_style}")
-        if map_style in style_url_mapping:
-            style = style_url_mapping[map_style]
+        if map_style in stadia_style_url_mapping:
+            style = stadia_style_url_mapping[map_style]
             debug_log(f"Mapped {map_style} to Stadia style: {style}")
             
             class CustomStadiaTiles(cimgt.GoogleTiles):
@@ -114,7 +157,7 @@ def create_map_tiles(map_style: str):
             return tiles
         else:
             debug_log(f"Unknown Stadia style: {map_style}, defaulting to stadia_light")
-            style = style_url_mapping["stadia_light"]
+            style = stadia_style_url_mapping["stadia_light"]
             
             class CustomStadiaTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
@@ -140,6 +183,51 @@ def create_map_tiles(map_style: str):
         tiles = OpenTopoMapTiles(cache=True)
         debug_log(f"Created OpenTopoMapTiles object: {type(tiles)}")
         return tiles
+        
+    elif map_style == "cyclosm":
+        debug_log("Processing CyclOSM style")
+        
+        class CyclOSMTiles(cimgt.OSM):
+            def _image_url(self, tile):
+                x, y, z = tile
+                url = f"https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png"
+                debug_log(f"Generated CyclOSM URL: {url}")
+                return url
+        
+        tiles = CyclOSMTiles(cache=True)
+        debug_log(f"Created CyclOSMTiles object: {type(tiles)}")
+        return tiles
+        
+    elif map_style.startswith('geoapify_'):
+        debug_log(f"Processing Geoapify map style: {map_style}")
+        if map_style in geoapify_style_url_mapping:
+            tile_style = geoapify_style_url_mapping[map_style]
+            debug_log(f"Mapped {map_style} to Geoapify tile style: {tile_style}")
+            
+            class CustomGeoapifyTiles(cimgt.GoogleTiles):
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://maps.geoapify.com/v1/tile/{tile_style}/{z}/{x}/{y}.png?apiKey={GEOAPIFY_API_KEY}'
+                    debug_log(f"Generated Geoapify URL: {url}")
+                    return url
+            
+            tiles = CustomGeoapifyTiles(cache=True)
+            debug_log(f"Created CustomGeoapifyTiles object: {type(tiles)}")
+            return tiles
+        else:
+            debug_log(f"Unknown Geoapify style: {map_style}, defaulting to geoapify_carto")
+            tile_style = geoapify_style_url_mapping["geoapify_carto"]
+            
+            class CustomGeoapifyTiles(cimgt.GoogleTiles):
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://maps.geoapify.com/v1/tile/{tile_style}/{z}/{x}/{y}.png?apiKey={GEOAPIFY_API_KEY}'
+                    debug_log(f"Generated fallback Geoapify URL: {url}")
+                    return url
+            
+            tiles = CustomGeoapifyTiles(cache=True)
+            debug_log(f"Created fallback CustomGeoapifyTiles object: {type(tiles)}")
+            return tiles
         
     elif map_style == "osm":
         debug_log("Processing OpenStreetMap style")
@@ -265,7 +353,12 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
         debug_log(f"Applied minimum latitude distance adjustment: {lat_distance:.6f}° -> 0.01°")
     
     # Set maximum zoom level based on map style
-    max_zoom = 15 if map_style == "otm" else 20
+    if map_style == "otm":
+        max_zoom = 15
+    elif map_style == "cyclosm":
+        max_zoom = 17
+    else:
+        max_zoom = 20
     
     # Find all suitable zoom levels
     suitable_zooms = []
@@ -286,6 +379,9 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
     if suitable_zooms:
         debug_log(f"Found {len(suitable_zooms)} suitable zoom levels between {min_tiles}-{max_tiles} tiles: {suitable_zooms}")
     else:
-        debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints")
+        # No suitable zoom levels found - use max_zoom as fallback
+        # This ensures we always return at least one zoom level, even if it exceeds max_tiles
+        debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints, using max_zoom {max_zoom} as fallback")
+        suitable_zooms = [max_zoom]
         
     return suitable_zooms 

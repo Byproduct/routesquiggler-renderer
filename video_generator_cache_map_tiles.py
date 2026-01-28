@@ -108,12 +108,34 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
             if map_style.startswith('stadia'):
                 # For Stadia maps, check the CustomStadiaTiles subdirectory
                 tile_file = os.path.join(cache_dir, 'CustomStadiaTiles', f"{x}_{y}_{zoom}.npy")
+            elif map_style.startswith('geoapify'):
+                # For Geoapify maps, check the CustomGeoapifyTiles subdirectory
+                tile_file = os.path.join(cache_dir, 'CustomGeoapifyTiles', f"{x}_{y}_{zoom}.npy")
             else:
                 # For non-Stadia maps, check if there's a nested subdirectory
                 # This handles cases like OSM/OSM structure
                 style_subdir_mapping = {
                     'osm': 'OSM',
-                    'otm': 'OpenTopoMap'
+                    'otm': 'OpenTopoMap',
+                    'cyclosm': 'CyclOSM',
+                    'geoapify_carto': 'GeoapifyCarto',
+                    'geoapify_bright': 'GeoapifyBright',
+                    'geoapify_bright_grey': 'GeoapifyBrightGrey',
+                    'geoapify_bright_smooth': 'GeoapifyBrightSmooth',
+                    'geoapify_klockantech': 'GeoapifyKlokantech',
+                    'geoapify_liberty': 'GeoapifyLiberty',
+                    'geoapify_maptiler': 'GeoapifyMaptiler',
+                    'geoapify_toner': 'GeoapifyToner',
+                    'geoapify_toner_grey': 'GeoapifyTonerGrey',
+                    'geoapify_positron': 'GeoapifyPositron',
+                    'geoapify_positron_blue': 'GeoapifyPositronBlue',
+                    'geoapify_positron_red': 'GeoapifyPositronRed',
+                    'geoapify_dark': 'GeoapifyDark',
+                    'geoapify_dark_brown': 'GeoapifyDarkBrown',
+                    'geoapify_grey': 'GeoapifyGrey',
+                    'geoapify_purple': 'GeoapifyPurple',
+                    'geoapify_purple_roads': 'GeoapifyPurpleRoads',
+                    'geoapify_yellow_roads': 'GeoapifyYellowRoads'
                 }
                 subdir = style_subdir_mapping.get(map_style, map_style.upper())
                 tile_file = os.path.join(cache_dir, subdir, f"{x}_{y}_{zoom}.npy")
@@ -188,11 +210,30 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         max_tiles_config = {
             'osm': 100,
             'otm': 100,
+            'cyclosm': 100,
             'stadia_light': 100,
             'stadia_dark': 100,
             'stadia_outdoors': 100,
             'stadia_toner': 100,
             'stadia_watercolor': 100,
+            'geoapify_carto': 100,
+            'geoapify_bright': 100,
+            'geoapify_bright_grey': 100,
+            'geoapify_bright_smooth': 100,
+            'geoapify_klockantech': 100,
+            'geoapify_liberty': 100,
+            'geoapify_maptiler': 100,
+            'geoapify_toner': 100,
+            'geoapify_toner_grey': 100,
+            'geoapify_positron': 100,
+            'geoapify_positron_blue': 100,
+            'geoapify_positron_red': 100,
+            'geoapify_dark': 100,
+            'geoapify_dark_brown': 100,
+            'geoapify_grey': 100,
+            'geoapify_purple': 100,
+            'geoapify_purple_roads': 100,
+            'geoapify_yellow_roads': 100,
         }
         max_tiles = max_tiles_config.get(map_style, 100)
         

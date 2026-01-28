@@ -289,8 +289,8 @@ class ImageGeneratorWorker(QObject):
                 map_style=self.json_data.get('map_style', 'osm')
             )
             
-            if not zoom_levels:
-                raise ValueError("No suitable zoom levels found")
+            # detect_zoom_level now always returns at least one zoom level (fallback to max_zoom)
+            # So we don't need to check for empty list anymore
             
             # Emit zoom levels immediately so UI can create status labels
             self.zoom_levels_ready.emit(zoom_levels)

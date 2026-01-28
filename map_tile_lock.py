@@ -28,14 +28,18 @@ def get_service_from_map_style(map_style):
         map_style (str): The map style from json_data
         
     Returns:
-        str: The service name ("osm", "otm", or "stadia")
+        str: The service name ("osm", "otm", "cyclosm", "stadia", or "geoapify")
     """
     if map_style == "osm":
         return "osm"
     elif map_style == "otm":
         return "otm"
+    elif map_style == "cyclosm":
+        return "cyclosm"
     elif map_style in ("stadia_light", "stadia_dark", "stadia_outdoors", "stadia_toner", "stadia_watercolor"):
         return "stadia"
+    elif map_style.startswith("geoapify_"):
+        return "geoapify"
     else:
         # Default to osm for unknown styles
         return "osm"
