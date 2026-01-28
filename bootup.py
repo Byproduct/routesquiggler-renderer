@@ -255,6 +255,9 @@ class BootupManager:
             return False
 
         try:
+            # Show main output message
+            self.log_callback("Checking and uploading map tiles")
+            
             try:
                 # Run cache sweep in production mode (actually delete files)
                 import sys
@@ -273,10 +276,12 @@ class BootupManager:
                 # Restore original argv
                 sys.argv = original_argv
                 
-                self.log_callback("Cache cleaning completed")
             except Exception as sweep_error:
                 self.log_callback(f"Warning: Cache cleaning failed: {str(sweep_error)}")
                 # Continue with sync even if sweep fails
+            
+            # Import debug logging function for terminal mode
+            from write_log import write_debug_log
             
             # Use the modular sync_map_tiles function
             success, uploaded_count, downloaded_count = sync_map_tiles(
@@ -287,8 +292,17 @@ class BootupManager:
                 log_callback=self.log_callback,
                 progress_callback=self.progress_callback,
                 sync_state_callback=self.sync_state_callback,
-                max_workers=10
+                max_workers=10,
+                debug_callback=write_debug_log
             )
+            
+            # Show upload/download counts in main output if > 0
+            if success:
+                if uploaded_count > 0 or downloaded_count > 0:
+                    if downloaded_count > 0:
+                        self.log_callback(f"Uploaded {uploaded_count} tiles, downloaded {downloaded_count} tiles")
+                    else:
+                        self.log_callback(f"Uploaded {uploaded_count} tiles")
             
             return success
 
@@ -394,8 +408,7 @@ class BootupManager:
                 write_log("Storage box connection failed.")
                 return False
             
-            # Sync map tile cache
-            write_log("Syncing map tile cache")
+            # Sync map tile cache (message is shown inside do_sync_map_tile_cache)
             if not self.do_sync_map_tile_cache():
                 write_log("Warning: map tile cache sync failed. Continuing regardless.")
             

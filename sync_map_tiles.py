@@ -14,7 +14,7 @@ class MapTileSyncer:
     """Handles syncing of map tile cache files between local and remote storage."""
     
     def __init__(self, storage_box_address, storage_box_user, storage_box_password, 
-                 local_cache_dir="map tile cache", log_callback=None, progress_callback=None, sync_state_callback=None):
+                 local_cache_dir="map tile cache", log_callback=None, progress_callback=None, sync_state_callback=None, debug_callback=None):
         """
         Initialize the MapTileSyncer.
         
@@ -23,9 +23,10 @@ class MapTileSyncer:
             storage_box_user: FTP username
             storage_box_password: FTP password
             local_cache_dir: Local directory for map tile cache (default: "map tile cache")
-            log_callback: Function to call for logging messages
+            log_callback: Function to call for main logging messages (upload/download counts)
             progress_callback: Function to call for progress updates
             sync_state_callback: Function to call when syncing starts/completes (called with 'start' or 'complete')
+            debug_callback: Function to call for debug logging messages (defaults to log_callback if not provided)
         """
         self.storage_box_address = storage_box_address
         self.storage_box_user = storage_box_user
@@ -34,6 +35,7 @@ class MapTileSyncer:
         self.log_callback = log_callback or (lambda msg: None)
         self.progress_callback = progress_callback or (lambda msg: None)
         self.sync_state_callback = sync_state_callback or (lambda state: None)
+        self.debug_callback = debug_callback or log_callback or (lambda msg: None)
         
         # Known directory structure for map tile cache
         self.known_directories = [
@@ -63,15 +65,15 @@ class MapTileSyncer:
             self.sync_state_callback('start')
             
             if dry_run:
-                self.log_callback("Starting map tile cache file count check")
+                self.debug_callback("Starting map tile cache file count check")
             elif upload_only:
-                self.log_callback("Starting map tile cache upload-only sync")
+                self.debug_callback("Starting map tile cache upload-only sync")
             else:
-                self.log_callback("Starting map tile cache sync")
+                self.debug_callback("Starting map tile cache sync")
             
             # Ensure local cache directory exists
             if not self.local_cache_dir.exists():
-                self.log_callback("Creating local map tile cache directory.")
+                self.debug_callback("Creating local map tile cache directory.")
                 self.local_cache_dir.mkdir(parents=True, exist_ok=True)
 
             # Get list of remote files (parallel)
@@ -80,25 +82,25 @@ class MapTileSyncer:
             # Get list of local files (recursive)
             local_files = self._get_local_files()
             
-            self.log_callback(f"Found {len(local_files)} local files and {len(remote_files)} remote files")
+            self.debug_callback(f"Found {len(local_files)} local files and {len(remote_files)} remote files")
 
             # Prepare files for upload and download
             files_to_upload = [f for f in local_files if f not in remote_files]
             
             if upload_only:
                 files_to_download = []
-                self.log_callback(f"Upload-only mode: {len(files_to_upload)} files to upload, no downloads")
+                self.debug_callback(f"Upload-only mode: {len(files_to_upload)} files to upload, no downloads")
             else:
                 files_to_download = [f for f in remote_files if f not in local_files]
-                self.log_callback(f"Files to upload: {len(files_to_upload)}, Files to download: {len(files_to_download)}")
+                self.debug_callback(f"Files to upload: {len(files_to_upload)}, Files to download: {len(files_to_download)}")
 
             if dry_run:
                 # For dry run, just return the counts without actually syncing
                 if upload_only:
-                    self.log_callback("File count check completed (dry run, upload-only mode - no files were transferred)")
+                    self.debug_callback("File count check completed (dry run, upload-only mode - no files were transferred)")
                     self.progress_callback(f"Map tile cache check: {len(local_files)} local, {len(remote_files)} remote, {len(files_to_upload)} to upload, no downloads")
                 else:
-                    self.log_callback("File count check completed (dry run - no files were transferred)")
+                    self.debug_callback("File count check completed (dry run - no files were transferred)")
                     self.progress_callback(f"Map tile cache check: {len(local_files)} local, {len(remote_files)} remote, {len(files_to_upload)} to upload, {len(files_to_download)} to download")
                 
                 # Notify that syncing is complete
@@ -108,7 +110,7 @@ class MapTileSyncer:
 
             # Use ThreadPoolExecutor for parallel operations
             max_workers = min(max_workers, max(len(files_to_upload), len(files_to_download), 1))
-            self.log_callback(f"Using {max_workers} parallel threads for syncing")
+            self.debug_callback(f"Using {max_workers} parallel threads for syncing")
 
             uploaded_count = 0
             downloaded_count = 0
@@ -122,10 +124,10 @@ class MapTileSyncer:
                 downloaded_count = self._download_files_parallel(files_to_download, max_workers)
 
             if upload_only:
-                self.log_callback(f"Map tile cache upload-only sync completed. Uploaded: {uploaded_count}")
+                self.debug_callback(f"Map tile cache upload-only sync completed. Uploaded: {uploaded_count}")
                 self.progress_callback(f"Syncing map tile cache: completed ({uploaded_count} uploaded, upload-only mode)")
             else:
-                self.log_callback(f"Map tile cache sync completed. Uploaded: {uploaded_count}, downloaded: {downloaded_count}")
+                self.debug_callback(f"Map tile cache sync completed. Uploaded: {uploaded_count}, downloaded: {downloaded_count}")
                 self.progress_callback(f"Syncing map tile cache: completed ({uploaded_count} uploaded, {downloaded_count} downloaded)")
             
             # Notify that syncing is complete
@@ -167,9 +169,9 @@ class MapTileSyncer:
                 try:
                     files = future.result()
                     all_files.extend(files)
-                    self.log_callback(f"Found {len(files)} files in {directory}")
+                    self.debug_callback(f"Found {len(files)} files in {directory}")
                 except Exception as e:
-                    self.log_callback(f"Error reading directory {directory}: {str(e)}")
+                    self.debug_callback(f"Error reading directory {directory}: {str(e)}")
         
         return all_files
 
@@ -197,15 +199,15 @@ class MapTileSyncer:
                         files.append(f"{directory}/{item}")
             
         except ftplib.error_perm as e:
-            self.log_callback(f"Permission error reading directory {directory}: {str(e)}")
+            self.debug_callback(f"Permission error reading directory {directory}: {str(e)}")
         except Exception as e:
-            self.log_callback(f"Error reading directory {directory}: {str(e)}")
+            self.debug_callback(f"Error reading directory {directory}: {str(e)}")
         
         return files
 
     def _upload_files_parallel(self, files_to_upload, max_workers):
         """Upload files in parallel."""
-        self.log_callback("Starting parallel upload")
+        self.debug_callback("Starting parallel upload")
         self.progress_callback("Syncing map tile cache: Starting upload")
         
         uploaded_count = 0
@@ -224,12 +226,12 @@ class MapTileSyncer:
                     if success:
                         uploaded_count += 1
                         if uploaded_count % 100 == 0:  # Log progress every 100 files
-                            self.log_callback(f"Uploaded {uploaded_count}/{len(files_to_upload)} files")
+                            self.debug_callback(f"Uploaded {uploaded_count}/{len(files_to_upload)} files")
                             self.progress_callback(f"Syncing map tile cache: Uploaded {uploaded_count}/{len(files_to_upload)} files")
                     else:
-                        self.log_callback(f"Failed to upload {file_path}")
+                        self.debug_callback(f"Failed to upload {file_path}")
                 except Exception as e:
-                    self.log_callback(f"Error uploading {file_path}: {str(e)}")
+                    self.debug_callback(f"Error uploading {file_path}: {str(e)}")
         
         return uploaded_count
 
@@ -252,13 +254,13 @@ class MapTileSyncer:
                     success = future.result()
                     if success:
                         downloaded_count += 1
-                        if downloaded_count % 100 == 0:  # Log progress every 100 files
-                            self.log_callback(f"Downloaded {downloaded_count}/{len(files_to_download)} files")
-                            self.progress_callback(f"Syncing map tile cache: downloaded {downloaded_count}/{len(files_to_download)} files")
+                    if downloaded_count % 100 == 0:  # Log progress every 100 files
+                        self.debug_callback(f"Downloaded {downloaded_count}/{len(files_to_download)} files")
+                        self.progress_callback(f"Syncing map tile cache: downloaded {downloaded_count}/{len(files_to_download)} files")
                     else:
-                        self.log_callback(f"Failed to download {file_path}")
+                        self.debug_callback(f"Failed to download {file_path}")
                 except Exception as e:
-                    self.log_callback(f"Error downloading {file_path}: {str(e)}")
+                    self.debug_callback(f"Error downloading {file_path}: {str(e)}")
         
         return downloaded_count
 
@@ -282,14 +284,14 @@ class MapTileSyncer:
                 filename = Path(file_path).name
                 
                 if not local_file_path.exists():
-                    self.log_callback(f"Upload failed: Local file not found - {file_path}")
+                    self.debug_callback(f"Upload failed: Local file not found - {file_path}")
                     return False
                 
                 with open(local_file_path, 'rb') as f:
                     ftp.storbinary(f'STOR {filename}', f)
                 return True
         except Exception as e:
-            self.log_callback(f"Upload failed for {file_path}: {str(e)}")
+            self.debug_callback(f"Upload failed for {file_path}: {str(e)}")
             return False
 
     def _download_file(self, file_path):
@@ -308,7 +310,7 @@ class MapTileSyncer:
                     ftp.retrbinary(f'RETR {file_path}', f.write)
                 return True
         except Exception as e:
-            self.log_callback(f"Download failed for {file_path}: {str(e)}")
+            self.debug_callback(f"Download failed for {file_path}: {str(e)}")
             return False
 
     def _ensure_remote_directory(self, ftp, dir_path):
@@ -335,7 +337,7 @@ class MapTileSyncer:
 # Convenience function for easy usage
 def sync_map_tiles(storage_box_address, storage_box_user, storage_box_password, 
                    local_cache_dir="map tile cache", log_callback=None, progress_callback=None, 
-                   sync_state_callback=None, max_workers=10, dry_run=False, upload_only=False):
+                   sync_state_callback=None, max_workers=10, dry_run=False, upload_only=False, debug_callback=None):
     """
     Convenience function to sync map tiles.
     
@@ -344,12 +346,13 @@ def sync_map_tiles(storage_box_address, storage_box_user, storage_box_password,
         storage_box_user: FTP username
         storage_box_password: FTP password
         local_cache_dir: Local directory for map tile cache
-        log_callback: Function to call for logging messages
+        log_callback: Function to call for main logging messages (upload/download counts)
         progress_callback: Function to call for progress updates
         sync_state_callback: Function to call when syncing starts/completes
         max_workers: Maximum number of parallel threads
         dry_run: If True, only check file counts without performing sync operations
         upload_only: If True, only upload files to remote server (no downloads)
+        debug_callback: Function to call for debug logging messages (defaults to log_callback if not provided)
         
     Returns:
         tuple: (success, uploaded_count, downloaded_count)
@@ -361,6 +364,7 @@ def sync_map_tiles(storage_box_address, storage_box_user, storage_box_password,
         local_cache_dir=local_cache_dir,
         log_callback=log_callback,
         progress_callback=progress_callback,
-        sync_state_callback=sync_state_callback
+        sync_state_callback=sync_state_callback,
+        debug_callback=debug_callback
     )
     return syncer.sync(max_workers=max_workers, dry_run=dry_run, upload_only=upload_only) 
