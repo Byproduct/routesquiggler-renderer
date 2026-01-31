@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale, PointOfInterest
+from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_coordinate_encoder import encode_coords
@@ -1978,6 +1978,18 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 
                 # Draw second label (width)
                 draw_label_at_position(label2_array, label2_name, start_x + label1_width + gap_between_labels)
+        
+        # Add clock overlay if enabled (same point as statistics_current_time: most recent point)
+        if json_data.get('clock', False):
+            last_point = None
+            for route_points in points_for_frame:
+                if not route_points:
+                    continue
+                route_last = route_points[-1]
+                if last_point is None or route_last.accumulated_time > last_point.accumulated_time:
+                    last_point = route_last
+            if last_point is not None and last_point.timestamp is not None:
+                composite_clock_onto_frame_array(frame_array, last_point.timestamp, image_scale)
         
         # Clean up matplotlib figure to prevent memory leaks
         plt.close(fig)

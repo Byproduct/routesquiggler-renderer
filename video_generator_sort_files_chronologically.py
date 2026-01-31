@@ -24,9 +24,10 @@ def sort_gpx_files_chronologically(gpx_files_info, log_callback=None, debug_call
         # List to store files in chronological order
         chronological_files = []
         
-        # Regular expression for time tags - updated to handle milliseconds
-        # Matches both formats: YYYY-MM-DDTHH:MM:SSZ and YYYY-MM-DDTHH:MM:SS.000Z
-        time_pattern = r'<time>(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z)</time>'
+        # Regular expression for time tags - handles Z and offset formats
+        # Matches: YYYY-MM-DDTHH:MM:SSZ, YYYY-MM-DDTHH:MM:SS.000Z,
+        #          YYYY-MM-DDTHH:MM:SS+00:00, YYYY-MM-DDTHH:MM:SS.000+00:00, etc.
+        time_pattern = r'<time>(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2}(?::\d{2})?))</time>'
         
         if debug_callback:
             debug_callback(f"Sorting {len(gpx_files_info)} GPX files chronologically")

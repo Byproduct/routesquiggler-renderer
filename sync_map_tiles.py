@@ -416,20 +416,19 @@ class MapTileSyncer:
         Returns:
             Number of files transferred
         """
-        # Look for rsync stats summary - multiple possible formats:
-        # "Number of files: X (reg: Y, dir: Z)"
-        # "Number of regular files transferred: X"
-        # "Number of files transferred: X"
+        # Look for rsync stats: "Number of regular files transferred: X" or "Number of files transferred: X".
+        # rsync 3.1.0+ with --human-readable uses comma separators (e.g. "1,234"); capture [\d,]+ and strip commas.
+        # Do NOT match "Number of files: X (reg: Y, dir: Z)" - that is total file count, not transferred count.
         patterns = [
-            r'Number of regular files transferred:\s*(\d+)',
-            r'Number of files transferred:\s*(\d+)',
-            r'Number of files[^:]*:\s*(\d+)',
+            r'Number of regular files transferred:\s*([\d,]+)',
+            r'Number of files transferred:\s*([\d,]+)',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, output, re.IGNORECASE)
             if match:
-                return int(match.group(1))
+                num_str = match.group(1).replace(',', '')
+                return int(num_str) if num_str else 0
         
         # Fallback: count itemize-changes lines if present (for dry-run)
         count = 0

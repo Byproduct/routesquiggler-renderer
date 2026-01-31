@@ -170,29 +170,29 @@ def create_map_tiles(map_style: str):
             style = stadia_style_url_mapping[map_style]
             debug_log(f"Mapped {map_style} to Stadia style: {style}")
             
-            class CustomStadiaTiles(cimgt.GoogleTiles):
+            class StadiaTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://tiles.stadiamaps.com/tiles/{style}/{z}/{x}/{y}.png?api_key={STADIA_API_KEY}'
                     debug_log(f"Generated Stadia URL: {url}")
                     return url
             
-            tiles = CustomStadiaTiles(cache=True)
-            debug_log(f"Created CustomStadiaTiles object: {type(tiles)}")
+            tiles = StadiaTiles(cache=True)
+            debug_log(f"Created StadiaTiles object: {type(tiles)}")
             return tiles
         else:
             debug_log(f"Unknown Stadia style: {map_style}, defaulting to stadia_light")
             style = stadia_style_url_mapping["stadia_light"]
             
-            class CustomStadiaTiles(cimgt.GoogleTiles):
+            class StadiaTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://tiles.stadiamaps.com/tiles/{style}/{z}/{x}/{y}.png?api_key={STADIA_API_KEY}'
                     debug_log(f"Generated fallback Stadia URL: {url}")
                     return url
             
-            tiles = CustomStadiaTiles(cache=True)
-            debug_log(f"Created fallback CustomStadiaTiles object: {type(tiles)}")
+            tiles = StadiaTiles(cache=True)
+            debug_log(f"Created fallback StadiaTiles object: {type(tiles)}")
             return tiles
             
     elif map_style == "otm":
@@ -229,29 +229,29 @@ def create_map_tiles(map_style: str):
             tile_style = geoapify_style_url_mapping[map_style]
             debug_log(f"Mapped {map_style} to Geoapify tile style: {tile_style}")
             
-            class CustomGeoapifyTiles(cimgt.GoogleTiles):
+            class GeoapifyTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://maps.geoapify.com/v1/tile/{tile_style}/{z}/{x}/{y}.png?apiKey={GEOAPIFY_API_KEY}'
                     debug_log(f"Generated Geoapify URL: {url}")
                     return url
             
-            tiles = CustomGeoapifyTiles(cache=True)
-            debug_log(f"Created CustomGeoapifyTiles object: {type(tiles)}")
+            tiles = GeoapifyTiles(cache=True)
+            debug_log(f"Created GeoapifyTiles object: {type(tiles)}")
             return tiles
         else:
             debug_log(f"Unknown Geoapify style: {map_style}, defaulting to geoapify_carto")
             tile_style = geoapify_style_url_mapping["geoapify_carto"]
             
-            class CustomGeoapifyTiles(cimgt.GoogleTiles):
+            class GeoapifyTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://maps.geoapify.com/v1/tile/{tile_style}/{z}/{x}/{y}.png?apiKey={GEOAPIFY_API_KEY}'
                     debug_log(f"Generated fallback Geoapify URL: {url}")
                     return url
             
-            tiles = CustomGeoapifyTiles(cache=True)
-            debug_log(f"Created fallback CustomGeoapifyTiles object: {type(tiles)}")
+            tiles = GeoapifyTiles(cache=True)
+            debug_log(f"Created fallback GeoapifyTiles object: {type(tiles)}")
             return tiles
         
     elif map_style.startswith('thunderforest_'):
@@ -260,29 +260,29 @@ def create_map_tiles(map_style: str):
             tile_style = thunderforest_style_url_mapping[map_style]
             debug_log(f"Mapped {map_style} to Thunderforest tile style: {tile_style}")
             
-            class CustomThunderforestTiles(cimgt.GoogleTiles):
+            class ThunderforestTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://tile.thunderforest.com/{tile_style}/{z}/{x}/{y}.png?apikey={THUNDERFOREST_API_KEY}'
                     debug_log(f"Generated Thunderforest URL: {url}")
                     return url
             
-            tiles = CustomThunderforestTiles(cache=True)
-            debug_log(f"Created CustomThunderforestTiles object: {type(tiles)}")
+            tiles = ThunderforestTiles(cache=True)
+            debug_log(f"Created ThunderforestTiles object: {type(tiles)}")
             return tiles
         else:
             debug_log(f"Unknown Thunderforest style: {map_style}, defaulting to thunderforest_atlas")
             tile_style = thunderforest_style_url_mapping["thunderforest_atlas"]
             
-            class CustomThunderforestTiles(cimgt.GoogleTiles):
+            class ThunderforestTiles(cimgt.GoogleTiles):
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://tile.thunderforest.com/{tile_style}/{z}/{x}/{y}.png?apikey={THUNDERFOREST_API_KEY}'
                     debug_log(f"Generated fallback Thunderforest URL: {url}")
                     return url
             
-            tiles = CustomThunderforestTiles(cache=True)
-            debug_log(f"Created fallback CustomThunderforestTiles object: {type(tiles)}")
+            tiles = ThunderforestTiles(cache=True)
+            debug_log(f"Created fallback ThunderforestTiles object: {type(tiles)}")
             return tiles
         
     elif map_style == "osm":

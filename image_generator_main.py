@@ -20,10 +20,11 @@ from PySide6.QtCore import QObject, QThread, Signal
 import image_generator_utils
 from image_generator_maptileutils import detect_zoom_level
 from image_generator_multiprocess import generate_images_parallel
+from image_generator_utils import convert_timestamp_to_job_timezone, normalize_timestamp
 from job_request import update_job_status
 from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 from update_status import update_status
-from video_generator_create_combined_route import create_combined_route
+from video_generator_create_combined_route import create_combined_route, get_first_track_point_time_from_gpx_content
 from video_generator_sort_files_chronologically import get_sorted_gpx_list
 
 class ImageGeneratorWorker(QObject):
@@ -56,6 +57,17 @@ class ImageGeneratorWorker(QObject):
             start_time = time.time()
             
             self.log_message.emit("Starting image generation.")
+
+            # Sanitize statistics_free_text on first read: allow only \n and plain text, no code/formatting/tags
+            raw_free_text = self.json_data.get('statistics_free_text')
+            if raw_free_text is not None:
+                if not isinstance(raw_free_text, str):
+                    raw_free_text = str(raw_free_text)
+                # Allow only newline and printable characters; strip < > & and control chars to prevent any code/tags
+                self.json_data['statistics_free_text'] = ''.join(
+                    c for c in raw_free_text
+                    if c == '\n' or (c not in '<>&\0' and ord(c) >= 32)
+                )
                       
             # Create track lookup
             track_objects = self.json_data.get('track_objects', [])
@@ -335,6 +347,32 @@ class ImageGeneratorWorker(QObject):
             job_id = str(self.json_data.get('job_id', ''))
             update_status(f"working ({job_id})", api_key=self.user)
             
+            # Clock: time of first point of first route (for overlay); only when clock=true
+            show_clock = self.json_data.get('clock', False) is True
+            first_point_time = None
+            if show_clock:
+                if route_points_data:
+                    all_routes = route_points_data.get('all_routes', [])
+                    if all_routes:
+                        combined = all_routes[0].get('combined_route', [])
+                        if combined and combined[0].timestamp is not None:
+                            first_point_time = combined[0].timestamp
+                if first_point_time is None:
+                    # Standard mode: get first point time from chronologically first GPX
+                    sorted_gpx = get_sorted_gpx_list(
+                        self.gpx_files_info,
+                        log_callback=self.log_message.emit,
+                        debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
+                    )
+                    if sorted_gpx:
+                        first_file = sorted_gpx[0]
+                        raw_time = get_first_track_point_time_from_gpx_content(first_file.get('content', ''))
+                        if raw_time is not None:
+                            first_point_time = normalize_timestamp(raw_time)
+                            first_point_time = convert_timestamp_to_job_timezone(
+                                first_point_time, self.json_data.get('timezone')
+                            )
+            
             try:
                 self.results, _ = generate_images_parallel(
                     zoom_levels=zoom_levels,
@@ -358,7 +396,9 @@ class ImageGeneratorWorker(QObject):
                     folder=self.json_data.get('folder', ''),
                     route_name=self.json_data.get('route_name', 'unknown'),
                     max_workers=self.max_workers,
-                    route_points_data=route_points_data  # Pass RoutePoint data for speed-based coloring
+                    route_points_data=route_points_data,  # Pass RoutePoint data for speed-based coloring
+                    show_clock=show_clock,
+                    first_point_time=first_point_time
                 )
             finally:
                 # Always release the lock after image generation, even if it fails

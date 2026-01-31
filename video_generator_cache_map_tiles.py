@@ -97,7 +97,7 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
     try:
         # CartoPy creates nested subdirectories. Check both possible locations:
         # 1. Direct in cache directory: {cache_dir}/{x}_{y}_{zoom}.npy
-        # 2. For Stadia maps: {cache_dir}/CustomStadiaTiles/{x}_{y}_{zoom}.npy
+        # 2. For Stadia maps: {cache_dir}/StadiaTiles/{x}_{y}_{zoom}.npy
         # 3. For other maps: {cache_dir}/{subdir}/{x}_{y}_{zoom}.npy
         
         # First try direct location
@@ -106,14 +106,14 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
         # If not found, try nested subdirectory based on map style
         if not os.path.exists(tile_file):
             if map_style.startswith('stadia'):
-                # For Stadia maps, check the CustomStadiaTiles subdirectory
-                tile_file = os.path.join(cache_dir, 'CustomStadiaTiles', f"{x}_{y}_{zoom}.npy")
+                # For Stadia maps, check the StadiaTiles subdirectory
+                tile_file = os.path.join(cache_dir, 'StadiaTiles', f"{x}_{y}_{zoom}.npy")
             elif map_style.startswith('geoapify'):
-                # For Geoapify maps, check the CustomGeoapifyTiles subdirectory
-                tile_file = os.path.join(cache_dir, 'CustomGeoapifyTiles', f"{x}_{y}_{zoom}.npy")
+                # For Geoapify maps, check the GeoapifyTiles subdirectory
+                tile_file = os.path.join(cache_dir, 'GeoapifyTiles', f"{x}_{y}_{zoom}.npy")
             elif map_style.startswith('thunderforest'):
-                # For Thunderforest maps, check the CustomThunderforestTiles subdirectory
-                tile_file = os.path.join(cache_dir, 'CustomThunderforestTiles', f"{x}_{y}_{zoom}.npy")
+                # For Thunderforest maps, check the ThunderforestTiles subdirectory
+                tile_file = os.path.join(cache_dir, 'ThunderforestTiles', f"{x}_{y}_{zoom}.npy")
             else:
                 # For non-Stadia maps, check if there's a nested subdirectory
                 # This handles cases like OSM/OSM structure

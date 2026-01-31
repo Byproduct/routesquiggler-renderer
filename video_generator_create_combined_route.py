@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 
 # Local imports
-from image_generator_utils import calculate_haversine_distance, normalize_timestamp
+from image_generator_utils import calculate_haversine_distance, convert_timestamp_to_job_timezone, normalize_timestamp
 from speed_based_color import (
     create_hr_based_color_label,
     create_hr_based_width_label,
@@ -272,6 +272,33 @@ def _is_imperial_units(json_data):
     Returns true if imperial_units is True in json_data.
     """
     return json_data and json_data.get('imperial_units', False) is True
+
+
+def get_first_track_point_time_from_gpx_content(gpx_content: str):
+    """
+    Get the timestamp of the first track point in GPX content.
+
+    Used when clock is enabled in standard (non-route-points) image mode to get
+    the time for the clock display from the chronologically first route.
+
+    Args:
+        gpx_content: GPX file content as string
+
+    Returns:
+        datetime of the first track point, or None if not found
+    """
+    if not gpx_content:
+        return None
+    try:
+        gpx = gpxpy.parse(gpx_content)
+        for track in gpx.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    if point.time is not None:
+                        return point.time
+    except Exception:
+        pass
+    return None
 
 
 def create_combined_route(sorted_gpx_files, json_data=None, progress_callback=None, log_callback=None, debug_callback=None):
@@ -709,8 +736,16 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                             # Get latitude, longitude and timestamp
                             lat = point.latitude
                             lon = point.longitude
+                            # Skip error points (exactly 0.0 lat or lon)
+                            if lat == 0.0 or lon == 0.0:
+                                continue
                             # Normalize timestamp to UTC timezone-aware to avoid comparison errors
                             timestamp = normalize_timestamp(point.time)
+                            # Convert to job timezone if specified (for clock and consistent display)
+                            if timestamp and json_data:
+                                tz_str = json_data.get('timezone')
+                                if tz_str:
+                                    timestamp = convert_timestamp_to_job_timezone(timestamp, tz_str)
                             
                             # Extract elevation if enabled and available
                             elevation = None

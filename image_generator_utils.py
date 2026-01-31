@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime, timezone
 from typing import Dict, List, NamedTuple, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 # Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
@@ -84,6 +85,79 @@ def normalize_timestamp(dt: Optional[datetime]) -> Optional[datetime]:
         return dt.astimezone(timezone.utc)
 
 
+def composite_clock_onto_frame_array(
+    frame_array: np.ndarray,
+    display_time,
+    resolution_scale: float,
+) -> np.ndarray:
+    """
+    Composite the clock overlay (hhmm.npy) onto a video frame array at top-left with scaled padding.
+
+    Clock files are in img/clock/{size}/hhmm.npy (e.g. 2/1325.npy for 13:25 at scale 2).
+    Size folder: 's' for scale < 1, else '1', '2', '3', '4'. Padding: 20px * resolution_scale.
+
+    Args:
+        frame_array: RGB frame as numpy array (H, W, 3) uint8; modified in place
+        display_time: datetime (timezone-aware or naive) for hour/minute
+        resolution_scale: scale factor for clock size folder and padding (0.7, 1.0, 2.0, 3.0, 4.0)
+
+    Returns:
+        frame_array (same array, modified in place), or unchanged on error
+    """
+    try:
+        clock_folder = "s" if resolution_scale < 1.0 else str(int(resolution_scale))
+        filename = f"{display_time.hour:02d}{display_time.minute:02d}.npy"
+        clock_dir = os.path.join(current_directory, "img", "clock", clock_folder)
+        clock_path = os.path.join(clock_dir, filename)
+        if not os.path.exists(clock_path):
+            return frame_array
+        clock_arr = np.load(clock_path)
+        if clock_arr.ndim != 3 or clock_arr.shape[2] not in (3, 4):
+            return frame_array
+        if clock_arr.dtype != np.uint8:
+            clock_arr = np.clip(clock_arr, 0, 255).astype(np.uint8)
+        ch, cw = clock_arr.shape[0], clock_arr.shape[1]
+        padding = int(20 * resolution_scale)
+        x, y = padding, padding
+        if y + ch > frame_array.shape[0] or x + cw > frame_array.shape[1]:
+            return frame_array
+        region = frame_array[y:y + ch, x:x + cw].astype(np.float32) / 255.0
+        if clock_arr.shape[2] == 4:
+            alpha = clock_arr[:, :, 3:4].astype(np.float32) / 255.0
+            rgb = clock_arr[:, :, :3].astype(np.float32) / 255.0
+        else:
+            alpha = np.ones((ch, cw, 1), dtype=np.float32)
+            rgb = clock_arr[:, :, :3].astype(np.float32) / 255.0
+        blended = alpha * rgb + (1.0 - alpha) * region
+        frame_array[y:y + ch, x:x + cw] = (blended * 255).astype(np.uint8)
+        return frame_array
+    except Exception:
+        return frame_array
+
+
+def convert_timestamp_to_job_timezone(dt: Optional[datetime], timezone_str: Optional[str]) -> Optional[datetime]:
+    """
+    Convert a timezone-aware datetime to the job's display timezone (IANA).
+
+    If timezone_str is None or empty, returns dt unchanged. Used when building
+    routes so that all point timestamps are in the job timezone (e.g. for clock display).
+
+    Args:
+        dt: A timezone-aware datetime (typically UTC from normalize_timestamp) or None
+        timezone_str: IANA timezone string (e.g. 'Europe/Helsinki') or None
+
+    Returns:
+        Datetime in the job timezone, or None if dt is None or conversion fails
+    """
+    if dt is None or not timezone_str or not isinstance(timezone_str, str) or not timezone_str.strip():
+        return dt
+    try:
+        tz = ZoneInfo(timezone_str.strip())
+        return dt.astimezone(tz)
+    except Exception:
+        return dt
+
+
 class PointOfInterest(NamedTuple):
     """
     Named tuple representing a point of interest (waypoint) from GPX data.
@@ -125,6 +199,9 @@ def extract_points_of_interest(
             gpx = gpxpy.parse(content)
             
             for waypoint in gpx.waypoints:
+                # Skip error points (exactly 0.0 lat or lon)
+                if waypoint.latitude == 0.0 or waypoint.longitude == 0.0:
+                    continue
                 # Extract name (can be None or empty)
                 name = waypoint.name if waypoint.name else ''
                 
@@ -417,6 +494,9 @@ class GPXProcessor:
                 for trkpt in root.findall(f'.//{{{ns_uri}}}trkpt'):
                     lat = float(trkpt.get('lat'))
                     lon = float(trkpt.get('lon'))
+                    # Skip error points (exactly 0.0 lat or lon)
+                    if lat == 0.0 or lon == 0.0:
+                        continue
                     lats.append(lat)
                     lons.append(lon)
 
@@ -425,6 +505,8 @@ class GPXProcessor:
                     for wpt in root.findall(f'.//{{{ns_uri}}}wpt'):
                         lat = float(wpt.get('lat'))
                         lon = float(wpt.get('lon'))
+                        if lat == 0.0 or lon == 0.0:
+                            continue
                         lats.append(lat)
                         lons.append(lon)
 
@@ -437,6 +519,8 @@ class GPXProcessor:
                 for trkpt in root.findall('.//trkpt'):
                     lat = float(trkpt.get('lat'))
                     lon = float(trkpt.get('lon'))
+                    if lat == 0.0 or lon == 0.0:
+                        continue
                     lats.append(lat)
                     lons.append(lon)
 
@@ -494,7 +578,8 @@ class GPXProcessor:
                         try:
                             lat = float(trkpt.get('lat'))
                             lon = float(trkpt.get('lon'))
-                            
+                            if lat == 0.0 or lon == 0.0:
+                                continue
                             # Try to find timestamp
                             time_elem = trkpt.find(f'{{{ns_uri}}}time')
                             if time_elem is not None and time_elem.text:
@@ -543,7 +628,8 @@ class GPXProcessor:
                         try:
                             lat = float(trkpt.get('lat'))
                             lon = float(trkpt.get('lon'))
-                            
+                            if lat == 0.0 or lon == 0.0:
+                                continue
                             # Try to find timestamp
                             time_elem = trkpt.find('time')
                             if time_elem is not None and time_elem.text:
@@ -712,6 +798,13 @@ class GPXProcessor:
         # Get overall start and end times for display purposes
         start_time = min(all_timestamps)
         end_time = max(all_timestamps)
+        # Convert to job timezone if specified (for consistent display with clock)
+        tz_str = json_data.get('timezone') if json_data else None
+        if tz_str:
+            start_time = normalize_timestamp(start_time)
+            start_time = convert_timestamp_to_job_timezone(start_time, tz_str)
+            end_time = normalize_timestamp(end_time)
+            end_time = convert_timestamp_to_job_timezone(end_time, tz_str)
         
         # Format timestamps
         start_time_str = start_time.strftime('%Y-%m-%d %H:%M')
@@ -926,7 +1019,7 @@ class ImageGenerator:
 def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float, float, float], 
              background_theme: str = 'light', resolution_scale: float = 1.0,
              horizontal_offset_points: Optional[float] = None, vertical_offset_points: Optional[float] = None,
-             horizontal_offset_coords: Optional[float] = None):
+             horizontal_offset_coords: Optional[float] = None, small_tags: bool = False, tiny_tags: bool = False):
     """
     Draw a tag/label on a matplotlib axes at the specified coordinates.
     
@@ -948,6 +1041,8 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         vertical_offset_points: Optional vertical offset in points (positive = up). If None, uses 0
         horizontal_offset_coords: Optional horizontal offset in coordinate space (for video mode alignment).
                                   If provided in video mode, takes precedence over horizontal_offset_points
+        small_tags: If True, halve the tag font size (after resolution scale). Job parameter 'small_tags'.
+        tiny_tags: If True, divide tag font size by 3 (after resolution scale). Job parameter 'tiny_tags'.
     
     Example:
         # Light theme with custom color
@@ -972,6 +1067,10 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
     
     # Calculate resolution-scaled values
     font_size = 13 * resolution_scale
+    if tiny_tags:
+        font_size = font_size / 3
+    elif small_tags:
+        font_size = font_size / 2
     border_width = max(1, resolution_scale)  # At least 1px border
     
     # Set defaults if not provided (scale with resolution)
@@ -1078,6 +1177,9 @@ def add_filename_tags_to_image(ax, track_coords_with_metadata: List[tuple], json
     if filename_tags_setting not in ['light', 'dark']:
         return
     
+    small_tags = bool(json_data.get('small_tags', False)) if json_data else False
+    tiny_tags = bool(json_data.get('tiny_tags', False)) if json_data else False
+    
     # Calculate coordinate spans for converting offsets to coordinate space
     lon_span = lon_max - lon_min
     lat_span = lat_max - lat_min
@@ -1172,5 +1274,7 @@ def add_filename_tags_to_image(ax, track_coords_with_metadata: List[tuple], json
             text_color_rgb=text_color_rgb,
             background_theme=filename_tags_setting,
             resolution_scale=resolution_scale,
-            vertical_offset_points=vertical_offset_points
+            vertical_offset_points=vertical_offset_points,
+            small_tags=small_tags,
+            tiny_tags=tiny_tags
         )

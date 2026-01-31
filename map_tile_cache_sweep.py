@@ -34,50 +34,68 @@ from write_log import write_debug_log, write_log
 
 def is_blank_or_erroneous_tile(npy_file_path: str) -> bool:
     """
-    Check if an npy file contains only white pixels or is erroneous (corrupted/malformed).
-    
+    Triple check: tile must (1) not be completely white, (2) have average pixel
+    value between 10 and 245 on 0-255 scale. Toner schemes (GeoapifyToner,
+    StadiaToner) are excluded from the average check but must still pass (1).
+
     Args:
         npy_file_path: Path to the .npy file
-        
+
     Returns:
-        True if the tile contains only white pixels or is erroneous, False otherwise
+        True if the tile is corrupt or erroneous, False otherwise
     """
     try:
-        # Load the numpy array
         tile_data = np.load(npy_file_path)
-        
-        # Handle different array shapes and data types
+
+        # --- Check 1: Not completely empty (all white) ---
         if tile_data.dtype == np.uint8:
-            # For uint8, white is 255
             white_value = 255
         elif tile_data.dtype == np.float32 or tile_data.dtype == np.float64:
-            # For float, white is typically 1.0
             white_value = 1.0
         else:
-            # For other types, assume normalized to 1.0
             white_value = 1.0
-        
-        # Check if all pixels are white
-        # Handle both RGB and RGBA formats
+
         if len(tile_data.shape) == 3:
-            # RGB/RGBA image
-            if tile_data.shape[2] >= 3:  # At least RGB channels
-                # Check if all RGB channels are white
+            if tile_data.shape[2] >= 3:
                 rgb_channels = tile_data[:, :, :3]
-                return np.all(rgb_channels == white_value)
+                if np.all(rgb_channels == white_value):
+                    return True  # corrupt: completely white
             else:
-                # Single channel or unexpected format
-                return np.all(tile_data == white_value)
+                if np.all(tile_data == white_value):
+                    return True
         elif len(tile_data.shape) == 2:
-            # Grayscale image
-            return np.all(tile_data == white_value)
+            if np.all(tile_data == white_value):
+                return True
+        # else: unexpected shape, treat as not completely white
+
+        # --- Check 2: Average pixel value 10..245 (skip for black/white toner schemes) ---
+        is_toner = "GeoapifyToner" in npy_file_path or "StadiaToner" in npy_file_path
+        if is_toner:
+            return False  # passed completely-empty check; toner excluded from average check
+
+        # Normalize to 0-255 scale
+        if tile_data.dtype == np.uint8:
+            data_255 = tile_data
+        elif tile_data.dtype == np.float32 or tile_data.dtype == np.float64:
+            data_255 = (tile_data * 255).astype(np.float64)
         else:
-            # Unexpected format, assume not blank
-            return False
-            
+            data_255 = np.asarray(tile_data, dtype=np.float64) * 255
+
+        if len(tile_data.shape) == 3 and tile_data.shape[2] >= 3:
+            rgb = data_255[:, :, :3]
+            avg_value = float(np.mean(rgb))
+        elif len(tile_data.shape) == 2:
+            avg_value = float(np.mean(data_255))
+        else:
+            return False  # unexpected format, pass
+
+        # Corrupt if average outside valid range (max 255)
+        if avg_value < 10 or avg_value > 245:
+            return True
+        return False
+
     except Exception:
         # Any error (reshape errors, empty files, etc.) means the tile is erroneous
-        # and should be deleted
         return True
 
 
@@ -271,12 +289,14 @@ def main():
         # Output summary in one line
         if test_mode:
             write_log(f"Skipped {skipped_tiles} already verified tiles. Total tiles processed: {total_tiles}. Good tiles (kept): {good_tiles}. Blank/erroneous tiles (would be deleted): {blank_or_erroneous_tiles}")
-            if blank_tile_paths:
-                write_debug_log("\nPaths of blank/erroneous tiles:")
-                for path in blank_tile_paths:
-                    write_debug_log(f"  - {path}")
         else:
             write_log(f"Skipped {skipped_tiles} already verified tiles. Total tiles processed: {total_tiles}. Good tiles (kept): {good_tiles}. Blank/erroneous tiles (deleted): {blank_or_erroneous_tiles}")
+
+        # Always print full file names of corrupt tiles to console (even when debug log is off)
+        if blank_tile_paths:
+            write_log("Corrupt map tiles (full paths):")
+            for path in blank_tile_paths:
+                write_log(path)
         
         write_debug_log(f"Operation completed in: {format_duration(duration)}")
         if test_mode:

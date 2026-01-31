@@ -8,11 +8,13 @@ import multiprocessing as mp
 import time
 import traceback
 from io import BytesIO
+from pathlib import Path
 from queue import Empty
 from typing import Any, Dict, List, Optional, Tuple
 
 # Third-party imports
 import cartopy.crs as ccrs
+import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from PIL import Image
 
@@ -42,6 +44,57 @@ from speed_based_color import speed_based_color
 from update_status import update_status
 from video_generator_create_combined_route import RoutePoint
 from write_log import write_debug_log, write_log
+
+
+def _composite_clock_onto_image(
+    image_bytes: bytes,
+    first_point_time,
+    resolution_scale: float,
+) -> bytes:
+    """
+    Composite the clock overlay (hhmm.npy) onto the image at top-left with scaled padding.
+
+    Clock files are in img/clock/{size}/hhmm.npy (e.g. 2/1325.npy for 13:25 at scale 2).
+    Size folder: 's' for scale < 1, else '1', '2', '3', '4'. Padding: 20px * resolution_scale.
+
+    Args:
+        image_bytes: PNG image bytes (RGB or RGBA)
+        first_point_time: datetime (timezone-aware or naive) for hour/minute
+        resolution_scale: scale factor for clock size folder and padding (0.7, 1.0, 2.0, 3.0, 4.0)
+
+    Returns:
+        New PNG image bytes with clock composited, or original bytes on error
+    """
+    try:
+        clock_folder = "s" if resolution_scale < 1.0 else str(int(resolution_scale))
+        filename = f"{first_point_time.hour:02d}{first_point_time.minute:02d}.npy"
+        clock_dir = Path(__file__).resolve().parent / "img" / "clock" / clock_folder
+        clock_path = clock_dir / filename
+        if not clock_path.exists():
+            write_log(f"Clock file not found: {clock_path}")
+            return image_bytes
+        clock_arr = np.load(str(clock_path))
+        # uint RGB with transparency: expect (H, W, 3) or (H, W, 4)
+        if clock_arr.ndim != 3 or clock_arr.shape[2] not in (3, 4):
+            write_log(f"Unexpected clock array shape: {clock_arr.shape}")
+            return image_bytes
+        # Ensure uint8 for PIL
+        if clock_arr.dtype != np.uint8:
+            clock_arr = np.clip(clock_arr, 0, 255).astype(np.uint8)
+        if clock_arr.shape[2] == 3:
+            clock_pil = Image.fromarray(clock_arr, mode="RGB").convert("RGBA")
+        else:
+            clock_pil = Image.fromarray(clock_arr, mode="RGBA")
+        base = Image.open(BytesIO(image_bytes)).convert("RGBA")
+        padding = int(20 * resolution_scale)
+        x, y = padding, padding
+        base.paste(clock_pil, (x, y), clock_pil)
+        out = BytesIO()
+        base.convert("RGB").save(out, format="PNG")
+        return out.getvalue()
+    except Exception as e:
+        write_log(f"Failed to composite clock: {e}")
+        return image_bytes
 
 class StatusUpdate:
     """Status update message from a worker process."""
@@ -136,7 +189,9 @@ def generate_images_parallel(
     folder: Optional[str] = None,
     route_name: Optional[str] = None,
     max_workers: Optional[int] = None,
-    route_points_data: Optional[Dict[str, Any]] = None
+    route_points_data: Optional[Dict[str, Any]] = None,
+    show_clock: bool = False,
+    first_point_time: Optional[Any] = None
 ) -> Tuple[List[Tuple[int, bytes]], mp.Queue]:
     """
     Generate images for multiple zoom levels in parallel.
@@ -197,7 +252,9 @@ def generate_images_parallel(
                 route_name,
                 zoom_level == thumbnail_zoom_level,  # Pass thumbnail=True for middle zoom level
                 sorted_zoom_levels,  # Pass all zoom levels
-                route_points_data  # Pass RoutePoint data for speed-based coloring
+                route_points_data,  # Pass RoutePoint data for speed-based coloring
+                show_clock,
+                first_point_time
             )
         )
         process.start()
@@ -259,7 +316,9 @@ def generate_images_parallel(
                         route_name,
                         next_zoom_level == thumbnail_zoom_level,
                         sorted_zoom_levels,
-                        route_points_data  # Pass RoutePoint data for speed-based coloring
+                        route_points_data,  # Pass RoutePoint data for speed-based coloring
+                        show_clock,
+                        first_point_time
                     )
                 )
                 process.start()
@@ -303,7 +362,9 @@ def _worker_process(
     route_name: str,
     thumbnail: bool = False,
     zoom_levels: Optional[List[int]] = None,
-    route_points_data: Optional[Dict[str, Any]] = None
+    route_points_data: Optional[Dict[str, Any]] = None,
+    show_clock: bool = False,
+    first_point_time: Optional[Any] = None
 ):
     """Worker process function that generates a single image."""
     try:
@@ -330,7 +391,9 @@ def _worker_process(
             route_name=route_name,
             thumbnail=thumbnail,
             zoom_levels=zoom_levels,
-            route_points_data=route_points_data
+            route_points_data=route_points_data,
+            show_clock=show_clock,
+            first_point_time=first_point_time
         )
         result_queue.put(result)
     except Exception as e:
@@ -364,7 +427,9 @@ def generate_image_for_zoom_level(
     route_name: str,
     thumbnail: bool = False,
     zoom_levels: Optional[List[int]] = None,
-    route_points_data: Optional[Dict[str, Any]] = None
+    route_points_data: Optional[Dict[str, Any]] = None,
+    show_clock: bool = False,
+    first_point_time: Optional[Any] = None
 ) -> Tuple[int, Optional[bytes]]:
     """
     Generate map image for a specific zoom level.
@@ -806,6 +871,11 @@ def generate_image_for_zoom_level(
         # Close figure to free memory
         fig.clear()
         
+        # Composite clock overlay if enabled (before compression)
+        if show_clock and first_point_time is not None:
+            update_debug_output("adding clock", textfield=False)
+            image_bytes = _composite_clock_onto_image(image_bytes, first_point_time, image_scale)
+        
         # Optimize PNG
         update_debug_output("compressing", textfield=False)
         optimized_bytes = optimize_png_bytes(image_bytes)
@@ -886,39 +956,45 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
         image_scale: Optional image scale factor for text sizing; if None, calculated from resolution
         statistics_theme: Theme for statistics display ('light' or 'dark')
     """
-    if not statistics_data:
-        return
-        
     # Build statistics lines to display based on configuration
     stats_lines = []
-    
-    if json_data.get('statistics_starting_time', False):
-        stats_lines.append(f"{statistics_data.get('starting_time', 'N/A')}")
-    
-    if json_data.get('statistics_ending_time', False):
-        stats_lines.append(f"{statistics_data.get('ending_time', 'N/A')}")
-    
-    if json_data.get('statistics_elapsed_time', False):
-        stats_lines.append(f"{statistics_data.get('elapsed_time', 'N/A')}")
-    
-    # Determine units based on imperial_units setting
-    imperial_units = json_data and json_data.get('imperial_units', False) is True
-    distance_unit = "miles" if imperial_units else "km"
-    speed_unit = "mph" if imperial_units else "km/h"
-    
-    if json_data.get('statistics_distance', False):
-        stats_lines.append(f"{statistics_data.get('distance', 'N/A')} {distance_unit}")
-    
-    if json_data.get('statistics_average_speed', False):
-        stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} {speed_unit}")
-    
-    # Store heart rate separately so we can draw the heart symbol in red
+
     avg_hr_value = None
-    if json_data.get('statistics_average_hr', False):
-        avg_hr = statistics_data.get('average_hr', '0')
-        if avg_hr and avg_hr != '0':
-            avg_hr_value = avg_hr
-            stats_lines.append(f"{avg_hr} ♥")
+    if statistics_data:
+        if json_data.get('statistics_starting_time', False):
+            stats_lines.append(f"{statistics_data.get('starting_time', 'N/A')}")
+        
+        if json_data.get('statistics_ending_time', False):
+            stats_lines.append(f"{statistics_data.get('ending_time', 'N/A')}")
+        
+        if json_data.get('statistics_elapsed_time', False):
+            stats_lines.append(f"{statistics_data.get('elapsed_time', 'N/A')}")
+        
+        # Determine units based on imperial_units setting
+        imperial_units = json_data and json_data.get('imperial_units', False) is True
+        distance_unit = "miles" if imperial_units else "km"
+        speed_unit = "mph" if imperial_units else "km/h"
+        
+        if json_data.get('statistics_distance', False):
+            stats_lines.append(f"{statistics_data.get('distance', 'N/A')} {distance_unit}")
+        
+        if json_data.get('statistics_average_speed', False):
+            stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} {speed_unit}")
+        
+        # Store heart rate separately so we can draw the heart symbol in red
+        if json_data.get('statistics_average_hr', False):
+            avg_hr = statistics_data.get('average_hr', '0')
+            if avg_hr and avg_hr != '0':
+                avg_hr_value = avg_hr
+                stats_lines.append(f"{avg_hr} ♥")
+
+    # Add free text lines (sanitized earlier; may contain \n-separated lines)
+    free_text = (json_data or {}).get('statistics_free_text', '') or ''
+    if free_text:
+        for line in free_text.split('\n'):
+            line = line.strip()
+            if line:
+                stats_lines.append(line)
     
     # If no statistics are configured to be shown, return
     if not stats_lines:

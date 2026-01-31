@@ -94,7 +94,7 @@ def _gps_to_web_mercator(lon, lat):
     return x, y
 
 
-def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, theme='light', vertical_offset_points=0):
+def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, theme='light', vertical_offset_points=0, small_tags=False, tiny_tags=False):
     """
     Draw a name tag to the right of a point.
     
@@ -109,6 +109,8 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, t
         resolution_scale (float): Resolution scale factor (0.7, 1.0, 2.0, 3.0, or 4.0)
         theme (str): Theme for the name tag ('light' or 'dark')
         vertical_offset_points (float): Vertical offset in points (positive = up)
+        small_tags (bool): If True, halve tag font size (after resolution scale). Job parameter 'small_tags'.
+        tiny_tags (bool): If True, divide tag font size by 3 (after resolution scale). Job parameter 'tiny_tags'.
     """
     # Extract coordinates using named attributes
     lat = point.lat
@@ -142,7 +144,9 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, t
         background_theme=theme,
         resolution_scale=resolution_scale,
         vertical_offset_points=vertical_offset_points,
-        horizontal_offset_coords=horizontal_offset_coords
+        horizontal_offset_coords=horizontal_offset_coords,
+        small_tags=small_tags,
+        tiny_tags=tiny_tags
     )
 
 
@@ -164,6 +168,9 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
     if name_tags_setting not in ['light', 'dark']:
         print(f"Warning: Invalid name_tags setting '{name_tags_setting}', skipping")
         return
+    
+    small_tags = bool(json_data.get('small_tags', False))
+    tiny_tags = bool(json_data.get('tiny_tags', False))
     
     # Get track_objects for name mapping
     track_objects = json_data.get('track_objects', [])
@@ -194,7 +201,7 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
             
             if filename and filename in filename_to_name:
                 runner_name = filename_to_name[filename]
-                _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting)
+                _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting, small_tags=small_tags, tiny_tags=tiny_tags)
     else:
         # Single route mode - draw name tag for the most recent point
         if not points_for_frame:  # Skip if no points
@@ -206,7 +213,7 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
         
         if filename and filename in filename_to_name:
             runner_name = filename_to_name[filename]
-            _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting)
+            _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting, small_tags=small_tags, tiny_tags=tiny_tags)
 
 
 def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax, hide_in_fade_out=False):
@@ -236,6 +243,9 @@ def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba
     if filename_tags_setting not in ['light', 'dark']:
         print(f"Warning: Invalid filename_tags setting '{filename_tags_setting}', skipping")
         return
+    
+    small_tags = bool(json_data.get('small_tags', False))
+    tiny_tags = bool(json_data.get('tiny_tags', False))
     
     # Check if realtime statistics are enabled - if so, we need to offset the tag vertically
     # Statistics stack downward from the point, so we only need to clear the topmost statistic
@@ -267,7 +277,7 @@ def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba
             
             if filename:
                 # Use filename as the display text (already without .gpx extension in RoutePoint)
-                _draw_name_tag(ax, most_recent_point, filename, filename_to_rgba, resolution_scale, filename_tags_setting, vertical_offset)
+                _draw_name_tag(ax, most_recent_point, filename, filename_to_rgba, resolution_scale, filename_tags_setting, vertical_offset, small_tags=small_tags, tiny_tags=tiny_tags)
     else:
         # Single route mode - draw filename tag for the most recent point
         if not points_for_frame:  # Skip if no points
@@ -279,4 +289,4 @@ def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba
         
         if filename:
             # Use filename as the display text (already without .gpx extension in RoutePoint)
-            _draw_name_tag(ax, most_recent_point, filename, filename_to_rgba, resolution_scale, filename_tags_setting, vertical_offset)
+            _draw_name_tag(ax, most_recent_point, filename, filename_to_rgba, resolution_scale, filename_tags_setting, vertical_offset, small_tags=small_tags, tiny_tags=tiny_tags)
