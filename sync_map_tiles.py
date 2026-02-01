@@ -167,7 +167,7 @@ class MapTileSyncer:
                         else:
                             self._wsl_sshpass_available = False
                             if not self._ssh_key_message_shown:
-                                self.debug_callback("sshpass not found in WSL. Installing sshpass in WSL for password authentication...")
+                                self.debug_callback("sshpass not found in WSL. Installing sshpass in WSL for password authentication")
                                 self.debug_callback("Run this in WSL to install: sudo apt-get update && sudo apt-get install -y sshpass")
                                 self._ssh_key_message_shown = True
                     except:
@@ -199,7 +199,85 @@ class MapTileSyncer:
         rest = str(path.relative_to(path.anchor)).replace('\\', '/')
         return f'/mnt/{drive}/{rest}'
 
-    def _run_rsync_with_password(self, cmd, capture_output=False, input_data=None):
+    def _is_progress2_line(self, line_bytes):
+        """Return True if this line looks like rsync --info=progress2 output."""
+        if not line_bytes or not isinstance(line_bytes, bytes):
+            return False
+        return b'xfr#' in line_bytes or (b'%' in line_bytes and re.search(rb'\d+%', line_bytes))
+
+    def _build_full_rsync_cmd(self, cmd):
+        """
+        Build full command list with sshpass (or WSL sshpass) for password auth.
+        Returns (full_cmd, can_run). can_run is False when sshpass is required but not available.
+        """
+        using_wsl = cmd and cmd[0] == 'wsl'
+        if using_wsl:
+            if self._wsl_sshpass_available is None:
+                try:
+                    check_result = subprocess.run(['wsl', 'which', 'sshpass'], capture_output=True, timeout=5)
+                    self._wsl_sshpass_available = (check_result.returncode == 0)
+                except Exception:
+                    self._wsl_sshpass_available = False
+            if self._wsl_sshpass_available:
+                return (['wsl', 'sshpass', '-p', self.storage_box_password] + cmd[1:], True)
+            return (cmd, False)
+        if sys.platform == 'win32':
+            for p in [r'C:\Program Files\Git\usr\bin\sshpass.exe', r'C:\Program Files (x86)\Git\usr\bin\sshpass.exe']:
+                if Path(p).exists():
+                    return ([p, '-p', self.storage_box_password] + cmd, True)
+        try:
+            subprocess.run(['sshpass', '-V'], capture_output=True, check=True, timeout=5)
+            return (['sshpass', '-p', self.storage_box_password] + cmd, True)
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return (cmd, True)  # run without sshpass (may prompt)
+
+    def _run_rsync_streaming(self, cmd, progress_callback):
+        """
+        Run rsync with Popen, read stdout line by line, call progress_callback for progress2 lines,
+        and return a result object with full stdout for parsing. Caller must add --info=progress2 to cmd.
+        """
+        full_cmd, can_run = self._build_full_rsync_cmd(cmd)
+        if not can_run:
+            if not self._ssh_key_message_shown:
+                self.log_callback("sshpass not found in WSL. Please install it: wsl sudo apt-get update && wsl sudo apt-get install -y sshpass")
+                self._ssh_key_message_shown = True
+            class FakeResult:
+                returncode = 1
+                stdout = b''
+                stderr = b'sshpass not found in WSL'
+            return FakeResult()
+        buffer = []
+        process = None
+        try:
+            process = subprocess.Popen(
+                full_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+            )
+            for line in iter(process.stdout.readline, b''):
+                buffer.append(line)
+                if self._is_progress2_line(line):
+                    try:
+                        progress_callback(line.decode('utf-8', errors='replace').strip())
+                    except Exception:
+                        pass
+            process.wait()
+        except Exception:
+            if process is not None and process.poll() is None:
+                process.kill()
+                process.wait()
+            raise
+        full_output = b''.join(buffer)
+        class StreamResult:
+            pass
+        result = StreamResult()
+        result.returncode = process.returncode
+        result.stdout = full_output
+        result.stderr = b''
+        return result
+
+    def _run_rsync_with_password(self, cmd, capture_output=False, input_data=None, progress_callback=None):
         """
         Run rsync command with password authentication using sshpass.
         Hardcodes password for convenience (user's personal project).
@@ -208,10 +286,15 @@ class MapTileSyncer:
             cmd: List of command arguments for rsync
             capture_output: If True, capture stdout/stderr
             input_data: Optional bytes/string to send to stdin (for --files-from=-)
+            progress_callback: If set, stream progress2 lines to this callback and return full output (for parsing)
             
         Returns:
-            CompletedProcess object
+            CompletedProcess object (or object with .returncode, .stdout, .stderr)
         """
+        # Stream progress when progress_callback is set (requires cmd to include --info=progress2)
+        if progress_callback is not None:
+            return self._run_rsync_streaming(cmd, progress_callback)
+
         # Check if using WSL rsync
         using_wsl = cmd and cmd[0] == 'wsl'
         
@@ -363,13 +446,25 @@ class MapTileSyncer:
                 # We'll use --stats to get summary at the end
                 pass
             
+            # When debug callback is set, add progress2 for live progress (only for actual sync)
+            use_live_progress = bool(self.debug_callback) and not dry_run
+            if use_live_progress:
+                opts = base_opts + ['--info=progress2']
+            else:
+                opts = base_opts
+            
             # Upload: sync local -> remote
-            upload_cmd = self._rsync_cmd + base_opts + [
+            self.debug_callback("Map tile sync: uploading to storage box")
+            upload_cmd = self._rsync_cmd + opts + [
                 local_path_str,
                 remote_path
             ]
             
-            result = self._run_rsync_with_password(upload_cmd, capture_output=True)
+            result = self._run_rsync_with_password(
+                upload_cmd,
+                capture_output=True,
+                progress_callback=self.debug_callback if use_live_progress else None
+            )
             
             if result.returncode == 0:
                 output = result.stdout.decode('utf-8', errors='ignore')
@@ -383,12 +478,17 @@ class MapTileSyncer:
             
             # Download: sync remote -> local (unless upload_only)
             if not upload_only:
-                download_cmd = self._rsync_cmd + base_opts + [
+                self.debug_callback("Map tile sync: downloading from storage box")
+                download_cmd = self._rsync_cmd + opts + [
                     remote_path,
                     local_path_str
                 ]
                 
-                result = self._run_rsync_with_password(download_cmd, capture_output=True)
+                result = self._run_rsync_with_password(
+                    download_cmd,
+                    capture_output=True,
+                    progress_callback=self.debug_callback if use_live_progress else None
+                )
                 
                 if result.returncode == 0:
                     output = result.stdout.decode('utf-8', errors='ignore')

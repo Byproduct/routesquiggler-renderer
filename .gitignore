@@ -9,3 +9,4 @@ ffprobe.exe
 git-push.bat
 status_update_log.txt
 debug.log
+utils/verified_map_tiles.txt
