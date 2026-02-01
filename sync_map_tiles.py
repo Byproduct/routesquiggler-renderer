@@ -13,6 +13,16 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+# PTY for unbuffered progress (Unix only; rsync buffers when stdout is a pipe)
+try:
+    import pty
+    import select
+    _HAVE_PTY = sys.platform != 'win32'
+except ImportError:
+    pty = None
+    select = None
+    _HAVE_PTY = False
+
 
 class MapTileSyncer:
     """Handles syncing of map tile cache files between local and remote storage."""
@@ -235,6 +245,7 @@ class MapTileSyncer:
         """
         Run rsync with Popen, read stdout line by line, call progress_callback for progress2 lines,
         and return a result object with full stdout for parsing. Caller must add --info=progress2 to cmd.
+        Uses a PTY on Unix so rsync flushes progress in real time (rsync buffers when stdout is a pipe).
         """
         full_cmd, can_run = self._build_full_rsync_cmd(cmd)
         if not can_run:
@@ -248,31 +259,91 @@ class MapTileSyncer:
             return FakeResult()
         buffer = []
         process = None
+        master_fd = None
+        use_pty = _HAVE_PTY and pty is not None and select is not None
         try:
-            process = subprocess.Popen(
-                full_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                stdin=subprocess.DEVNULL,
-            )
-            for line in iter(process.stdout.readline, b''):
-                buffer.append(line)
-                if self._is_progress2_line(line):
-                    try:
-                        progress_callback(line.decode('utf-8', errors='replace').strip())
-                    except Exception:
-                        pass
-            process.wait()
+            if use_pty:
+                master_fd, slave_fd = pty.openpty()
+                try:
+                    process = subprocess.Popen(
+                        full_cmd,
+                        stdin=slave_fd,
+                        stdout=slave_fd,
+                        stderr=slave_fd,
+                    )
+                finally:
+                    os.close(slave_fd)
+                # Read from PTY master so rsync sees a TTY and flushes progress
+                linebuf = b''
+                while True:
+                    r, _, _ = select.select([master_fd], [], [], 0.25)
+                    if r:
+                        data = os.read(master_fd, 8192)
+                        if not data:
+                            break
+                        buffer.append(data)
+                        linebuf += data
+                        while b'\n' in linebuf or b'\r\n' in linebuf:
+                            if b'\r\n' in linebuf:
+                                line, _, linebuf = linebuf.partition(b'\r\n')
+                            else:
+                                line, _, linebuf = linebuf.partition(b'\n')
+                            if line and self._is_progress2_line(line):
+                                try:
+                                    progress_callback(line.decode('utf-8', errors='replace').strip())
+                                except Exception:
+                                    pass
+                    if process.poll() is not None:
+                        while True:
+                            data = os.read(master_fd, 8192)
+                            if not data:
+                                break
+                            buffer.append(data)
+                            linebuf += data
+                            while b'\n' in linebuf or b'\r\n' in linebuf:
+                                if b'\r\n' in linebuf:
+                                    line, _, linebuf = linebuf.partition(b'\r\n')
+                                else:
+                                    line, _, linebuf = linebuf.partition(b'\n')
+                                if line and self._is_progress2_line(line):
+                                    try:
+                                        progress_callback(line.decode('utf-8', errors='replace').strip())
+                                    except Exception:
+                                        pass
+                        break
+            else:
+                # Pipe path (Windows or no PTY): rsync may buffer until end; add --outbuf=L in caller to try line buffering
+                process = subprocess.Popen(
+                    full_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    stdin=subprocess.DEVNULL,
+                )
+                for line in iter(process.stdout.readline, b''):
+                    buffer.append(line)
+                    if self._is_progress2_line(line):
+                        try:
+                            progress_callback(line.decode('utf-8', errors='replace').strip())
+                        except Exception:
+                            pass
+            if process is not None:
+                process.wait()
         except Exception:
             if process is not None and process.poll() is None:
                 process.kill()
                 process.wait()
             raise
+        finally:
+            if master_fd is not None:
+                try:
+                    os.close(master_fd)
+                except OSError:
+                    pass
         full_output = b''.join(buffer)
         class StreamResult:
             pass
         result = StreamResult()
-        result.returncode = process.returncode
+        result.returncode = process.returncode if process is not None else -1
         result.stdout = full_output
         result.stderr = b''
         return result
@@ -450,6 +521,8 @@ class MapTileSyncer:
             use_live_progress = bool(self.debug_callback) and not dry_run
             if use_live_progress:
                 opts = base_opts + ['--info=progress2']
+                if not _HAVE_PTY:
+                    opts.append('--outbuf=L')  # try line buffering on Windows (no PTY)
             else:
                 opts = base_opts
             
