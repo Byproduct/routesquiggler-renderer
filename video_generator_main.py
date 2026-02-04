@@ -355,12 +355,13 @@ class VideoGeneratorWorker(QObject):
                 # Lock acquisition failed after 60 minutes - mark job as error
                 raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
             
-            # Update status to "downloading maps (job_id)"
-            job_id = str(self.json_data.get('job_id', ''))
-            from update_status import update_status
-            update_status(f"downloading maps ({job_id})", api_key=self.user)
-            
+            # Wrap everything from lock acquisition in try-finally to ensure lock is always released
             try:
+                # Update status to "downloading maps (job_id)"
+                job_id = str(self.json_data.get('job_id', ''))
+                from update_status import update_status
+                update_status(f"downloading maps ({job_id})", api_key=self.user)
+                
                 cache_result = cache_map_tiles(
                     self.json_data,
                     combined_route_data=self.combined_route_data,

@@ -343,37 +343,38 @@ class ImageGeneratorWorker(QObject):
                 # Lock acquisition failed after 60 minutes - mark job as error
                 raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
             
-            # Update status to "downloading maps (job_id)"
-            job_id = str(self.json_data.get('job_id', ''))
-            update_status(f"working ({job_id})", api_key=self.user)
-            
-            # Clock: time of first point of first route (for overlay); only when clock=true
-            show_clock = self.json_data.get('clock', False) is True
-            first_point_time = None
-            if show_clock:
-                if route_points_data:
-                    all_routes = route_points_data.get('all_routes', [])
-                    if all_routes:
-                        combined = all_routes[0].get('combined_route', [])
-                        if combined and combined[0].timestamp is not None:
-                            first_point_time = combined[0].timestamp
-                if first_point_time is None:
-                    # Standard mode: get first point time from chronologically first GPX
-                    sorted_gpx = get_sorted_gpx_list(
-                        self.gpx_files_info,
-                        log_callback=self.log_message.emit,
-                        debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
-                    )
-                    if sorted_gpx:
-                        first_file = sorted_gpx[0]
-                        raw_time = get_first_track_point_time_from_gpx_content(first_file.get('content', ''))
-                        if raw_time is not None:
-                            first_point_time = normalize_timestamp(raw_time)
-                            first_point_time = convert_timestamp_to_job_timezone(
-                                first_point_time, self.json_data.get('timezone')
-                            )
-            
+            # Wrap everything from lock acquisition in try-finally to ensure lock is always released
             try:
+                # Update status to "downloading maps (job_id)"
+                job_id = str(self.json_data.get('job_id', ''))
+                update_status(f"working ({job_id})", api_key=self.user)
+                
+                # Clock: time of first point of first route (for overlay); only when clock=true
+                show_clock = self.json_data.get('clock', False) is True
+                first_point_time = None
+                if show_clock:
+                    if route_points_data:
+                        all_routes = route_points_data.get('all_routes', [])
+                        if all_routes:
+                            combined = all_routes[0].get('combined_route', [])
+                            if combined and combined[0].timestamp is not None:
+                                first_point_time = combined[0].timestamp
+                    if first_point_time is None:
+                        # Standard mode: get first point time from chronologically first GPX
+                        sorted_gpx = get_sorted_gpx_list(
+                            self.gpx_files_info,
+                            log_callback=self.log_message.emit,
+                            debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
+                        )
+                        if sorted_gpx:
+                            first_file = sorted_gpx[0]
+                            raw_time = get_first_track_point_time_from_gpx_content(first_file.get('content', ''))
+                            if raw_time is not None:
+                                first_point_time = normalize_timestamp(raw_time)
+                                first_point_time = convert_timestamp_to_job_timezone(
+                                    first_point_time, self.json_data.get('timezone')
+                                )
+                
                 self.results, _ = generate_images_parallel(
                     zoom_levels=zoom_levels,
                     map_style=self.json_data.get('map_style', 'osm'),

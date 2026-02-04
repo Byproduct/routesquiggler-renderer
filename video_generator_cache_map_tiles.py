@@ -400,13 +400,9 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         if progress_callback:
             progress_callback("progress_bar_tiles", 0, f"Downloading {total_to_download} tiles")
         
-        # Add rate limiting based on map style
-        if map_style == 'osm':
-            # OSM is more restrictive - add delay between requests
-            request_delay = 0.1  # 100ms delay for OSM
-        else:
-            # Other services are generally more permissive
-            request_delay = 0.02  # 20ms delay for others
+        # Add rate limiting to avoid hitting rate limits (especially for Stadia)
+        # Use 0.1s delay for all services to be safe and avoid rate limiting issues
+        request_delay = 0.1  # 100ms delay between tile requests
         
         # Track progress and statistics
         total_tiles_cached = 0

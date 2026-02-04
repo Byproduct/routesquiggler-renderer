@@ -29,6 +29,7 @@ def generate_image_gallery_html(route_name: str, zoom_levels: List[int]) -> str:
     html_parts.append('    <meta name="viewport" content="width=device-width, initial-scale=1.0">')
     html_parts.append('    <meta name="robots" content="noindex">')
     html_parts.append(f'    <title>{route_name}</title>')
+    html_parts.append('    <link rel="icon" type="image/x-icon" href="https://routesquiggler.com/static/img/favicons/favicon.ico">')
     html_parts.append('    <style>')
     html_parts.append('        body {')
     html_parts.append('            background-color: #f0f0f0;')

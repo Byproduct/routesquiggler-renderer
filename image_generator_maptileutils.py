@@ -4,6 +4,8 @@ Map tile utilities for handling different map styles and zoom levels.
 
 # Standard library imports
 import os
+import threading
+import time
 from datetime import datetime
 from typing import List, Tuple
 
@@ -17,6 +19,14 @@ STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
 GEOAPIFY_API_KEY = "1180c192019b43b9a366c498deadcc4b"
 THUNDERFOREST_API_KEY = "43413e30756b4dd489d7e62d5c0a9245"
 LOGGING_INTO_FILE = False   #render.log
+
+# Rate limiting for tile downloads (0.1 seconds between requests)
+# This applies only to tiles that are actually downloaded (not cached)
+TILE_DOWNLOAD_DELAY = 0.1  # seconds
+
+# Thread-safe rate limiter for tile downloads
+_tile_download_lock = threading.Lock()
+_last_tile_download_time = 0.0
 
 # Import the debug flag from the main file
 try:
@@ -37,6 +47,21 @@ def debug_log(message: str):
                 f.write(f"[{timestamp}] {message}\n")
         except:
             pass
+
+def _rate_limit_tile_download():
+    """
+    Thread-safe rate limiter for tile downloads.
+    Ensures at least TILE_DOWNLOAD_DELAY seconds between tile download requests.
+    This only affects tiles that are actually downloaded (not cached).
+    """
+    global _last_tile_download_time
+    with _tile_download_lock:
+        current_time = time.time()
+        time_since_last = current_time - _last_tile_download_time
+        if time_since_last < TILE_DOWNLOAD_DELAY:
+            sleep_time = TILE_DOWNLOAD_DELAY - time_since_last
+            time.sleep(sleep_time)
+        _last_tile_download_time = time.time()
 
 def set_cache_directory(map_style: str):
     """Set the appropriate cache directory for the given map style."""
@@ -176,6 +201,13 @@ def create_map_tiles(map_style: str):
                     url = f'https://tiles.stadiamaps.com/tiles/{style}/{z}/{x}/{y}.png?api_key={STADIA_API_KEY}'
                     debug_log(f"Generated Stadia URL: {url}")
                     return url
+                
+                def _fetch_tile(self, tile):
+                    """Override to add rate limiting for tile downloads."""
+                    # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                    _rate_limit_tile_download()
+                    # Call parent method to actually fetch the tile
+                    return super()._fetch_tile(tile)
             
             tiles = StadiaTiles(cache=True)
             debug_log(f"Created StadiaTiles object: {type(tiles)}")
@@ -190,6 +222,13 @@ def create_map_tiles(map_style: str):
                     url = f'https://tiles.stadiamaps.com/tiles/{style}/{z}/{x}/{y}.png?api_key={STADIA_API_KEY}'
                     debug_log(f"Generated fallback Stadia URL: {url}")
                     return url
+                
+                def _fetch_tile(self, tile):
+                    """Override to add rate limiting for tile downloads."""
+                    # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                    _rate_limit_tile_download()
+                    # Call parent method to actually fetch the tile
+                    return super()._fetch_tile(tile)
             
             tiles = StadiaTiles(cache=True)
             debug_log(f"Created fallback StadiaTiles object: {type(tiles)}")
@@ -204,6 +243,13 @@ def create_map_tiles(map_style: str):
                 url = f"https://a.tile.opentopomap.org/{z}/{x}/{y}.png"
                 debug_log(f"Generated OTM URL: {url}")
                 return url
+            
+            def _fetch_tile(self, tile):
+                """Override to add rate limiting for tile downloads."""
+                # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                _rate_limit_tile_download()
+                # Call parent method to actually fetch the tile
+                return super()._fetch_tile(tile)
         
         tiles = OpenTopoMapTiles(cache=True)
         debug_log(f"Created OpenTopoMapTiles object: {type(tiles)}")
@@ -218,6 +264,13 @@ def create_map_tiles(map_style: str):
                 url = f"https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png"
                 debug_log(f"Generated CyclOSM URL: {url}")
                 return url
+            
+            def _fetch_tile(self, tile):
+                """Override to add rate limiting for tile downloads."""
+                # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                _rate_limit_tile_download()
+                # Call parent method to actually fetch the tile
+                return super()._fetch_tile(tile)
         
         tiles = CyclOSMTiles(cache=True)
         debug_log(f"Created CyclOSMTiles object: {type(tiles)}")
@@ -235,6 +288,13 @@ def create_map_tiles(map_style: str):
                     url = f'https://maps.geoapify.com/v1/tile/{tile_style}/{z}/{x}/{y}.png?apiKey={GEOAPIFY_API_KEY}'
                     debug_log(f"Generated Geoapify URL: {url}")
                     return url
+                
+                def _fetch_tile(self, tile):
+                    """Override to add rate limiting for tile downloads."""
+                    # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                    _rate_limit_tile_download()
+                    # Call parent method to actually fetch the tile
+                    return super()._fetch_tile(tile)
             
             tiles = GeoapifyTiles(cache=True)
             debug_log(f"Created GeoapifyTiles object: {type(tiles)}")
@@ -249,6 +309,13 @@ def create_map_tiles(map_style: str):
                     url = f'https://maps.geoapify.com/v1/tile/{tile_style}/{z}/{x}/{y}.png?apiKey={GEOAPIFY_API_KEY}'
                     debug_log(f"Generated fallback Geoapify URL: {url}")
                     return url
+                
+                def _fetch_tile(self, tile):
+                    """Override to add rate limiting for tile downloads."""
+                    # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                    _rate_limit_tile_download()
+                    # Call parent method to actually fetch the tile
+                    return super()._fetch_tile(tile)
             
             tiles = GeoapifyTiles(cache=True)
             debug_log(f"Created fallback GeoapifyTiles object: {type(tiles)}")
@@ -266,6 +333,13 @@ def create_map_tiles(map_style: str):
                     url = f'https://tile.thunderforest.com/{tile_style}/{z}/{x}/{y}.png?apikey={THUNDERFOREST_API_KEY}'
                     debug_log(f"Generated Thunderforest URL: {url}")
                     return url
+                
+                def _fetch_tile(self, tile):
+                    """Override to add rate limiting for tile downloads."""
+                    # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                    _rate_limit_tile_download()
+                    # Call parent method to actually fetch the tile
+                    return super()._fetch_tile(tile)
             
             tiles = ThunderforestTiles(cache=True)
             debug_log(f"Created ThunderforestTiles object: {type(tiles)}")
@@ -280,6 +354,13 @@ def create_map_tiles(map_style: str):
                     url = f'https://tile.thunderforest.com/{tile_style}/{z}/{x}/{y}.png?apikey={THUNDERFOREST_API_KEY}'
                     debug_log(f"Generated fallback Thunderforest URL: {url}")
                     return url
+                
+                def _fetch_tile(self, tile):
+                    """Override to add rate limiting for tile downloads."""
+                    # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                    _rate_limit_tile_download()
+                    # Call parent method to actually fetch the tile
+                    return super()._fetch_tile(tile)
             
             tiles = ThunderforestTiles(cache=True)
             debug_log(f"Created fallback ThunderforestTiles object: {type(tiles)}")
@@ -287,14 +368,32 @@ def create_map_tiles(map_style: str):
         
     elif map_style == "osm":
         debug_log("Processing OpenStreetMap style")
-        tiles = cimgt.OSM(cache=True)
+        
+        class RateLimitedOSM(cimgt.OSM):
+            def _fetch_tile(self, tile):
+                """Override to add rate limiting for tile downloads."""
+                # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                _rate_limit_tile_download()
+                # Call parent method to actually fetch the tile
+                return super()._fetch_tile(tile)
+        
+        tiles = RateLimitedOSM(cache=True)
         debug_log(f"Created OSM tiles object: {type(tiles)}")
         return tiles
         
     else:
         debug_log(f"Invalid map style '{map_style}', defaulting to OSM")
         print(f"Invalid map style '{map_style}', defaulting to OSM")
-        tiles = cimgt.OSM(cache=True)
+        
+        class RateLimitedOSM(cimgt.OSM):
+            def _fetch_tile(self, tile):
+                """Override to add rate limiting for tile downloads."""
+                # Rate limit before fetching (only affects actual downloads, not cached tiles)
+                _rate_limit_tile_download()
+                # Call parent method to actually fetch the tile
+                return super()._fetch_tile(tile)
+        
+        tiles = RateLimitedOSM(cache=True)
         debug_log(f"Created default OSM tiles object: {type(tiles)}")
         return tiles
 
