@@ -401,8 +401,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             progress_callback("progress_bar_tiles", 0, f"Downloading {total_to_download} tiles")
         
         # Add rate limiting to avoid hitting rate limits (especially for Stadia)
-        # Use 0.1s delay for all services to be safe and avoid rate limiting issues
-        request_delay = 0.1  # 100ms delay between tile requests
+        # Use 0.03s minimum delay - if a request takes longer, the wait is skipped
+        request_delay = 0.03  # 30ms minimum delay between tile requests
         
         # Track progress and statistics
         total_tiles_cached = 0
@@ -410,13 +410,21 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
         max_consecutive_errors = 20
         error_types = {}
         
+        # Track last request time for smart rate limiting
+        last_request_time = None
+        
         # Download all missing tiles
         for tile_index, tile_coords in enumerate(tiles_to_download):
             x, y, zoom = tile_coords
             
-            # Apply rate limiting (except for first request)
-            if tile_index > 0:
-                time.sleep(request_delay)
+            # Apply rate limiting: only sleep if less than request_delay has passed
+            # This means if a request takes longer than the delay, we skip the wait
+            if last_request_time is not None:
+                current_time = time.time()
+                time_since_last = current_time - last_request_time
+                if time_since_last < request_delay:
+                    sleep_time = request_delay - time_since_last
+                    time.sleep(sleep_time)
             
             # Debug: Show what we're trying to download
             if MAP_TILE_CACHING_DEBUG:
@@ -448,6 +456,10 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                 if error_type not in error_types:
                     error_types[error_type] = 0
                 error_types[error_type] += 1
+            finally:
+                # Update last request time after the request completes (success or failure)
+                # This ensures we track actual time between requests, not just sleeps
+                last_request_time = time.time()
             
             # If too many consecutive errors, pause longer
             if consecutive_errors >= max_consecutive_errors:
@@ -489,9 +501,14 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             for tile_index, tile_coords in enumerate(tiles_still_missing):
                 x, y, zoom = tile_coords
                 
-                # Apply rate limiting (except for first request)
-                if tile_index > 0:
-                    time.sleep(request_delay)
+                # Apply rate limiting: only sleep if less than request_delay has passed
+                # This means if a request takes longer than the delay, we skip the wait
+                if last_request_time is not None:
+                    current_time = time.time()
+                    time_since_last = current_time - last_request_time
+                    if time_since_last < request_delay:
+                        sleep_time = request_delay - time_since_last
+                        time.sleep(sleep_time)
                 
                 # Debug: Show what we're trying to download
                 if MAP_TILE_CACHING_DEBUG:
@@ -523,6 +540,10 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
                     if error_type not in error_types:
                         error_types[error_type] = 0
                     error_types[error_type] += 1
+                finally:
+                    # Update last request time after the request completes (success or failure)
+                    # This ensures we track actual time between requests, not just sleeps
+                    last_request_time = time.time()
                 
                 # If too many consecutive errors, pause longer
                 if consecutive_errors >= max_consecutive_errors:

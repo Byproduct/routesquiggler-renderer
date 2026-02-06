@@ -1,0 +1,39 @@
+{
+  "created_at": "2026-02-06T18:37:40.918369+00:00",
+  "folder": "2aZYuqBqFu",
+  "job_id": 1104,
+  "job_type": "video",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "thunderforest_landscape",
+  "map_transparency": 0,
+  "name_tags": "off",
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "Fantastic style 2026-01-21",
+  "squiggle_speed": "relative",
+  "statistics": "off",
+  "tail_color": "light",
+  "tail_width": 3,
+  "user_id": 1,
+  "video_fps": 60,
+  "video_length": 60,
+  "video_resolution_x": 1280,
+  "video_resolution_y": 720,
+  "zoom_mode": "dynamic",
+  "track_objects": [
+    {
+      "filename": "ebike2.gpx",
+      "date": "2026-01-21",
+      "color": "#004000",
+      "name": ""
+    },
+    {
+      "filename": "ebike.gpx",
+      "date": "2026-01-21",
+      "color": "#004000",
+      "name": ""
+    }
+  ]
+}

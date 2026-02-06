@@ -20,8 +20,9 @@ from image_generator_maptileutils import (
 )
 from video_generator_cache_map_tiles import is_tile_cached
 
-# Rate limiting delay (0.1 seconds between tile requests)
-TILE_DOWNLOAD_DELAY = 0.1  # seconds
+# Rate limiting delay (0.03 seconds minimum between tile requests)
+# If a request takes longer than this, the wait is skipped
+TILE_DOWNLOAD_DELAY = 0.03  # seconds
 
 
 def pre_cache_map_tiles_for_images(
@@ -176,13 +177,21 @@ def pre_cache_map_tiles_for_images(
         max_consecutive_errors = 20
         error_types = {}
         
+        # Track last request time for smart rate limiting
+        last_request_time = None
+        
         # Download all missing tiles with rate limiting
         for tile_index, tile_coords in enumerate(tiles_to_download):
             x, y, zoom = tile_coords
             
-            # Apply rate limiting (except for first request)
-            if tile_index > 0:
-                time.sleep(TILE_DOWNLOAD_DELAY)
+            # Apply rate limiting: only sleep if less than TILE_DOWNLOAD_DELAY has passed
+            # This means if a request takes longer than the delay, we skip the wait
+            if last_request_time is not None:
+                current_time = time.time()
+                time_since_last = current_time - last_request_time
+                if time_since_last < TILE_DOWNLOAD_DELAY:
+                    sleep_time = TILE_DOWNLOAD_DELAY - time_since_last
+                    time.sleep(sleep_time)
             
             # Update progress
             if progress_callback and (tile_index + 1) % 10 == 0:
@@ -209,6 +218,10 @@ def pre_cache_map_tiles_for_images(
                 if error_type not in error_types:
                     error_types[error_type] = 0
                 error_types[error_type] += 1
+            finally:
+                # Update last request time after the request completes (success or failure)
+                # This ensures we track actual time between requests, not just sleeps
+                last_request_time = time.time()
             
             # If too many consecutive errors, pause longer
             if consecutive_errors >= max_consecutive_errors:

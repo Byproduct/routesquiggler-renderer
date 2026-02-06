@@ -283,10 +283,10 @@ class ImageGeneratorWorker(QObject):
                 max_tiles = 100
             elif total_pixels < 20_000_000:  # 8MP to 20MP
                 min_tiles = 10
-                max_tiles = 300
+                max_tiles = 250
             else:  # More than 20MP
                 min_tiles = 20
-                max_tiles = 400
+                max_tiles = 500
 
             # Calculate map bounds
             map_bounds = (
@@ -295,11 +295,15 @@ class ImageGeneratorWorker(QObject):
             )
             
             # Get suitable zoom levels
+            # Pass resolution to use padded bounds (same as image generation)
+            # This ensures zoom level selection matches actual tile usage
             zoom_levels = detect_zoom_level(
                 map_bounds,
                 min_tiles=min_tiles,
                 max_tiles=max_tiles,
-                map_style=self.json_data.get('map_style', 'osm')
+                map_style=self.json_data.get('map_style', 'osm'),
+                resolution_x=resolution_x,
+                resolution_y=resolution_y
             )
             
             # detect_zoom_level now always returns at least one zoom level (fallback to max_zoom)

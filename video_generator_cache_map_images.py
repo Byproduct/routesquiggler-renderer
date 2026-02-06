@@ -25,6 +25,23 @@ from video_generator_calculate_bounding_boxes import calculate_route_time_per_fr
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_create_single_frame import _convert_bbox_to_web_mercator, _gps_to_web_mercator
 
+def _get_from_cache_safe(shared_map_cache, encoded_bbox):
+    """
+    Get an image from the cache. Returns a copy of the numpy array.
+    
+    Args:
+        shared_map_cache: The shared map cache dict
+        encoded_bbox: The encoded bounding box key
+        
+    Returns:
+        numpy array or None if not found
+    """
+    if shared_map_cache is None:
+        return None
+    if encoded_bbox in shared_map_cache:
+        return shared_map_cache[encoded_bbox].copy()
+    return None
+
 
 def create_map_image_worker(args):
     """
@@ -188,7 +205,7 @@ def create_map_image_worker(args):
         # Convert RGBA to RGB (remove alpha channel)
         img_array = img_array[:, :, :3]
         
-        # Store in shared memory cache (no disk saving for better performance)
+        # Store in shared memory cache (unlimited cache for dynamic zoom)
         if shared_map_cache is not None:
             shared_map_cache[encoded_bbox] = img_array
         
@@ -303,7 +320,7 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
             shared_progress_dict['total'] = total_bboxes
             shared_progress_dict['lock'] = manager.Lock()
             
-            # Create shared memory cache for map images
+            # Create shared memory cache for map images (unlimited cache for dynamic zoom)
             if shared_map_cache is None:
                 shared_map_cache = manager.dict()
             

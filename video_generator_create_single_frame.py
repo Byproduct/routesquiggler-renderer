@@ -1103,12 +1103,11 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
     # Check if we have a precached map image for these bounds
     encoded_bbox = encode_coords(*bbox)
     
-    # Try to load from shared memory cache (exclusive approach for better performance)
-    img = None
-    if shared_map_cache is not None and encoded_bbox in shared_map_cache:
-        # Load from shared memory (fastest)
-        img = shared_map_cache[encoded_bbox]
-    else:
+    # Try to load from shared memory cache using thread-safe read (returns a copy)
+    # Lazy import to avoid circular import: video_generator_cache_map_images imports this module
+    from video_generator_cache_map_images import _get_from_cache_safe
+    img = _get_from_cache_safe(shared_map_cache, encoded_bbox)
+    if img is None:
         # Image not found in shared cache
         print(f"ERROR: Map image not found in shared cache for frame {frame_number}: {encoded_bbox}")
         print(f"Frame {frame_number}: Bounding box: {bbox}")

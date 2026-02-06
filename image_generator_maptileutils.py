@@ -7,7 +7,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 # Third-party imports
 import cartopy
@@ -20,9 +20,10 @@ GEOAPIFY_API_KEY = "1180c192019b43b9a366c498deadcc4b"
 THUNDERFOREST_API_KEY = "43413e30756b4dd489d7e62d5c0a9245"
 LOGGING_INTO_FILE = False   #render.log
 
-# Rate limiting for tile downloads (0.1 seconds between requests)
+# Rate limiting for tile downloads (0.03 seconds minimum between requests)
 # This applies only to tiles that are actually downloaded (not cached)
-TILE_DOWNLOAD_DELAY = 0.1  # seconds
+# If a request takes longer than this, the wait is skipped
+TILE_DOWNLOAD_DELAY = 0.03  # seconds
 
 # Thread-safe rate limiter for tile downloads
 _tile_download_lock = threading.Lock()
@@ -483,7 +484,9 @@ def calculate_tile_count(map_bounds: Tuple[float, float, float, float], zoom_lev
 def detect_zoom_level(map_bounds: Tuple[float, float, float, float], 
                      min_tiles: int = 10,
                      max_tiles: int = 200,
-                     map_style: str = "osm") -> List[int]:
+                     map_style: str = "osm",
+                     resolution_x: Optional[int] = None,
+                     resolution_y: Optional[int] = None) -> List[int]:
     """
     Detect all suitable zoom levels for map bounds based on the number of tiles required.
     
@@ -492,6 +495,8 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
         min_tiles: Minimum acceptable number of tiles
         max_tiles: Maximum acceptable number of tiles
         map_style: Map tile style being used (e.g., "osm", "otm")
+        resolution_x: Optional image width in pixels (for padded bounds calculation)
+        resolution_y: Optional image height in pixels (for padded bounds calculation)
     
     Returns:
         List of suitable zoom levels where tile count is between min_tiles and max_tiles
@@ -513,6 +518,23 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
         map_bounds = (lon_min, lon_max, lat_min, lat_max)
         debug_log(f"Applied minimum latitude distance adjustment: {lat_distance:.6f}° -> 0.01°")
     
+    # If resolution is provided, calculate padded bounds (same as image generation uses)
+    # This ensures zoom level selection matches actual tile usage
+    bounds_for_tile_calculation = map_bounds
+    if resolution_x is not None and resolution_y is not None:
+        try:
+            from image_generator_utils import ImageGenerator
+            generator = ImageGenerator()
+            target_aspect_ratio = resolution_x / resolution_y
+            padded_bounds = generator.calculate_aspect_ratio_bounds(
+                map_bounds, target_aspect_ratio=target_aspect_ratio
+            )
+            bounds_for_tile_calculation = padded_bounds
+            debug_log(f"Using padded bounds for zoom level detection (resolution: {resolution_x}x{resolution_y})")
+        except Exception as e:
+            debug_log(f"Warning: Failed to calculate padded bounds, using raw bounds: {e}")
+            # Fall back to raw bounds if padding calculation fails
+    
     # Set maximum zoom level based on map style
     if map_style == "otm":
         max_zoom = 15
@@ -526,7 +548,7 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
     
     for zoom in range(1, max_zoom + 1):
         try:
-            tile_count = calculate_tile_count(map_bounds, zoom)
+            tile_count = calculate_tile_count(bounds_for_tile_calculation, zoom)
             debug_log(f"Zoom level {zoom}: tile count {tile_count}")
             
             if min_tiles <= tile_count <= max_tiles:

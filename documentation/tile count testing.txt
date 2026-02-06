@@ -1,0 +1,8 @@
+Preview images on creator page: ~10 tiles (very low res)
+3 images 1920x1080: 103 tiles
+3 images 3840x2160 (4k): 334 tiles
+3 images 7680x4320 (8k) and above: 334 tiles, 609 tiles (different routes triggering different zoom levels) 
+Video with static view: 40 tiles
+Video with dynamic view: 118 tiles (neighbourhood jog) - 548 tiles (ride across town)
+Resolution currently doesn't affect tile count in videos, and usage per frame is negligible beyond certain threshold
+

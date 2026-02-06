@@ -1,0 +1,62 @@
+{
+  "created_at": "2026-02-06T19:17:58.822946+00:00",
+  "filename_tags": "dark",
+  "folder": "Z1IXQ98419OX1a0",
+  "hr_based_width": true,
+  "hr_based_width_label": true,
+  "hr_based_width_max": 170,
+  "hr_based_width_min": 80,
+  "job_id": 1106,
+  "job_type": "video",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 5,
+  "map_style": "stadia_dark",
+  "map_transparency": 0,
+  "name_tags": "off",
+  "newest_on_top": true,
+  "points_of_interest": "dark",
+  "points_of_interest_max": 1000,
+  "route_accuracy": "normal",
+  "route_name": "Tuusula ice skating trip",
+  "speed_based_color": true,
+  "speed_based_color_label": true,
+  "speed_based_color_max": 25,
+  "speed_based_color_min": 5,
+  "squiggle_speed": "relative",
+  "statistics": "dark",
+  "statistics_current_hr": true,
+  "statistics_current_speed": true,
+  "statistics_current_time": true,
+  "statistics_distance": true,
+  "tail_color": "light",
+  "tail_length": 1,
+  "tail_width": 3,
+  "timezone": "Europe/Helsinki",
+  "user_id": 1,
+  "video_fps": 60,
+  "video_length": 60,
+  "video_resolution_x": 1920,
+  "video_resolution_y": 1080,
+  "zoom_mode": "dynamic",
+  "track_objects": [
+    {
+      "filename": "ebike .gpx",
+      "date": "2026-01-21",
+      "color": "#7777FF",
+      "name": ""
+    },
+    {
+      "filename": "ebike.gpx",
+      "date": "2026-01-21",
+      "color": "#7777FF",
+      "name": ""
+    },
+    {
+      "filename": "ice skating.gpx",
+      "date": "2026-01-21",
+      "color": "#7777FF",
+      "name": ""
+    }
+  ]
+}

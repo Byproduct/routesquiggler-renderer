@@ -9,8 +9,10 @@ import gc
 import json
 import multiprocessing
 import os
+import pickle
 import re
 import sys
+import tempfile
 import time
 from contextlib import contextmanager
 from io import StringIO
@@ -223,15 +225,82 @@ def _binary_search_cutoff_index(route_points, target_time):
     return result
 
 
+def _save_shared_worker_data(data_dict, job_id, temp_dir=None):
+    """
+    Save shared worker data to a pickle file to avoid redundant pickling for each worker.
+    
+    Args:
+        data_dict: Dictionary containing shared data (combined_route_data, json_data, etc.)
+        job_id: Job ID for creating unique filename
+        temp_dir: Optional temporary directory path (defaults to system temp)
+    
+    Returns:
+        str: Path to the pickle file
+    """
+    if temp_dir is None:
+        temp_dir = tempfile.gettempdir()
+    
+    # Create job-specific filename
+    filename = f"route_squiggler_worker_data_{job_id}.pkl"
+    filepath = os.path.join(temp_dir, filename)
+    
+    # Save data to pickle file
+    with open(filepath, 'wb') as f:
+        pickle.dump(data_dict, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    return filepath
+
+
+def _load_shared_worker_data(filepath):
+    """
+    Load shared worker data from a pickle file.
+    
+    Args:
+        filepath: Path to the pickle file
+    
+    Returns:
+        dict: Dictionary containing shared data
+    """
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
+
+
+def _cleanup_shared_worker_data(filepath):
+    """
+    Clean up the shared worker data pickle file.
+    
+    Args:
+        filepath: Path to the pickle file to delete
+    """
+    try:
+        if filepath and os.path.exists(filepath):
+            os.remove(filepath)
+    except Exception as e:
+        # Log but don't fail if cleanup fails
+        write_debug_log(f"Warning: Failed to cleanup worker data file {filepath}: {e}")
+
+
 def _streaming_frame_worker(args):
     """
     Worker function for generating a single frame and returning it as numpy array
     instead of saving to disk. Supports both single route and multiple routes modes.
     OPTIMIZED: Better memory management and performance for computationally intensive tasks.
     OPTIMIZED: Uses binary search + list slicing instead of linear search + individual appends.
+    OPTIMIZED: Loads shared data from pickle file to avoid redundant pickling.
     """
-    frame_number, json_data, route_time_per_frame, combined_route_data, shared_map_cache, filename_to_rgba, gpx_time_per_video_time, stamp_array, target_time_video, shared_route_cache = args
+    # Args format: (frame_number, target_time_video, shared_data_filepath)
+    frame_number, target_time_video, shared_data_filepath = args
     
+    # Load shared data from pickle file
+    shared_data = _load_shared_worker_data(shared_data_filepath)
+    json_data = shared_data['json_data']
+    route_time_per_frame = shared_data['route_time_per_frame']
+    combined_route_data = shared_data['combined_route_data']
+    shared_map_cache = shared_data['shared_map_cache']
+    filename_to_rgba = shared_data['filename_to_rgba']
+    gpx_time_per_video_time = shared_data['gpx_time_per_video_time']
+    stamp_array = shared_data['stamp_array']
+    shared_route_cache = shared_data['shared_route_cache']
 
     try:
         # Ensure frame_number is an integer
@@ -788,8 +857,24 @@ class StreamingFrameGenerator:
             else:
                 progress_callback("progress_bar_frames", 0, f"5-second ending: {cloned_ending_duration:.1f}s cloned frames (no tail)")
         
+        # Pickle shared worker data once to avoid redundant pickling for each worker
+        # This significantly reduces startup time when using many workers
+        shared_data_dict = {
+            'json_data': self.json_data,
+            'route_time_per_frame': self.route_time_per_frame,
+            'combined_route_data': self.combined_route_data,
+            'shared_map_cache': self.shared_map_cache,
+            'filename_to_rgba': self.filename_to_rgba,
+            'gpx_time_per_video_time': self.gpx_time_per_video_time,
+            'stamp_array': self.stamp_array,
+            'shared_route_cache': self.shared_route_cache
+        }
+        self.shared_data_filepath = _save_shared_worker_data(shared_data_dict, self.job_id)
+        write_debug_log(f"Pickled shared worker data to {self.shared_data_filepath}")
+        
         # Prepare work items with pre-computed color mapping and stamp
         # Only generate frames up to the extended_video_length (excludes cloned frames)
+        # OPTIMIZED: Only pass frame-specific data (frame_number, target_time_video) and filepath
         self.work_items = []
         frames_to_generate = int(self.extended_video_length * video_fps)  # Only frames that need rendering
         
@@ -802,8 +887,9 @@ class StreamingFrameGenerator:
             # Therefore: video_seconds = route_seconds / gpx_time_per_video_time
             target_time_video = target_time_route / self.gpx_time_per_video_time if self.gpx_time_per_video_time > 0 else 0
             
+            # New format: only pass frame-specific data and filepath to shared data
             self.work_items.append((
-                frame_number, self.json_data, self.route_time_per_frame, self.combined_route_data, self.shared_map_cache, self.filename_to_rgba, self.gpx_time_per_video_time, self.stamp_array, target_time_video, self.shared_route_cache
+                frame_number, target_time_video, self.shared_data_filepath
             ))
         
         # Store the last rendered frame for cloning (will be set during frame generation)
@@ -842,6 +928,8 @@ class StreamingFrameGenerator:
         self.frames_requested = 0
         self.frames_generated = 0  # Track total frames generated
         self.last_reported_progress_percent = -1  # Track last reported progress to only update every 5%
+        self.last_consumed_frame = 0  # Track last frame consumed by MoviePy for cleanup
+        self.frames_cleanup_threshold = 50  # Clean up frames more than this many frames behind current position
         
         # NEW: Track buffer health and performance metrics
         self.buffer_health_check_interval = 50  # Check buffer health every 50 frames
@@ -1071,6 +1159,37 @@ class StreamingFrameGenerator:
             self._aggressive_buffer_refill()
             self.consecutive_on_demand_requests = 0
     
+    def _cleanup_old_frames(self, current_frame_number):
+        """
+        Clean up frames that are significantly behind the current position.
+        MoviePy processes frames sequentially, so frames far behind are unlikely to be needed again.
+        This prevents memory accumulation from frames that MoviePy has already consumed.
+        
+        Args:
+            current_frame_number: The frame number that MoviePy just requested
+        """
+        # Only clean up if we're significantly ahead (to allow for some backward seeking)
+        if current_frame_number <= self.frames_cleanup_threshold:
+            return
+        
+        # Calculate the threshold frame number (frames before this can be cleaned up)
+        cleanup_threshold = current_frame_number - self.frames_cleanup_threshold
+        
+        # Find frames to remove (frames that are significantly behind current position)
+        frames_to_remove = []
+        for frame_num in list(self.frame_buffer.keys()):
+            # Remove frames that are far behind AND not the last rendered frame (needed for cloning)
+            if frame_num < cleanup_threshold and frame_num != self.frames_to_generate:
+                frames_to_remove.append(frame_num)
+        
+        # Remove old frames from buffer
+        for frame_num in frames_to_remove:
+            del self.frame_buffer[frame_num]
+        
+        # Log cleanup if significant
+        if frames_to_remove and self.debug_callback:
+            self.debug_callback(f"Cleaned up {len(frames_to_remove)} old frames (threshold: {cleanup_threshold})")
+    
     def _aggressive_buffer_refill(self):
         """Aggressively refill the buffer when falling behind"""
         # Request frames more aggressively
@@ -1273,6 +1392,14 @@ class StreamingFrameGenerator:
         # Track the last successfully returned frame for fallback on timeout
         self.last_successfully_returned_frame = frame_array.copy()
         
+        # Update last consumed frame for cleanup tracking
+        self.last_consumed_frame = max(self.last_consumed_frame, frame_number)
+        
+        # MEMORY MANAGEMENT: Clean up old frames that MoviePy has already consumed
+        # MoviePy processes frames sequentially, so frames significantly behind the current position
+        # are unlikely to be needed again (unless seeking backward, which is rare)
+        self._cleanup_old_frames(frame_number)
+        
         # MEMORY MANAGEMENT: Periodic garbage collection in parent process
         # This helps clean up frame arrays that have been consumed from the Manager.dict()
         # and prevents memory fragmentation, especially important on Linux.
@@ -1287,6 +1414,30 @@ class StreamingFrameGenerator:
             self.pool.terminate()
             self.pool.join()
             self.pool = None
+        
+        # Clean up frame buffer to free memory
+        if hasattr(self, 'frame_buffer'):
+            try:
+                self.frame_buffer.clear()
+            except:
+                pass  # Ignore errors during cleanup
+        
+        # Clear frame tracking variables
+        self.last_rendered_frame = None
+        self.last_successfully_returned_frame = None
+        self.pending_results.clear()
+        
+        # Clean up shared worker data pickle file
+        if hasattr(self, 'shared_data_filepath') and self.shared_data_filepath:
+            _cleanup_shared_worker_data(self.shared_data_filepath)
+            self.shared_data_filepath = None
+    
+    def __del__(self):
+        """Destructor to ensure cleanup happens even if cleanup() isn't called explicitly"""
+        try:
+            self.cleanup()
+        except:
+            pass  # Ignore errors during destruction
 
 
 def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None):

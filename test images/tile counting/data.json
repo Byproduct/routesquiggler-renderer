@@ -1,0 +1,37 @@
+{
+  "created_at": "2026-02-06T18:25:24.030558+00:00",
+  "folder": "Ok0NGT1XPuXC",
+  "image_resolution_x": 7680,
+  "image_resolution_y": 4320,
+  "job_id": 1103,
+  "job_type": "image",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4,
+  "map_style": "thunderforest_landscape",
+  "map_transparency": 0,
+  "newest_on_top": true,
+  "route_name": "Fantastic style 2026-01-21",
+  "statistics": "off",
+  "user_id": 1,
+  "track_objects": [
+    {
+      "filename": "2024-05-18 kehä3.gpx",
+      "date": "2024-05-18",
+      "color": "#BB4040",
+      "name": ""
+    },
+    {
+      "filename": "ebike2.gpx",
+      "date": "2026-01-21",
+      "color": "#BB4040",
+      "name": ""
+    },
+    {
+      "filename": "ebike.gpx",
+      "date": "2026-01-21",
+      "color": "#BB4040",
+      "name": ""
+    }
+  ]
+}
