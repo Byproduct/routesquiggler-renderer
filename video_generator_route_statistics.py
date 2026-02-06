@@ -55,9 +55,9 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
     
     if is_multiple_routes:
         # Multiple routes mode - find the most recent point by checking last point of each route
-        # Since routes are chronologically ordered, we can optimize this
+        # Must scan all routes to get the chronologically latest (max accumulated_time), same as clock overlay
         latest_time = None
-        for route_points in reversed(points_for_frame):  # Start from end since more likely to have recent data
+        for route_points in points_for_frame:
             if not route_points:  # Skip empty routes
                 continue
             route_last_point = route_points[-1]
@@ -65,8 +65,6 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
             if latest_time is None or point_time > latest_time:
                 latest_time = point_time
                 last_point = route_last_point
-            if latest_time is not None:  # Found a valid point, can break early for efficiency
-                break
     else:
         # Single route mode - simple and fast
         if points_for_frame:

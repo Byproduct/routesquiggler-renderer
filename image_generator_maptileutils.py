@@ -196,6 +196,9 @@ def create_map_tiles(map_style: str):
             debug_log(f"Mapped {map_style} to Stadia style: {style}")
             
             class StadiaTiles(cimgt.GoogleTiles):
+                # Set explicit name to ensure consistent cache subdirectory naming
+                _name = 'StadiaTiles'
+                
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://tiles.stadiamaps.com/tiles/{style}/{z}/{x}/{y}.png?api_key={STADIA_API_KEY}'
@@ -217,6 +220,9 @@ def create_map_tiles(map_style: str):
             style = stadia_style_url_mapping["stadia_light"]
             
             class StadiaTiles(cimgt.GoogleTiles):
+                # Set explicit name to ensure consistent cache subdirectory naming
+                _name = 'StadiaTiles'
+                
                 def _image_url(self, tile):
                     x, y, z = tile
                     url = f'https://tiles.stadiamaps.com/tiles/{style}/{z}/{x}/{y}.png?api_key={STADIA_API_KEY}'

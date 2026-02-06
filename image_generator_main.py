@@ -18,6 +18,7 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 # Local imports
 import image_generator_utils
+from image_generator_cache_tiles import pre_cache_map_tiles_for_images
 from image_generator_maptileutils import detect_zoom_level
 from image_generator_multiprocess import generate_images_parallel
 from image_generator_utils import convert_timestamp_to_job_timezone, normalize_timestamp
@@ -332,7 +333,7 @@ class ImageGeneratorWorker(QObject):
             except Exception:
                 pass
             
-            # Acquire map tile lock before generating images (tiles are downloaded during generation)
+            # Acquire map tile lock before downloading tiles
             lock_acquired, lock_error = acquire_map_tile_lock(
                 self.json_data,
                 log_callback=self.log_message.emit,
@@ -343,71 +344,96 @@ class ImageGeneratorWorker(QObject):
                 # Lock acquisition failed after 60 minutes - mark job as error
                 raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
             
-            # Wrap everything from lock acquisition in try-finally to ensure lock is always released
+            # Pre-cache all tiles for all zoom levels BEFORE multiprocessing
+            # This ensures tiles are downloaded with proper rate limiting and lock is released before workers start
             try:
                 # Update status to "downloading maps (job_id)"
                 job_id = str(self.json_data.get('job_id', ''))
-                update_status(f"working ({job_id})", api_key=self.user)
+                update_status(f"downloading maps ({job_id})", api_key=self.user)
                 
-                # Clock: time of first point of first route (for overlay); only when clock=true
-                show_clock = self.json_data.get('clock', False) is True
-                first_point_time = None
-                if show_clock:
-                    if route_points_data:
-                        all_routes = route_points_data.get('all_routes', [])
-                        if all_routes:
-                            combined = all_routes[0].get('combined_route', [])
-                            if combined and combined[0].timestamp is not None:
-                                first_point_time = combined[0].timestamp
-                    if first_point_time is None:
-                        # Standard mode: get first point time from chronologically first GPX
-                        sorted_gpx = get_sorted_gpx_list(
-                            self.gpx_files_info,
-                            log_callback=self.log_message.emit,
-                            debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
-                        )
-                        if sorted_gpx:
-                            first_file = sorted_gpx[0]
-                            raw_time = get_first_track_point_time_from_gpx_content(first_file.get('content', ''))
-                            if raw_time is not None:
-                                first_point_time = normalize_timestamp(raw_time)
-                                first_point_time = convert_timestamp_to_job_timezone(
-                                    first_point_time, self.json_data.get('timezone')
-                                )
+                self.log_message.emit("Pre-caching map tiles for all zoom levels")
                 
-                self.results, _ = generate_images_parallel(
+                # Pre-cache tiles for all zoom levels
+                cache_success = pre_cache_map_tiles_for_images(
                     zoom_levels=zoom_levels,
-                    map_style=self.json_data.get('map_style', 'osm'),
                     map_bounds=map_bounds,
-                    track_coords_with_metadata=track_coords_with_metadata,
-                    track_lookup=track_lookup,
-                    map_transparency=map_transparency_value,
-                    line_width=line_width_value,
+                    map_style=self.json_data.get('map_style', 'osm'),
                     resolution_x=resolution_x_value,
                     resolution_y=resolution_y_value,
-                    legend=self.json_data.get('legend', 'off'),
-                    statistics=statistics_setting,
-                    statistics_data=statistics_data,
-                    json_data=self.json_data,
-                    status_queue=status_queue,
-                    storage_box_address=self.storage_box_address,
-                    storage_box_user=self.storage_box_user,
-                    storage_box_password=self.storage_box_password,
-                    job_id=str(self.json_data.get('job_id', '')),
-                    folder=self.json_data.get('folder', ''),
-                    route_name=self.json_data.get('route_name', 'unknown'),
-                    max_workers=self.max_workers,
-                    route_points_data=route_points_data,  # Pass RoutePoint data for speed-based coloring
-                    show_clock=show_clock,
-                    first_point_time=first_point_time
+                    log_callback=self.log_message.emit,
+                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
+                    progress_callback=None  # Could add progress callback if needed
                 )
+                
+                if not cache_success:
+                    raise ValueError("Map tile pre-caching failed")
+                
+                self.log_message.emit("Map tile pre-caching completed")
+                
             finally:
-                # Always release the lock after image generation, even if it fails
+                # Always release the lock after tile pre-caching, before multiprocessing starts
                 release_map_tile_lock(
                     self.json_data,
                     log_callback=self.log_message.emit,
                     debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
                 )
+            
+            # Update status to "working (job_id)" - tiles are now cached, starting image generation
+            update_status(f"working ({job_id})", api_key=self.user)
+            
+            # Clock: time of first point of first route (for overlay); only when clock=true
+            show_clock = self.json_data.get('clock', False) is True
+            first_point_time = None
+            if show_clock:
+                if route_points_data:
+                    all_routes = route_points_data.get('all_routes', [])
+                    if all_routes:
+                        combined = all_routes[0].get('combined_route', [])
+                        if combined and combined[0].timestamp is not None:
+                            first_point_time = combined[0].timestamp
+                if first_point_time is None:
+                    # Standard mode: get first point time from chronologically first GPX
+                    sorted_gpx = get_sorted_gpx_list(
+                        self.gpx_files_info,
+                        log_callback=self.log_message.emit,
+                        debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else self.log_message.emit)
+                    )
+                    if sorted_gpx:
+                        first_file = sorted_gpx[0]
+                        raw_time = get_first_track_point_time_from_gpx_content(first_file.get('content', ''))
+                        if raw_time is not None:
+                            first_point_time = normalize_timestamp(raw_time)
+                            first_point_time = convert_timestamp_to_job_timezone(
+                                first_point_time, self.json_data.get('timezone')
+                            )
+            
+            # Now generate images in parallel - all tiles are already cached, so no downloads will happen
+            self.results, _ = generate_images_parallel(
+                zoom_levels=zoom_levels,
+                map_style=self.json_data.get('map_style', 'osm'),
+                map_bounds=map_bounds,
+                track_coords_with_metadata=track_coords_with_metadata,
+                track_lookup=track_lookup,
+                map_transparency=map_transparency_value,
+                line_width=line_width_value,
+                resolution_x=resolution_x_value,
+                resolution_y=resolution_y_value,
+                legend=self.json_data.get('legend', 'off'),
+                statistics=statistics_setting,
+                statistics_data=statistics_data,
+                json_data=self.json_data,
+                status_queue=status_queue,
+                storage_box_address=self.storage_box_address,
+                storage_box_user=self.storage_box_user,
+                storage_box_password=self.storage_box_password,
+                job_id=str(self.json_data.get('job_id', '')),
+                folder=self.json_data.get('folder', ''),
+                route_name=self.json_data.get('route_name', 'unknown'),
+                max_workers=self.max_workers,
+                route_points_data=route_points_data,  # Pass RoutePoint data for speed-based coloring
+                show_clock=show_clock,
+                first_point_time=first_point_time
+            )
                        
             # After all workers have completed, check if we have all results
             if self.results and len(self.results) == len(zoom_levels):
