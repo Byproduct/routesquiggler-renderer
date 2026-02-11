@@ -1199,45 +1199,54 @@ def upload_to_storage_box(
                 write_log(f"File {filename} has zero or negative size")
                 return False
 
-            # If we have a thumbnail, upload it too
+            # Upload gallery HTML first (while still in media/job_id/folder)
+            if thumbnail_bytes and route_name and zoom_levels:
+                try:
+                    html_content = generate_image_gallery_html(route_name, zoom_levels)
+                    ftp.storbinary('STOR images.html', BytesIO(html_content.encode('utf-8')))
+                    try:
+                        html_size = ftp.size('images.html')
+                        if html_size <= 0:
+                            write_log("Gallery HTML file has zero or negative size")
+                        else:
+                            write_debug_log(f"Successfully uploaded gallery HTML ({html_size} bytes)")
+                    except:
+                        write_log("Failed to verify gallery HTML file size")
+                except Exception as e:
+                    write_log(f"Error generating/uploading gallery HTML: {str(e)}")
+
+            # Upload thumbnail last (one directory switch to thumbnails/job_id/folder)
             if thumbnail_bytes:
                 thumb_filename = "thumbnail.png"
+                ftp.cwd('..')
+                ftp.cwd('..')
+                ftp.cwd('..')
+                try:
+                    ftp.mkd('thumbnails')
+                except ftplib.error_perm:
+                    pass
+                ftp.cwd('thumbnails')
+                try:
+                    ftp.mkd(job_id)
+                except ftplib.error_perm:
+                    pass
+                ftp.cwd(job_id)
+                try:
+                    ftp.mkd(folder)
+                except ftplib.error_perm:
+                    pass
+                ftp.cwd(folder)
                 ftp.storbinary(f'STOR {thumb_filename}', BytesIO(thumbnail_bytes))
-                
-                # Verify thumbnail exists and has size
                 thumb_size = 0
                 try:
                     thumb_size = ftp.size(thumb_filename)
                 except:
                     write_log(f"Failed to get size for {thumb_filename}")
                     return False
-                    
                 if thumb_size <= 0:
                     write_log(f"File {thumb_filename} has zero or negative size")
                     return False
-                
-                # After successful thumbnail upload, generate and upload gallery
-                if route_name and zoom_levels:
-                    try:
-                        # Generate HTML content
-                        html_content = generate_image_gallery_html(route_name, zoom_levels)
-                        
-                        # Upload HTML file
-                        ftp.storbinary('STOR images.html', BytesIO(html_content.encode('utf-8')))
-                        
-                        # Verify HTML file exists and has size
-                        try:
-                            html_size = ftp.size('images.html')
-                            if html_size <= 0:
-                                write_log("Gallery HTML file has zero or negative size")
-                            else:
-                                write_debug_log(f"Successfully uploaded gallery HTML ({html_size} bytes)")
-                        except:
-                            write_log("Failed to verify gallery HTML file size")
-                            
-                    except Exception as e:
-                        write_log(f"Error generating/uploading gallery HTML: {str(e)}")
-            
+
             return True
             
         except Exception as e:

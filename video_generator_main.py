@@ -175,14 +175,35 @@ def upload_video_to_storage_box(
             if debug_callback:
                 debug_callback(f"Video file uploaded successfully: {file_size} bytes")
 
-            # Upload thumbnail if it exists
+            # Upload thumbnail if it exists (to thumbnails/job_id/folder)
             if os.path.exists(thumbnail_path):
                 if debug_callback:
                     debug_callback("Uploading thumbnail file: thumbnail.png")
                     
                 if progress_callback:
                     progress_callback("progress_bar_upload", int((video_size / total_upload_size) * 100), "Uploading thumbnail")
-                    
+                
+                # Navigate to root (we are in media/job_id/folder)
+                ftp.cwd('..')
+                ftp.cwd('..')
+                ftp.cwd('..')
+                # Create or enter thumbnails directory
+                try:
+                    ftp.mkd('thumbnails')
+                except ftplib.error_perm:
+                    pass  # Directory might already exist
+                ftp.cwd('thumbnails')
+                try:
+                    ftp.mkd(job_id)
+                except ftplib.error_perm:
+                    pass
+                ftp.cwd(job_id)
+                try:
+                    ftp.mkd(folder)
+                except ftplib.error_perm:
+                    pass
+                ftp.cwd(folder)
+                
                 with open(thumbnail_path, 'rb') as thumb_file:
                     ftp.storbinary('STOR thumbnail.png', thumb_file)
                 

@@ -20,9 +20,8 @@ GEOAPIFY_API_KEY = "1180c192019b43b9a366c498deadcc4b"
 THUNDERFOREST_API_KEY = "43413e30756b4dd489d7e62d5c0a9245"
 LOGGING_INTO_FILE = False   #render.log
 
-# Service-specific rate limits (seconds between tile download requests).
-# Used when fetching tiles; if a request takes longer than the delay, the wait is skipped.
-RATE_LIMIT_DEFAULT = 0.05   # OSM, Stadia, and any unspecified service
+# Service-specific rate limits (minimum seconds between tile download requests).
+RATE_LIMIT_DEFAULT = 0.05   # Default (OSM and Stadia and any unspecified service)
 RATE_LIMIT_OTM = 0.10      # OpenTopoMap
 RATE_LIMIT_CYCLOSM = 0.10  # CyclOSM
 RATE_LIMIT_GEOAPIFY = 0.20 # Geoapify
