@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 
 # Local imports
 from image_generator_utils import load_gpx_files_from_zip
-from job_request import apply_vertical_video_swap
+from job_request import apply_vertical_video_swap, set_attribution_from_theme
 
 class TestFolderSelectionDialog(QDialog):
     """Custom dialog for selecting test folders."""
@@ -242,6 +242,7 @@ class TestVideoManager:
             
             # Apply vertical_video resolution swap if enabled
             json_data = apply_vertical_video_swap(json_data, self.main_window.log_widget.add_log)
+            set_attribution_from_theme(json_data)
 
             # Load GPX files using shared utility function
             zip_path = os.path.join(folder, 'gpx_files.zip')

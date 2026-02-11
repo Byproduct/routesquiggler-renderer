@@ -218,6 +218,57 @@ def add_stamp_to_plot(ax, image_width: int, image_height: int, image_scale: int 
         write_debug_log(f"Error loading or displaying stamp: {e}")
         raise e
 
+
+def add_attribution_to_plot(ax, attribution_text: str, theme: str, image_width: int, image_height: int, image_scale: int | float | None = None):
+    """
+    Add attribution text to the bottom-left corner of the plot.
+    Uses the same font and light/dark styling as statistics (e.g. in video).
+    Padding is 20px scaled by resolution scale.
+
+    Args:
+        ax: Matplotlib axis object.
+        attribution_text: Text to display (e.g. "Route Squiggler & OpenStreetMap").
+        theme: 'light' or 'dark' for background/foreground colors.
+        image_width: Output image width in pixels.
+        image_height: Output image height in pixels.
+        image_scale: Resolution scale (0.7, 1, 2, 3, 4). If None, derived from width/height.
+    """
+    if not attribution_text:
+        return
+    if image_scale is None:
+        image_scale = calculate_resolution_scale(image_width, image_height)
+    if theme == 'dark':
+        bg_color = '#2d2d2d'
+        border_color = '#cccccc'
+        text_color = '#ffffff'
+    else:
+        bg_color = 'white'
+        border_color = '#333333'
+        text_color = '#333333'
+    base_font_size = 12
+    font_size = base_font_size * image_scale
+    padding_pixels = 20 * image_scale
+    text_x = padding_pixels / image_width
+    text_y = padding_pixels / image_height
+    ax.text(
+        text_x, text_y, attribution_text,
+        transform=ax.transAxes,
+        color=text_color,
+        fontsize=font_size,
+        fontweight='bold',
+        ha='left',
+        va='bottom',
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=1
+        ),
+        zorder=100
+    )
+
+
 def add_legend_to_plot(ax, track_coords_with_metadata, track_lookup, legend_type: str, image_width: int, image_height: int, image_scale: int | None = None, legend_theme: str = "light"):
     """
     Add a legend to the plot based on the specified type.

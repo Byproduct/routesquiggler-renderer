@@ -21,6 +21,7 @@ import numpy as np
 
 # Local imports
 from image_generator_maptileutils import create_map_tiles, detect_zoom_level, set_cache_directory
+from job_request import set_attribution_from_theme
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_create_single_frame import _convert_bbox_to_web_mercator, _gps_to_web_mercator
@@ -443,6 +444,7 @@ def cache_map_images(json_data=None, combined_route_data=None, progress_callback
             
             with open(data_file, 'r') as f:
                 json_data = json.load(f)
+            set_attribution_from_theme(json_data)
         
         # Use gpx_time_per_video_time from combined_route_data if available, otherwise calculate it
         if combined_route_data and 'gpx_time_per_video_time' in combined_route_data:

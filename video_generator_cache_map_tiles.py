@@ -17,6 +17,7 @@ import numpy as np
 
 # Local imports
 from image_generator_maptileutils import calculate_tile_count, create_map_tiles, detect_zoom_level, set_cache_directory
+from job_request import set_attribution_from_theme
 from sync_map_tiles import sync_map_tiles
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 
@@ -584,6 +585,7 @@ def cache_map_tiles(json_data=None, combined_route_data=None, progress_callback=
             
             with open(data_file, 'r') as f:
                 json_data = json.load(f)
+            set_attribution_from_theme(json_data)
         
         # Use gpx_time_per_video_time from combined_route_data if available, otherwise calculate it
         if combined_route_data and 'gpx_time_per_video_time' in combined_route_data:

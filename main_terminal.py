@@ -22,7 +22,7 @@ import requests
 from config import config
 from image_generator_multiprocess import StatusUpdate
 from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
-from job_request import apply_vertical_video_swap
+from job_request import apply_vertical_video_swap, set_attribution_from_theme
 from sync_map_tiles import sync_map_tiles
 from update_status import update_status
 from write_log import write_debug_log, write_log
@@ -166,6 +166,7 @@ def run_test_image_terminal(bootup_manager, folder_name=None, app=None):
         
         # Apply vertical_video resolution swap if enabled
         json_data = apply_vertical_video_swap(json_data, write_log)
+        set_attribution_from_theme(json_data)
 
         # Load GPX files using shared utility function
         zip_path = os.path.join(selected_folder, 'gpx_files.zip')
@@ -293,6 +294,7 @@ def run_test_video_terminal(bootup_manager, folder_name=None, app=None):
         
         # Apply vertical_video resolution swap if enabled
         json_data = apply_vertical_video_swap(json_data, write_log)
+        set_attribution_from_theme(json_data)
 
         # Load GPX files using shared utility function
         zip_path = os.path.join(selected_folder, 'gpx_files.zip')
@@ -520,6 +522,7 @@ def process_job_zip_terminal(zip_data, api_url, user, hardware_id, app_version):
                 
                 # Apply vertical_video resolution swap if enabled
                 json_data = apply_vertical_video_swap(json_data, write_log)
+                set_attribution_from_theme(json_data)
             except Exception as e:
                 write_log(f"Error reading data.json: {str(e)}")
                 write_debug_log(traceback.format_exc())

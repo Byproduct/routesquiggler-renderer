@@ -68,6 +68,7 @@ def get_ffmpeg_executable():
         # On Linux/Mac, ffmpeg should be in PATH
         return 'ffmpeg'
 from image_generator_utils import calculate_resolution_scale
+from job_request import set_attribution_from_theme
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
 from video_generator_create_combined_route import RoutePoint
 from video_generator_create_single_frame import generate_video_frame_in_memory
@@ -747,35 +748,36 @@ class StreamingFrameGenerator:
                 
                 self.filename_to_rgba[filename] = rgba_color
                                   
-        # Pre-load stamp array once for all frames
+        # Pre-load stamp array once for all frames (only when stamp is enabled via json_data)
         self.stamp_array = None
-        try:
-            width = int(json_data.get('video_resolution_x', 1920))
-            height = int(json_data.get('video_resolution_y', 1080))
-            
-            # Calculate resolution scale to determine appropriate stamp size
-            image_scale = calculate_resolution_scale(width, height)
-            
-            # Choose stamp file based on resolution scale
-            if image_scale < 1:
-                # Use stamp_small for resolutions with scale < 1 (less than 1 MP)
-                stamp_file = "img/stamp_small.npy"
-            elif image_scale == 1:
-                stamp_file = "img/stamp_1x.npy"
-            elif image_scale == 2:
-                stamp_file = "img/stamp_2x.npy"
-            elif image_scale == 3:
-                stamp_file = "img/stamp_3x.npy"
-            elif image_scale >= 4:
-                stamp_file = "img/stamp_4x.npy"
-            else:
-                # Fallback to 1x for any other scale value
-                stamp_file = "img/stamp_1x.npy"
-            
-            self.stamp_array = np.load(stamp_file)
-            write_debug_log(f"Loaded stamp: {stamp_file} (scale: {image_scale})")
-        except Exception as e:
-            write_log(f"Warning: Could not load stamp: {e}")
+        if json_data.get('stamp', False):
+            try:
+                width = int(json_data.get('video_resolution_x', 1920))
+                height = int(json_data.get('video_resolution_y', 1080))
+                
+                # Calculate resolution scale to determine appropriate stamp size
+                image_scale = calculate_resolution_scale(width, height)
+                
+                # Choose stamp file based on resolution scale
+                if image_scale < 1:
+                    # Use stamp_small for resolutions with scale < 1 (less than 1 MP)
+                    stamp_file = "img/stamp_small.npy"
+                elif image_scale == 1:
+                    stamp_file = "img/stamp_1x.npy"
+                elif image_scale == 2:
+                    stamp_file = "img/stamp_2x.npy"
+                elif image_scale == 3:
+                    stamp_file = "img/stamp_3x.npy"
+                elif image_scale >= 4:
+                    stamp_file = "img/stamp_4x.npy"
+                else:
+                    # Fallback to 1x for any other scale value
+                    stamp_file = "img/stamp_1x.npy"
+                
+                self.stamp_array = np.load(stamp_file)
+                write_debug_log(f"Loaded stamp: {stamp_file} (scale: {image_scale})")
+            except Exception as e:
+                write_log(f"Warning: Could not load stamp: {e}")
         
         # Calculate video parameters
         video_length = float(json_data.get('video_length', 30))
@@ -1919,6 +1921,7 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
             
             with open(data_file, 'r') as f:
                 json_data = json.load(f)
+            set_attribution_from_theme(json_data)
         
         # Use gpx_time_per_video_time from combined_route_data if available, otherwise calculate it
         if combined_route_data and 'gpx_time_per_video_time' in combined_route_data:

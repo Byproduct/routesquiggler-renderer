@@ -360,6 +360,29 @@ def calculate_resolution_scale(resolution_x: int, resolution_y: int) -> float:
     return scale
 
 
+def get_attribution_text(map_style):
+    """
+    Return attribution string based on map_style.
+    Used for video and image attribution display.
+    """
+    if not map_style:
+        return "Route Squiggler & OpenStreetMap"
+    ms = str(map_style).strip().lower()
+    if ms == "osm":
+        return "Route Squiggler & OpenStreetMap"
+    if ms == "otm":
+        return "Route Squiggler & OpenTopoMap"
+    if ms == "cyclosm":
+        return "Route Squiggler & CyclOSM"
+    if ms.startswith("stadia"):
+        return "Route Squiggler & Stadia Maps"
+    if ms.startswith("geoapify"):
+        return "Route Squiggler & Geoapify"
+    if ms.startswith("thunderforest"):
+        return "Route Squiggler & Thunderforest"
+    return "Route Squiggler & OpenStreetMap"
+
+
 def format_scale_for_label_filename(image_scale: float) -> str:
     """
     Format the image scale for use in label filenames.

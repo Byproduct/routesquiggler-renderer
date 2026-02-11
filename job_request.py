@@ -19,6 +19,22 @@ from network_retry import retry_operation
 from write_log import write_debug_log
 
 
+def set_attribution_from_theme(json_data):
+    """
+    Set json_data['attribution'] to 'light', 'dark', or keep 'off'. Mutates json_data in place.
+    If attribution is already 'off', leave it as is. Otherwise set from theme-like variables.
+    Priority: title_text, statistics, legend, name_tags, filename_tags; default 'light'.
+    """
+    if json_data.get('attribution') == 'off':
+        return
+    for key in ('title_text', 'statistics', 'legend', 'name_tags', 'filename_tags'):
+        val = json_data.get(key)
+        if val in ('light', 'dark'):
+            json_data['attribution'] = val
+            return
+    json_data['attribution'] = 'light'
+
+
 def apply_vertical_video_swap(json_data, log_callback=None):
     """
     Swap video resolution dimensions if vertical_video is True.
@@ -788,6 +804,7 @@ class JobRequestManager:
                     
                     # Apply vertical_video resolution swap if enabled
                     json_data = apply_vertical_video_swap(json_data, self.main_window.log_widget.add_log)
+                    set_attribution_from_theme(json_data)
                 except Exception as e:
                     self.main_window.log_widget.add_log(f"Error reading data.json: {str(e)}")
                     # Can't report error to server since we don't have job_id yet

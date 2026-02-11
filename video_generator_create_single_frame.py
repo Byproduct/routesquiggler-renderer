@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, PointOfInterest
+from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, get_attribution_text, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_coordinate_encoder import encode_coords
@@ -41,6 +41,7 @@ from video_generator_route_statistics import (
     _draw_current_elevation_at_point,
     _draw_current_hr_at_point,
     _draw_current_speed_at_point,
+    _draw_video_attribution,
     _draw_video_statistics,
 )
 
@@ -1837,6 +1838,13 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 # Also exclude current elevation from top-right display since it's shown at the point
                 exclude_elevation = current_elevation_enabled and current_elevation_value and not at_end_of_route
                 _draw_video_statistics(ax, statistics_data, json_data, effective_line_width, statistics_setting, exclude_current_speed=exclude_speed, exclude_current_elevation=exclude_elevation, resolution_scale=resolution_scale)
+        
+        # Add attribution text if enabled (bottom-left, same style as statistics)
+        attribution_setting = json_data.get('attribution', 'off')
+        if attribution_setting in ['light', 'dark']:
+            map_style = json_data.get('map_style', '')
+            attribution_text = get_attribution_text(map_style)
+            _draw_video_attribution(ax, attribution_text, attribution_setting, resolution_scale, width, height)
         
         # Draw points of interest if enabled
         poi_setting = json_data.get('points_of_interest', 'off') if json_data else 'off'

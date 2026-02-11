@@ -26,6 +26,7 @@ from config import config
 from html_file_generator import generate_image_gallery_html
 from image_generator_maptileutils import create_map_tiles, set_cache_directory
 from image_generator_postprocess import (
+    add_attribution_to_plot,
     add_legend_to_plot,
     add_markers_to_plot,
     add_points_of_interest_to_plot,
@@ -38,6 +39,7 @@ from image_generator_utils import (
     ImageGenerator,
     add_filename_tags_to_image,
     calculate_resolution_scale,
+    get_attribution_text,
 )
 from network_retry import retry_operation
 from speed_based_color import speed_based_color
@@ -847,14 +849,28 @@ def generate_image_for_zoom_level(
                 lat_max=lat_max_padded
             )
 
-        # Add stamp
-        update_debug_output("adding stamp", textfield=False)
-        add_stamp_to_plot(
-            ax=ax,
-            image_width=resolution_x_value,
-            image_height=resolution_y_value,
-            image_scale=image_scale
-        )
+        # Add stamp if enabled via json_data
+        if json_data and json_data.get('stamp', False):
+            update_debug_output("adding stamp", textfield=False)
+            add_stamp_to_plot(
+                ax=ax,
+                image_width=resolution_x_value,
+                image_height=resolution_y_value,
+                image_scale=image_scale
+            )
+        
+        # Add attribution text if enabled (bottom-left, same style as statistics)
+        if json_data and json_data.get('attribution', 'off') in ['light', 'dark']:
+            update_debug_output("adding attribution", textfield=False)
+            attribution_text = get_attribution_text(json_data.get('map_style', ''))
+            add_attribution_to_plot(
+                ax=ax,
+                attribution_text=attribution_text,
+                theme=json_data.get('attribution', 'light'),
+                image_width=resolution_x_value,
+                image_height=resolution_y_value,
+                image_scale=image_scale
+            )
         
         # Save to bytes
         update_debug_output("saving image", textfield=False)

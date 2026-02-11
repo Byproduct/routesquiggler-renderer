@@ -819,4 +819,55 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
                 ha='left',  # Left align from the number's left edge
                 va='top',
                 zorder=101  # Slightly above the statistics text
-            ) 
+            )
+
+
+def _draw_video_attribution(ax, attribution_text, theme, resolution_scale, width, height):
+    """
+    Draw attribution text in the bottom-left corner of the video frame.
+    Uses the same font and light/dark styling as the statistics text.
+    Padding is 20px scaled by resolution_scale.
+
+    Args:
+        ax (matplotlib.axes.Axes): Matplotlib axes for drawing
+        attribution_text (str): Text to display (e.g. "Route Squiggler & OpenStreetMap")
+        theme (str): 'light' or 'dark' for background/foreground colors
+        resolution_scale (float): Resolution scale factor for font and padding
+        width (int): Frame width in pixels
+        height (int): Frame height in pixels
+    """
+    if not attribution_text:
+        return
+    # Same theme colors as statistics
+    if theme == 'dark':
+        bg_color = '#2d2d2d'
+        border_color = '#cccccc'
+        text_color = '#ffffff'
+    else:
+        bg_color = 'white'
+        border_color = '#333333'
+        text_color = '#333333'
+    # Same font scaling as statistics
+    base_font_size = 12
+    font_size = base_font_size * resolution_scale
+    # Bottom-left position: 20px padding scaled by resolution_scale, in axes coordinates
+    padding_pixels = 20 * resolution_scale
+    text_x = padding_pixels / width
+    text_y = padding_pixels / height
+    ax.text(
+        text_x, text_y, attribution_text,
+        transform=ax.transAxes,
+        color=text_color,
+        fontsize=font_size,
+        fontweight='bold',
+        ha='left',
+        va='bottom',
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=1
+        ),
+        zorder=100
+    ) 
