@@ -1716,7 +1716,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 legend_handles, legend_labels = get_filename_legend_data(flattened_points, json_data, effective_line_width)
                 
                 if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width)
+                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
             
             elif legend_type == 'year':
                 # Get legend data - flatten points_for_frame for legend generation
@@ -1724,7 +1724,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 legend_handles, legend_labels = get_year_legend_data(flattened_points, json_data, effective_line_width)
                 
                 if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width)
+                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
             
             elif legend_type == 'month':
                 # Get legend data - flatten points_for_frame for legend generation
@@ -1732,7 +1732,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 legend_handles, legend_labels = get_month_legend_data(flattened_points, json_data, effective_line_width)
                 
                 if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width)
+                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
             
             elif legend_type == 'day':
                 # Get legend data - flatten points_for_frame for legend generation
@@ -1740,7 +1740,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 legend_handles, legend_labels = get_day_legend_data(flattened_points, json_data, effective_line_width)
                 
                 if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width)
+                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
             
             elif legend_type == 'people':
                 # Get legend data - flatten points_for_frame for legend generation
@@ -1748,7 +1748,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 legend_handles, legend_labels = get_people_legend_data(flattened_points, json_data, effective_line_width)
                 
                 if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width)
+                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
         
         # Add title text if enabled (can be 'light' or 'dark', text is route_name)
         if json_data is not None:

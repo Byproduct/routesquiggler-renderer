@@ -343,21 +343,14 @@ def add_legend_to_plot(ax, track_coords_with_metadata, track_lookup, legend_type
     
     write_debug_log(f"Legend position: x={legend_x:.3f}, y={legend_y:.3f}, height={legend_height_fig:.3f}")
     
-    # Determine font size based on provided image_scale or derive from pixels
-    base_font_size = 10
+    # Font size: same as statistics/attribution (base 12, scaled by resolution)
     if image_scale is None:
-        total_pixels = image_width * image_height
-        if total_pixels < 8_000_000:
-            image_scale = 1
-        elif total_pixels < 18_000_000:
-            image_scale = 2
-        elif total_pixels < 33_000_000:
-            image_scale = 3
-        else:
-            image_scale = 4
-
+        image_scale = calculate_resolution_scale(image_width, image_height)
+    base_font_size = 12
     font_size = base_font_size * image_scale
-    write_debug_log(f"Legend font size set to {font_size} using image_scale {image_scale}")
+    if len(legend_patches) >= 10:
+        font_size = font_size * 0.5  # -50% when 10+ items
+    write_debug_log(f"Legend font size set to {font_size} using image_scale {image_scale}, {len(legend_patches)} items")
 
     # Create the legend
     legend = ax.legend(
@@ -376,10 +369,11 @@ def add_legend_to_plot(ax, track_coords_with_metadata, track_lookup, legend_type
     
     # Set legend properties
     legend.get_frame().set_linewidth(0.5)
-    # Apply text color to legend labels
+    # Apply text color and bold to legend labels (match statistics/attribution font)
     try:
         for text in legend.get_texts():
             text.set_color(text_color)
+            text.set_fontweight('bold')
     except Exception:
         pass
     

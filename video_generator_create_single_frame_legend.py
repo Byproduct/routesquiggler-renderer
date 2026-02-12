@@ -8,13 +8,20 @@ from video_generator_create_combined_route import RoutePoint
 from video_generator_create_single_frame_utils import hex_to_rgba
 
 
-def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width):
-    """Create and configure legend with given handles, labels, and theme colors"""
+def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=1.0):
+    """Create and configure legend with given handles, labels, and theme colors.
+    Font size matches statistics/attribution (base 12 * resolution_scale); -50% when 10+ items."""
     from matplotlib.lines import Line2D
-    
+
+    # Font size: same as statistics/attribution (base 12), -50% when 10+ items
+    base_font_size = 12
+    font_size = base_font_size * resolution_scale
+    if len(legend_handles) >= 10:
+        font_size = font_size * 0.5
+
     # Create legend
     legend = ax.legend(
-        legend_handles, 
+        legend_handles,
         legend_labels,
         loc='lower right',
         bbox_to_anchor=(1.0, 0.0),
@@ -22,16 +29,17 @@ def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_lin
         facecolor=theme_colors['facecolor'],
         edgecolor=theme_colors['edgecolor'],
         framealpha=theme_colors['framealpha'],
-        fontsize=10,
+        fontsize=font_size,
         title=None
     )
-    
+
     # Set zorder on the legend object after creation
     legend.set_zorder(45)  # Above tails but below statistics
-    
-    # Set text color
+
+    # Set text color and bold (match statistics/attribution font)
     for text in legend.get_texts():
         text.set_color(theme_colors['textcolor'])
+        text.set_fontweight('bold')
     
     # Adjust legend position with padding
     legend.set_bbox_to_anchor((0.99, 0.01))  # 10 pixels from bottom and right
