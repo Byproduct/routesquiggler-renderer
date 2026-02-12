@@ -924,8 +924,8 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
     base_font_size = 24
     font_size = base_font_size * resolution_scale
 
-    # Top padding scaled by resolution (same base as statistics: 10px)
-    base_padding_pixels = 10
+    # Top padding: 20px multiplied by resolution scale
+    base_padding_pixels = 20
     padding_pixels = base_padding_pixels * resolution_scale
     if image_height:
         padding_y = padding_pixels / image_height

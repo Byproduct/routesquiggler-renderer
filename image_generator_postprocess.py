@@ -111,8 +111,8 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
     base_font_size = 24
     font_size = base_font_size * image_scale
 
-    # Top padding scaled by resolution (same base as statistics: 10px)
-    base_padding_pixels = 10
+    # Top padding: 20px multiplied by resolution scale
+    base_padding_pixels = 20
     padding_pixels = base_padding_pixels * image_scale
     padding_y = padding_pixels / image_height
 
