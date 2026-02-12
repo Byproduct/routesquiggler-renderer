@@ -8,6 +8,7 @@ import math
 from datetime import datetime
 
 # Local imports
+from image_generator_utils import get_text_theme_colors
 from video_generator_create_combined_route import RoutePoint
 
 
@@ -374,16 +375,8 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     y_offset = (scaled_vertical_offset_pixels / height) * y_range
     speed_y = y - y_offset
     
-    # Set theme colors
-    if theme == 'dark':
-        bg_color = '#2d2d2d'      # Dark gray background
-        border_color = '#cccccc'  # Light gray border
-        text_color = '#ffffff'    # White text
-    else:  # light theme (default)
-        bg_color = 'white'        # White background
-        border_color = '#333333'  # Dark gray border
-        text_color = '#333333'    # Dark gray text
-    
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
     # Use hardcoded base font size that scales with resolution
     base_font_size = 13  # Hardcoded base size for 1080p 
     font_size = base_font_size * resolution_scale
@@ -501,16 +494,8 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
     y_offset = (scaled_vertical_offset_pixels / height) * y_range
     elevation_y = y - y_offset
     
-    # Set theme colors
-    if theme == 'dark':
-        bg_color = '#2d2d2d'      # Dark gray background
-        border_color = '#cccccc'  # Light gray border
-        text_color = '#ffffff'    # White text
-    else:  # light theme (default)
-        bg_color = 'white'        # White background
-        border_color = '#333333'  # Dark gray border
-        text_color = '#333333'    # Dark gray text
-    
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
     # Use hardcoded base font size that scales with resolution
     base_font_size = 13  # Hardcoded base size for 1080p 
     font_size = base_font_size * resolution_scale
@@ -621,16 +606,8 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     y_offset = (scaled_vertical_offset_pixels / height) * y_range
     hr_y = y - y_offset
     
-    # Set theme colors
-    if theme == 'dark':
-        bg_color = '#2d2d2d'      # Dark gray background
-        border_color = '#cccccc'  # Light gray border
-        text_color = '#ffffff'    # White text
-    else:  # light theme (default)
-        bg_color = 'white'        # White background
-        border_color = '#333333'  # Dark gray border
-        text_color = '#333333'    # Dark gray text
-    
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
     # Use hardcoded base font size that scales with resolution
     base_font_size = 13  # Hardcoded base size for 1080p 
     font_size = base_font_size * resolution_scale
@@ -713,16 +690,8 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     if not stats_lines:
         return
     
-    # Set theme colors
-    if theme == 'dark':
-        bg_color = '#2d2d2d'      # Dark gray background
-        border_color = '#cccccc'  # Light gray border
-        text_color = '#ffffff'    # White text
-    else:  # light theme (default)
-        bg_color = 'white'        # White background
-        border_color = '#333333'  # Dark gray border
-        text_color = '#333333'    # Dark gray text
-    
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
     # Use pre-calculated resolution scale if provided, otherwise calculate it
     if resolution_scale is None:
         if json_data:
@@ -838,15 +807,7 @@ def _draw_video_attribution(ax, attribution_text, theme, resolution_scale, width
     """
     if not attribution_text:
         return
-    # Same theme colors as statistics
-    if theme == 'dark':
-        bg_color = '#2d2d2d'
-        border_color = '#cccccc'
-        text_color = '#ffffff'
-    else:
-        bg_color = 'white'
-        border_color = '#333333'
-        text_color = '#333333'
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
     # Same font scaling as statistics
     base_font_size = 12
     font_size = base_font_size * resolution_scale

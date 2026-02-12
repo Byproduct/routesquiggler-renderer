@@ -21,7 +21,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale, PointOfInterest
+from image_generator_utils import calculate_resolution_scale, get_text_theme_colors, PointOfInterest
 from video_generator_create_single_frame import get_legend_theme_colors
 from write_log import write_debug_log, write_log
 
@@ -85,7 +85,9 @@ def optimize_png_bytes(png_data: bytes) -> bytes:
 
 def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: int, image_scale: int | None = None, theme: str = 'light'):
     """
-    Draw a title at the top center of the image, visually matching video title styling.
+    Draw a title at the top center of the image.
+    Uses the same styling as statistics and attribution (bbox, theme colors) but at twice the font size.
+    Top padding scales by resolution scale like statistics.
 
     Args:
         ax: Matplotlib axis object
@@ -94,43 +96,28 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
         image_height: Height in pixels
         image_scale: Optional precomputed image scale; if None it's derived from pixels
         theme: Theme for title text ('light' or 'dark')
-            - 'light': light-colored text with dark outline
-            - 'dark': dark-colored text with light outline
+            - 'light': white background, dark border and text (same as statistics/attribution)
+            - 'dark': dark background, light border and text
     """
     if not title_text:
         return
     # Determine image scale if not provided
     if image_scale is None:
-        total_pixels = image_width * image_height
-        if total_pixels < 8_000_000:
-            image_scale = 1
-        elif total_pixels < 18_000_000:
-            image_scale = 2
-        elif total_pixels < 33_000_000:
-            image_scale = 3
-        else:
-            image_scale = 4
+        image_scale = calculate_resolution_scale(image_width, image_height)
 
-    base_font_size = 22
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
+    # Twice the font size of statistics/attribution (they use base 12)
+    base_font_size = 24
     font_size = base_font_size * image_scale
 
-    # Scale padding with resolution_scale, then convert to axes coordinates
+    # Top padding scaled by resolution (same base as statistics: 10px)
     base_padding_pixels = 10
     padding_pixels = base_padding_pixels * image_scale
     padding_y = padding_pixels / image_height
 
     text_x = 0.5
     text_y = 1.0 - padding_y
-
-    # Calculate outline width: default 0.7, scaled by image_scale
-    outline_width = 0.7 * image_scale
-
-    if theme == 'dark':
-        text_color = '#1a1a1a'  
-        outline_color = '#e8e8e8' 
-    else:  # 'light' theme (default)
-        text_color = '#e8e8e8'  
-        outline_color = '#1a1a1a' 
 
     ax.text(
         text_x,
@@ -142,10 +129,13 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
         fontweight='bold',
         ha='center',
         va='top',
-        path_effects=[
-            patheffects.Stroke(linewidth=outline_width, foreground=outline_color),
-            patheffects.Normal()
-        ],
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=1
+        ),
         zorder=110,
     )
 
@@ -237,14 +227,7 @@ def add_attribution_to_plot(ax, attribution_text: str, theme: str, image_width: 
         return
     if image_scale is None:
         image_scale = calculate_resolution_scale(image_width, image_height)
-    if theme == 'dark':
-        bg_color = '#2d2d2d'
-        border_color = '#cccccc'
-        text_color = '#ffffff'
-    else:
-        bg_color = 'white'
-        border_color = '#333333'
-        text_color = '#333333'
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
     base_font_size = 12
     font_size = base_font_size * image_scale
     padding_pixels = 20 * image_scale
@@ -903,16 +886,8 @@ def add_points_of_interest_to_plot(
     lon_span = lon_max - lon_min
     lat_span = lat_max - lat_min
     
-    # Set theme colors for text (same as statistics styling)
-    if theme == 'dark':
-        bg_color = '#2d2d2d'      # Dark gray background
-        border_color = '#cccccc'  # Light gray border
-        text_color = '#ffffff'    # White text
-    else:  # light theme (default)
-        bg_color = 'white'        # White background
-        border_color = '#333333'  # Dark gray border
-        text_color = '#333333'    # Dark gray text
-    
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
     # Calculate font size based on image scale (base 13 as specified)
     base_font_size = 13
     font_size = base_font_size * image_scale

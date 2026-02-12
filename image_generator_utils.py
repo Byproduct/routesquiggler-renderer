@@ -27,6 +27,19 @@ from image_generator_maptileutils import debug_log
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 
+# --- Text overlay theme colors (statistics, attribution, title, legend, POI, name tags, etc.) ---
+TEXT_THEME_LIGHT = ('white', '#333333', '#333333')   # (bg_color, border_color, text_color)
+TEXT_THEME_DARK = ('#2d2d2d', '#cccccc', '#ffffff')
+
+
+def get_text_theme_colors(theme: str) -> Tuple[str, str, str]:
+    """
+    Return (bg_color, border_color, text_color) for text overlays.
+    theme: 'light' or 'dark'. Defaults to light for any other value.
+    """
+    return TEXT_THEME_DARK if theme == 'dark' else TEXT_THEME_LIGHT
+
+
 # --- GPX time harmonization ---
 TIME_NO_MS_RE = re.compile(r'<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</time>')
 TIME_MS_RE = re.compile(r'(<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d{3}(Z</time>)')
@@ -1078,15 +1091,16 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
     r, g, b = text_color_rgb
     hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
     
-    # Set theme colors
+    # Base theme from central definition; override text/border with route color where needed
+    base_bg, base_border, _ = get_text_theme_colors(background_theme)
     if background_theme == 'dark':
-        bg_color = '#2d2d2d'  # Dark gray background
-        border_color = '#cccccc'  # Light gray border
+        bg_color = base_bg
+        border_color = base_border
         text_color = hex_color  # Use route color for text
-    else:  # light theme (default)
-        bg_color = 'white'
-        border_color = hex_color  # Use text color for border
-        text_color = hex_color  # Use text color for text
+    else:
+        bg_color = base_bg
+        border_color = hex_color  # Use route color for border
+        text_color = hex_color  # Use route color for text
     
     # Calculate resolution-scaled values
     font_size = 13 * resolution_scale

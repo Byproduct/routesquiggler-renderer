@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, get_attribution_text, PointOfInterest
+from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, get_attribution_text, get_text_theme_colors, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_coordinate_encoder import encode_coords
@@ -134,16 +134,8 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
     x_span = x_max - x_min
     y_span = y_max - y_min
     
-    # Set theme colors for text (same as statistics styling)
-    if theme == 'dark':
-        bg_color = '#2d2d2d'
-        border_color = '#cccccc'
-        text_color = '#ffffff'
-    else:
-        bg_color = 'white'
-        border_color = '#333333'
-        text_color = '#333333'
-    
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
     # Calculate font size based on image scale (base 13 as in image mode)
     base_font_size = 13
     font_size = base_font_size * image_scale
@@ -338,29 +330,15 @@ def _calculate_hr_based_width(hr_value, hr_min, hr_max):
 
 
 def get_legend_theme_colors(legend_theme):
-    """Get legend colors based on theme"""
-    if legend_theme == "dark":
-        return {
-            'facecolor': '#2d2d2d',  # Dark gray background
-            'edgecolor': '#cccccc',  # Light gray border
-            'textcolor': '#ffffff',  # White text
-            'framealpha': 0.9        # Slightly more opaque for dark theme
-        }
-    elif legend_theme == "light":
-        return {
-            'facecolor': 'white',    # White background
-            'edgecolor': 'black',    # Black border
-            'textcolor': 'black',    # Black text
-            'framealpha': 0.8        # Standard transparency
-        }
-    else:
-        # Default to light theme
-        return {
-            'facecolor': 'white',
-            'edgecolor': 'black',
-            'textcolor': 'black',
-            'framealpha': 0.8
-        }
+    """Get legend colors based on theme. Uses central text theme from image_generator_utils."""
+    theme = 'dark' if legend_theme == 'dark' else 'light'
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+    return {
+        'facecolor': bg_color,
+        'edgecolor': border_color,
+        'textcolor': text_color,
+        'framealpha': 0.9 if theme == 'dark' else 0.8
+    }
 
 
 def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effective_line_width, filename_to_rgba, ax, fade_out_progress=None, fluffy_tail=False):
@@ -917,7 +895,9 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
 def _draw_video_title(ax, title_text, effective_line_width, json_data, resolution_scale=None, image_height=None, theme='light'):
     """
     Draw video title at the top center of the frame.
-    
+    Uses the same styling as statistics and attribution (bbox, theme colors) but at twice the font size.
+    Top padding scales by resolution scale like statistics.
+
     Args:
         ax (matplotlib.axes.Axes): Matplotlib axes for drawing
         title_text (str): Title text to display
@@ -926,53 +906,50 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
         resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
         image_height (int): Image height in pixels for padding calculation
         theme (str): Theme for title text ('light' or 'dark')
-            - 'light': light-colored text with dark outline
-            - 'dark': dark-colored text with light outline
+            - 'light': white background, dark border and text (same as statistics/attribution)
+            - 'dark': dark background, light border and text
     """
     if not title_text:
         return
     
-    # Use same base font size as image mode
-    base_font_size = 22
+    if resolution_scale is None:
+        from image_generator_utils import calculate_resolution_scale
+        resolution_x = int(json_data.get('video_resolution_x', 1920))
+        resolution_y = int(json_data.get('video_resolution_y', 1080))
+        resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
+    # Twice the font size of statistics/attribution (they use base 12)
+    base_font_size = 24
     font_size = base_font_size * resolution_scale
-    
-    # Scale padding with resolution_scale, then convert to axes coordinates
+
+    # Top padding scaled by resolution (same base as statistics: 10px)
     base_padding_pixels = 10
     padding_pixels = base_padding_pixels * resolution_scale
     if image_height:
         padding_y = padding_pixels / image_height
     else:
-        # Fallback to approximate padding if height not provided
         padding_y = 0.01
-    
     text_x = 0.5
     text_y = 1.0 - padding_y
-    
-    # Calculate outline width: default 0.7, scaled by resolution_scale
-    outline_width = 0.7 * resolution_scale
-    
-    # Set colors based on theme
-    if theme == 'dark':
-        text_color = '#1a1a1a'  
-        outline_color = '#e8e8e8' 
-    else:  # 'light' theme (default)
-        text_color = '#e8e8e8'  
-        outline_color = '#1a1a1a' 
-    
-    # Draw title text
+
     ax.text(
         text_x, text_y, title_text,
-        transform=ax.transAxes,  # Use axes coordinates
+        transform=ax.transAxes,
         color=text_color,
         fontsize=font_size,
         fontweight='bold',
-        ha='center',             # Center align horizontally
-        va='top',                # Top align vertically
-        path_effects=[
-            matplotlib.patheffects.Stroke(linewidth=outline_width, foreground=outline_color),
-            matplotlib.patheffects.Normal()
-        ],
-        zorder=110  # Very top layer - above everything else
+        ha='center',
+        va='top',
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=1
+        ),
+        zorder=110
     )
 
 

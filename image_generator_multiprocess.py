@@ -40,6 +40,7 @@ from image_generator_utils import (
     add_filename_tags_to_image,
     calculate_resolution_scale,
     get_attribution_text,
+    get_text_theme_colors,
 )
 from network_retry import retry_operation
 from speed_based_color import speed_based_color
@@ -1020,16 +1021,8 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     if image_scale is None:
         image_scale = calculate_resolution_scale(image_width, image_height)
     
-    # Set theme colors
-    if statistics_theme == 'dark':
-        bg_color = '#2d2d2d'      # Dark gray background
-        border_color = '#cccccc'  # Light gray border
-        text_color = '#ffffff'    # White text
-    else:  # light theme (default)
-        bg_color = 'white'        # White background
-        border_color = '#333333'  # Dark gray border
-        text_color = '#333333'    # Dark gray text
-    
+    bg_color, border_color, text_color = get_text_theme_colors(statistics_theme)
+
     # Calculate font size based on image scale
     base_font_size = 10
     font_size = base_font_size * image_scale
