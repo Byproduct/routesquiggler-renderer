@@ -71,8 +71,8 @@ def generate_image_gallery_html(route_name: str, zoom_levels: List[int]) -> str:
     html_parts.append(f'    <h1>{route_name}</h1>')
     html_parts.append('    <div class="instruction">Click to enlarge or save</div>')
 
-    # Add each image
-    for zoom_level in sorted(zoom_levels):
+    # Add each image (highest zoom first)
+    for zoom_level in sorted(zoom_levels, reverse=True):
         html_parts.append(f'    <div class="zoom-level">Zoom level {zoom_level}</div>')
         image_name = f"{route_name}_zoom{zoom_level}.png"
         html_parts.append('    <div class="image-container">')
