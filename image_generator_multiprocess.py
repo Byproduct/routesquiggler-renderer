@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Optional, Tuple
 # Third-party imports
 import cartopy.crs as ccrs
 import numpy as np
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 from PIL import Image
 
 # Increase PIL image size limit to 200 megapixels to handle large renders
@@ -998,11 +997,9 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
         if json_data.get('statistics_average_speed', False):
             stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} {speed_unit}")
         
-        # Store heart rate separately so we can draw the heart symbol in red
         if json_data.get('statistics_average_hr', False):
             avg_hr = statistics_data.get('average_hr', '0')
             if avg_hr and avg_hr != '0':
-                avg_hr_value = avg_hr
                 stats_lines.append(f"{avg_hr} ♥")
 
     # Add free text lines (sanitized earlier; may contain \n-separated lines)
@@ -1060,62 +1057,6 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
         zorder=100  # Very top layer - above all other elements
     )
     
-    # If average HR is displayed, overlay the heart symbol in red
-    if avg_hr_value is not None:
-        # Find which line contains the heart rate (count from bottom)
-        hr_line_index = None
-        for i, line in enumerate(stats_lines):
-            if '♥' in line or avg_hr_value in line:
-                hr_line_index = len(stats_lines) - 1 - i  # Line index from top (0 = top line)
-                break
-        
-        if hr_line_index is not None:
-            # Calculate the y position of the heart rate line
-            # Each line has a height, we need to account for line spacing
-            fig = ax.figure
-            if fig.canvas is not None:
-                renderer = fig.canvas.get_renderer()
-            else:
-                # Fallback: create a dummy renderer for measurement
-                canvas = FigureCanvasAgg(fig)
-                renderer = canvas.get_renderer()
-            
-            # Measure single line height
-            temp_text = ax.text(0, 0, "Test", fontsize=font_size, fontweight='bold', visible=False)
-            line_bbox = temp_text.get_window_extent(renderer=renderer)
-            temp_text.remove()
-            
-            # Convert to axes coordinates
-            transform = ax.transAxes.inverted()
-            line_height_axes = line_bbox.transformed(transform).height
-            
-            # Calculate y position of the heart rate line (from top)
-            hr_line_y = text_y - (hr_line_index * line_height_axes)
-            
-            # Measure the number text to find where heart symbol should go
-            number_text = f"{avg_hr_value}"
-            temp_text = ax.text(text_x, hr_line_y, number_text, transform=ax.transAxes,
-                               fontsize=font_size, fontweight='bold', ha='right', va='top', visible=False)
-            number_bbox = temp_text.get_window_extent(renderer=renderer)
-            temp_text.remove()
-            
-            # Convert to axes coordinates to get the left edge of number (since ha='right')
-            number_bbox_axes = number_bbox.transformed(transform)
-            heart_x = number_bbox_axes.x0  # Left edge of number (right-aligned)
-            
-            # Draw the heart symbol in red, positioned right after the number
-            ax.text(
-                heart_x, hr_line_y, " ♥",
-                transform=ax.transAxes,
-                color='red',  # Red color for heart symbol
-                fontsize=font_size,
-                fontweight='bold',
-                ha='left',  # Left align from the number's left edge
-                va='top',
-                zorder=101  # Slightly above the statistics text
-            )
-
-
 def upload_to_storage_box(
     image_bytes: bytes,
     storage_box_address: str,

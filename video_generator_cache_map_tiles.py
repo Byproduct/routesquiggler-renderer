@@ -229,7 +229,7 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             'stadia_dark': 100,
             'stadia_outdoors': 100,
             'stadia_toner': 100,
-            'stadia_watercolor': 100,
+            'stadia_watercolor': 150,
             'geoapify_carto': 100,
             'geoapify_bright': 100,
             'geoapify_bright_grey': 100,

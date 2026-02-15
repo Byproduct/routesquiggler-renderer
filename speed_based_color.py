@@ -5,6 +5,13 @@ import os
 # Third-party imports
 from PIL import Image, ImageDraw, ImageFont
 
+def _load_label_font(font_size):
+    """Load arial.ttf from the current working directory for label text (numbers + heart ♥). Place arial.ttf in the script's run directory if the heart renders as a square."""
+    try:
+        return ImageFont.truetype("arial.ttf", font_size)
+    except (OSError, IOError):
+        return ImageFont.load_default()
+
 
 def _draw_text_with_outline(draw, position, text, font, fill_color, outline_color=(0, 0, 0, 255), outline_width=1):
     """
@@ -405,20 +412,11 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
         avg_text = f"{int(math.ceil(average))} {unit}"
         max_text = f"{int(round(speed_based_color_max))} {unit}"
     
-    # Try to load a default font, fall back to default if not available
-    # Scale font size with image_scale (convert to int for PIL)
+    # Helper unit text: size at scale 1 is correct (base_font_size); other scales scale from that
+    # Use _load_label_font so the heart symbol (♥ U+2665) renders; otherwise install DejaVu Sans or Liberation.
     base_font_size = 12
-    font_size = int(round(base_font_size * image_scale))
-    try:
-        # Try to use a default font (scaled size)
-        font = ImageFont.truetype("arial.ttf", font_size)
-    except:
-        try:
-            # Try alternative common font paths on Windows
-            font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", font_size)
-        except:
-            # Fall back to default font
-            font = ImageFont.load_default()
+    font_size = max(1, int(round(base_font_size * image_scale)))
+    font = _load_label_font(font_size)
     
     # Create ImageDraw object to measure text
     draw_temp = ImageDraw.Draw(base_img)
@@ -472,8 +470,9 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
         draw_text_func = _draw_text_with_outline
     
     # Draw left text (min) with outline (and red heart if HR mode)
-    # Add padding to prevent cutoff: 5 pixels
-    padding_horizontal = 5
+    # Scale horizontal padding with resolution so layout is consistent
+    base_padding_horizontal = 5
+    padding_horizontal = int(round(base_padding_horizontal * image_scale))
     min_x = padding_horizontal
     draw_text_func(draw, (min_x, text_y), min_text, font, fill_color=(255, 255, 255, 255))
     
@@ -484,7 +483,6 @@ def create_speed_based_color_label(speed_based_color_min, speed_based_color_max,
     draw_text_func(draw, (avg_x, text_y), avg_text, font, fill_color=(255, 255, 255, 255))
     
     # Draw right text (max) with outline (and red heart if HR mode)
-    # Add padding to prevent cutoff: 5 pixels
     max_bbox = draw.textbbox((0, 0), max_text, font=font)
     max_text_width = max_bbox[2] - max_bbox[0]
     max_x = new_width - max_text_width - padding_horizontal
@@ -587,20 +585,11 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     avg_text = f"{int(math.ceil(average))} ♥"
     max_text = f"{int(round(hr_based_width_max))} ♥"
     
-    # Try to load a default font, fall back to default if not available
-    # Scale font size with image_scale (convert to int for PIL)
+    # Helper unit text: size at scale 1 is correct (base_font_size); other scales scale from that
+    # Use _load_label_font so the heart symbol (♥ U+2665) renders; otherwise install DejaVu Sans or Liberation.
     base_font_size = 12
-    font_size = int(round(base_font_size * image_scale))
-    try:
-        # Try to use a default font (scaled size)
-        font = ImageFont.truetype("arial.ttf", font_size)
-    except:
-        try:
-            # Try alternative common font paths on Windows
-            font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", font_size)
-        except:
-            # Fall back to default font
-            font = ImageFont.load_default()
+    font_size = max(1, int(round(base_font_size * image_scale)))
+    font = _load_label_font(font_size)
     
     # Create ImageDraw object to measure text
     draw_temp = ImageDraw.Draw(base_img)
@@ -637,8 +626,9 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     text_y = int(base_img.height + spacing_below + max_ascender)
     
     # Draw left text (min) with outline and red heart symbol
-    # Add padding to prevent cutoff: 5 pixels
-    padding_horizontal = 5
+    # Scale horizontal padding with resolution so layout is consistent
+    base_padding_horizontal = 5
+    padding_horizontal = int(round(base_padding_horizontal * image_scale))
     min_x = padding_horizontal
     _draw_text_with_red_heart(draw, (min_x, text_y), min_text, font, fill_color=(255, 255, 255, 255))
     
@@ -649,7 +639,6 @@ def create_hr_based_width_label(hr_based_width_min, hr_based_width_max, image_sc
     _draw_text_with_red_heart(draw, (avg_x, text_y), avg_text, font, fill_color=(255, 255, 255, 255))
     
     # Draw right text (max) with outline and red heart symbol
-    # Add padding to prevent cutoff: 5 pixels
     max_bbox = draw.textbbox((0, 0), max_text, font=font)
     max_text_width = max_bbox[2] - max_bbox[0]
     max_x = new_width - max_text_width - padding_horizontal

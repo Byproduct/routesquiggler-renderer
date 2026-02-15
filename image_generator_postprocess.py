@@ -406,102 +406,43 @@ def add_speed_based_color_label_to_plot(ax, json_data: dict, image_width: int, i
     if json_data:
         # Get color label (speed-based or HR-based, mutually exclusive)
         if json_data.get('speed_based_color_label', False):
-            # Try to load the appropriate scaled version from file
+            # Always create on-the-fly so helper unit text (min/avg/max and units) scales with resolution
             color_label = None
-            module_dir = os.path.dirname(os.path.abspath(__file__))
-            
-            # Determine filename based on scale (special case for 0.7 -> "07x")
-            from image_generator_utils import format_scale_for_label_filename
-            scale_str = format_scale_for_label_filename(image_scale)
-            label_filename = f"speed_based_color_label_{scale_str}.png"
-            
-            label_file = os.path.join(module_dir, "img", label_filename)
-            
-            # Try to load the scaled version
-            if os.path.exists(label_file):
-                try:
-                    color_label = mpimg.imread(label_file)
-                    # Verify the loaded label has the expected size (approximately)
-                    # Expected width for 1x is ~200px, so for scale N it should be ~200*N px
-                    expected_min_width = 150 * image_scale  # Allow some tolerance
-                    actual_width = color_label.shape[1]
-                    if actual_width < expected_min_width:
-                        write_debug_log(f"WARNING: Loaded {label_filename} has width {actual_width}px, expected at least {expected_min_width}px for scale {image_scale}. Recreating on-the-fly.")
-                        color_label = None  # Force recreation
-                    else:
-                        write_debug_log(f"Loaded speed-based color label from {label_filename} (shape: {color_label.shape})")
-                except Exception as e:
-                    write_debug_log(f"Failed to load {label_filename}: {e}")
-                    color_label = None
-            
-            # Create label on-the-fly using appropriately scaled base image
-            if color_label is None:
-                write_debug_log(f"Creating speed-based color label on-the-fly with image_scale={image_scale}")
-                try:
-                    from speed_based_color import create_speed_based_color_label
-                    speed_min = json_data.get('speed_based_color_min', 5)
-                    speed_max = json_data.get('speed_based_color_max', 35)
-                    imperial_units = json_data and json_data.get('imperial_units', False) is True
-                    label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units, hr_mode=False, image_scale=image_scale)
-                    write_debug_log(f"PIL Image size after creation: {label_image.size} (width x height)")
-                    color_label = np.array(label_image)
-                    write_debug_log(f"Successfully created speed-based color label on-the-fly using scale {image_scale}x (numpy shape: {color_label.shape}, expected width ~{200 * image_scale}px)")
-                except Exception as e:
-                    write_debug_log(f"Failed to create speed-based color label on-the-fly: {e}")
-                    import traceback
-                    write_debug_log(f"Traceback: {traceback.format_exc()}")
-                    # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
-                    color_label = None
+            write_debug_log(f"Creating speed-based color label on-the-fly with image_scale={image_scale}")
+            try:
+                from speed_based_color import create_speed_based_color_label
+                speed_min = json_data.get('speed_based_color_min', 5)
+                speed_max = json_data.get('speed_based_color_max', 35)
+                imperial_units = json_data and json_data.get('imperial_units', False) is True
+                label_image = create_speed_based_color_label(speed_min, speed_max, imperial_units, hr_mode=False, image_scale=image_scale)
+                write_debug_log(f"PIL Image size after creation: {label_image.size} (width x height)")
+                color_label = np.array(label_image)
+                write_debug_log(f"Successfully created speed-based color label on-the-fly using scale {image_scale}x (numpy shape: {color_label.shape}, expected width ~{200 * image_scale}px)")
+            except Exception as e:
+                write_debug_log(f"Failed to create speed-based color label on-the-fly: {e}")
+                import traceback
+                write_debug_log(f"Traceback: {traceback.format_exc()}")
+                color_label = None
             
             if color_label is not None and isinstance(color_label, np.ndarray):
                 labels_to_draw.append((color_label, "Speed-based color"))
         elif json_data.get('hr_based_color_label', False):
-            # Try to load the appropriate scaled version from file
+            # Always create on-the-fly so helper unit text (min/avg/max and ♥) scales with resolution
             color_label = None
-            module_dir = os.path.dirname(os.path.abspath(__file__))
-            
-            # Determine filename based on scale (special case for 0.7 -> "07x")
-            # HR-based color uses the same base image as speed-based color
-            from image_generator_utils import format_scale_for_label_filename
-            scale_str = format_scale_for_label_filename(image_scale)
-            label_filename = f"speed_based_color_label_{scale_str}.png"
-            
-            label_file = os.path.join(module_dir, "img", label_filename)
-            
-            # Try to load the scaled version
-            if os.path.exists(label_file):
-                try:
-                    color_label = mpimg.imread(label_file)
-                    # Verify the loaded label has the expected size (approximately)
-                    # Expected width for 1x is ~200px, so for scale N it should be ~200*N px
-                    expected_min_width = 150 * image_scale  # Allow some tolerance
-                    actual_width = color_label.shape[1]
-                    if actual_width < expected_min_width:
-                        write_debug_log(f"WARNING: Loaded {label_filename} has width {actual_width}px, expected at least {expected_min_width}px for scale {image_scale}. Recreating on-the-fly.")
-                        color_label = None  # Force recreation
-                    else:
-                        write_debug_log(f"Loaded HR-based color label from {label_filename} (shape: {color_label.shape})")
-                except Exception as e:
-                    write_debug_log(f"Failed to load {label_filename}: {e}")
-                    color_label = None
-            
-            # Create label on-the-fly using appropriately scaled base image
-            if color_label is None:
-                write_debug_log(f"Creating HR-based color label on-the-fly with image_scale={image_scale}")
-                try:
-                    from speed_based_color import create_hr_based_color_label
-                    hr_min = json_data.get('hr_based_color_min', 50)
-                    hr_max = json_data.get('hr_based_color_max', 180)
-                    label_image = create_hr_based_color_label(hr_min, hr_max, image_scale=image_scale)
-                    write_debug_log(f"PIL Image size after creation: {label_image.size} (width x height)")
-                    color_label = np.array(label_image)
-                    write_debug_log(f"Successfully created HR-based color label on-the-fly using scale {image_scale}x (numpy shape: {color_label.shape}, expected width ~{200 * image_scale}px)")
-                except Exception as e:
-                    write_debug_log(f"Failed to create HR-based color label on-the-fly: {e}")
-                    import traceback
-                    write_debug_log(f"Traceback: {traceback.format_exc()}")
-                    # Don't use fallback - if creation fails, we can't proceed with wrong-sized label
-                    color_label = None
+            write_debug_log(f"Creating HR-based color label on-the-fly with image_scale={image_scale}")
+            try:
+                from speed_based_color import create_hr_based_color_label
+                hr_min = json_data.get('hr_based_color_min', 50)
+                hr_max = json_data.get('hr_based_color_max', 180)
+                label_image = create_hr_based_color_label(hr_min, hr_max, image_scale=image_scale)
+                write_debug_log(f"PIL Image size after creation: {label_image.size} (width x height)")
+                color_label = np.array(label_image)
+                write_debug_log(f"Successfully created HR-based color label on-the-fly using scale {image_scale}x (numpy shape: {color_label.shape}, expected width ~{200 * image_scale}px)")
+            except Exception as e:
+                write_debug_log(f"Failed to create HR-based color label on-the-fly: {e}")
+                import traceback
+                write_debug_log(f"Traceback: {traceback.format_exc()}")
+                color_label = None
             
             if color_label is not None and isinstance(color_label, np.ndarray):
                 labels_to_draw.append((color_label, "HR-based color"))
