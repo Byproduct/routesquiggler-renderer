@@ -191,28 +191,31 @@ class ImageGeneratorWorker(QObject):
                 if not track_coords_with_metadata:
                     raise ValueError("No valid coordinates found in any GPX file")
             else:
-                # Speed-based mode: create track_coords_with_metadata from RoutePoint data for legends, because legends still use track_coords_with_metadata
-                # Note: this is probably unnecessary, for now legends are disabled if speed-based color is enabled, and they will likely stay that way.
+                # Data-based mode: build track_coords_with_metadata from RoutePoint data (for legends and per-segment color lookup).
+                # Group by point.filename so we get one entry per track even when all files are merged into one route (empty names).
                 track_coords_with_metadata = []
                 all_routes = route_points_data.get('all_routes', [])
+                points_by_filename = {}  # filename -> list of RoutePoints
+                filename_order = []  # order of first appearance for consistent legend/plot order
                 for route in all_routes:
                     combined_route = route.get('combined_route', [])
-                    if not combined_route:
+                    for point in combined_route:
+                        fn = point.filename if point.filename else 'Unknown'
+                        if fn not in points_by_filename:
+                            points_by_filename[fn] = []
+                            filename_order.append(fn)
+                        points_by_filename[fn].append(point)
+                for filename in filename_order:
+                    points = points_by_filename[filename]
+                    if not points:
                         continue
-                    
-                    # Get filename from first point
-                    filename = combined_route[0].filename if combined_route else 'Unknown'
-                    # Try lookup with filename as-is, then with .gpx extension (track_lookup keys may include .gpx)
                     track_metadata = track_lookup.get(filename, {})
                     if not track_metadata and not filename.endswith('.gpx'):
                         track_metadata = track_lookup.get(filename + '.gpx', {})
                     color = track_metadata.get('color', '#2E8B57')
                     name = track_metadata.get('name', 'Unknown Track')
-                    
-                    # Extract coordinates for this route
-                    route_lats = [point.lat for point in combined_route]
-                    route_lons = [point.lon for point in combined_route]
-                    
+                    route_lats = [p.lat for p in points]
+                    route_lons = [p.lon for p in points]
                     track_coords_with_metadata.append((route_lats, route_lons, color, name, filename))
             
             # Calculate statistics if enabled

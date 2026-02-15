@@ -673,9 +673,20 @@ def generate_image_for_zoom_level(
             # If HR-based width is enabled and we have route points data, draw segments individually
             if use_hr_based_width:
                 # HR-BASED WIDTH MODE: Draw segments individually with varying widths
+                # Use segment's point filename for color so merged (single-route) and multi-route both get correct per-track colors
                 all_routes = route_points_data.get('all_routes', []) if route_points_data else []
                 if not all_routes and route_points_data:
                     all_routes = [route_points_data]  # Fallback to single route
+                
+                def _color_for_filename(point_filename):
+                    """Resolve color from track_coords_with_metadata by filename (stem or full)."""
+                    default = (1.0, 0.0, 0.0)
+                    if not point_filename or not track_coords_with_metadata:
+                        return default
+                    for lats, lons, color, name, filename in track_coords_with_metadata:
+                        if filename and point_filename and filename.lower() == point_filename.lower():
+                            return color
+                    return default
                 
                 track_count = 0
                 total_segments = 0
@@ -688,18 +699,8 @@ def generate_image_for_zoom_level(
                     
                     track_count += 1
                     
-                    # Get filename from first point and find the color
-                    point_filename = combined_route[0].filename
-                    
-                    # Find the color from track_coords_with_metadata
-                    route_color = (1.0, 0.0, 0.0)  # Default red
-                    if track_coords_with_metadata:
-                        for lats, lons, color, name, filename in track_coords_with_metadata:
-                            if filename and point_filename and filename.lower() == point_filename.lower():
-                                route_color = color
-                                break
-                    
-                    # Draw each segment with HR-based width
+                    # Draw each segment with HR-based width; resolve color per segment from current point's filename
+                    # (so a single merged route from multiple files still gets correct colors per file)
                     for j in range(len(combined_route) - 1):
                         current_point = combined_route[j]
                         next_point = combined_route[j + 1]
@@ -707,6 +708,8 @@ def generate_image_for_zoom_level(
                         # Skip segments that cross track boundaries
                         if current_point.new_route_flag or next_point.new_route_flag:
                             continue
+                        
+                        segment_color = _color_for_filename(current_point.filename)
                         
                         # Calculate HR-based width
                         hr_width_value = _calculate_hr_based_width_image(current_point.heart_rate_smoothed, hr_width_min, hr_width_max)
@@ -718,7 +721,7 @@ def generate_image_for_zoom_level(
                             [current_point.lon, next_point.lon],
                             [current_point.lat, next_point.lat],
                             transform=ccrs.PlateCarree(),
-                            color=route_color,
+                            color=segment_color,
                             linewidth=segment_width
                         )
                         total_segments += 1
