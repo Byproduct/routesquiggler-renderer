@@ -1038,7 +1038,9 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
     text_x = 1.0 - padding_x  # Right edge minus padding
     text_y = 1.0 - padding_y  # Top edge minus padding
     
-    # Add the statistics text
+    # Box border: half of previous at scale 1, then scale with resolution
+    bbox_linewidth = 0.5 * image_scale
+    # Line spacing: multiple of font size (1.2), so vertical space between lines scales with font_size
     text_obj = ax.text(
         text_x, text_y, stats_text,
         transform=ax.transAxes,  # Use axes coordinates
@@ -1047,12 +1049,13 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
         fontweight='bold',
         ha='right',     # Right align
         va='top',       # Top align
+        linespacing=1.2,
         bbox=dict(
             boxstyle='round,pad=0.3',
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100  # Very top layer - above all other elements
     )

@@ -119,6 +119,8 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
     text_x = 0.5
     text_y = 1.0 - padding_y
 
+    # Box border: half of previous at scale 1, then scale with resolution
+    bbox_linewidth = 0.5 * image_scale
     ax.text(
         text_x,
         text_y,
@@ -134,7 +136,7 @@ def add_title_text_to_plot(ax, title_text: str, image_width: int, image_height: 
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=110,
     )
@@ -233,6 +235,7 @@ def add_attribution_to_plot(ax, attribution_text: str, theme: str, image_width: 
     padding_pixels = 20 * image_scale
     text_x = padding_pixels / image_width
     text_y = padding_pixels / image_height
+    bbox_linewidth = 0.5 * image_scale
     ax.text(
         text_x, text_y, attribution_text,
         transform=ax.transAxes,
@@ -246,7 +249,7 @@ def add_attribution_to_plot(ax, attribution_text: str, theme: str, image_width: 
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100
     )
@@ -352,13 +355,14 @@ def add_legend_to_plot(ax, track_coords_with_metadata, track_lookup, legend_type
         font_size = font_size * 0.5  # -50% when 10+ items
     write_debug_log(f"Legend font size set to {font_size} using image_scale {image_scale}, {len(legend_patches)} items")
 
-    # Create the legend
+    # Vertical space between legend entries: labelspacing is in font-size units, so it scales with font_size
     legend = ax.legend(
         handles=legend_patches,
         loc='lower right',
         bbox_to_anchor=(legend_x, legend_y, 0, legend_height_fig),
         bbox_transform=ax.transAxes,
         fontsize=font_size,
+        labelspacing=0.5,
         frameon=True,
         fancybox=True,
         framealpha=frame_alpha,
@@ -367,8 +371,8 @@ def add_legend_to_plot(ax, track_coords_with_metadata, track_lookup, legend_type
         ncol=1
     )
     
-    # Set legend properties
-    legend.get_frame().set_linewidth(0.5)
+    # Legend box border: half of previous at scale 1, then scale with resolution
+    legend.get_frame().set_linewidth(0.25 * image_scale)
     # Apply text color and bold to legend labels (match statistics/attribution font)
     try:
         for text in legend.get_texts():
@@ -871,7 +875,8 @@ def add_points_of_interest_to_plot(
                 # Center text vertically with the icon
                 text_y_fig = marker_y_fig + (marker_height_fig / 2)
                 
-                # Add the POI name text with background
+                # Add the POI name text with background (box border scales with resolution)
+                bbox_linewidth = 0.5 * image_scale
                 ax.text(
                     text_x_fig, text_y_fig, poi_name,
                     transform=ax.transAxes,
@@ -885,7 +890,7 @@ def add_points_of_interest_to_plot(
                         facecolor=bg_color,
                         edgecolor=border_color,
                         alpha=0.9,
-                        linewidth=1
+                        linewidth=bbox_linewidth
                     ),
                     zorder=100  # Very top layer - above all other elements
                 )

@@ -385,6 +385,7 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     imperial_units = _is_imperial_units(json_data)
     speed_unit = "mph" if imperial_units else "km/h"
     
+    bbox_linewidth = 0.5 * resolution_scale
     # Add the current speed text
     ax.text(
         speed_x, speed_y, f"{current_speed} {speed_unit}",
@@ -398,7 +399,7 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100  # Very top layer - above all other elements
     )
@@ -500,6 +501,7 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
     base_font_size = 13  # Hardcoded base size for 1080p 
     font_size = base_font_size * resolution_scale
     
+    bbox_linewidth = 0.5 * resolution_scale
     # Add the current elevation text with up arrow symbol
     ax.text(
         elevation_x, elevation_y, f"{current_elevation} m ↑",
@@ -513,7 +515,7 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100  # Very top layer - above all other elements
     )
@@ -612,6 +614,7 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     base_font_size = 13  # Hardcoded base size for 1080p 
     font_size = base_font_size * resolution_scale
     
+    bbox_linewidth = 0.5 * resolution_scale
     # Add the current heart rate text with heart symbol
     full_text = f"{current_hr} ♥"
     ax.text(
@@ -626,7 +629,7 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100  # Very top layer - above all other elements
     )
@@ -712,7 +715,8 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     text_x = 1.0 - padding_factor  # Right edge minus padding
     text_y = 1.0 - padding_factor  # Top edge minus padding
     
-    # Add the statistics text
+    bbox_linewidth = 0.5 * resolution_scale
+    # Line spacing: multiple of font size (1.2), so vertical space between lines scales with font_size
     text_obj = ax.text(
         text_x, text_y, stats_text,
         transform=ax.transAxes,  # Use axes coordinates
@@ -721,12 +725,13 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
         fontweight='bold',
         ha='right',     # Right align
         va='top',       # Top align
+        linespacing=1.2,
         bbox=dict(
             boxstyle='round,pad=0.3',
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100  # Very top layer - above all other elements
     )
@@ -755,6 +760,7 @@ def _draw_video_attribution(ax, attribution_text, theme, resolution_scale, width
     padding_pixels = 20 * resolution_scale
     text_x = padding_pixels / width
     text_y = padding_pixels / height
+    bbox_linewidth = 0.5 * resolution_scale
     ax.text(
         text_x, text_y, attribution_text,
         transform=ax.transAxes,
@@ -768,7 +774,7 @@ def _draw_video_attribution(ax, attribution_text, theme, resolution_scale, width
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=100
     ) 

@@ -1108,7 +1108,8 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         font_size = font_size / 3
     elif small_tags:
         font_size = font_size / 2
-    border_width = max(1, resolution_scale)  # At least 1px border
+    # Box border: half of previous at scale 1, then scale with resolution
+    border_width = 0.5 * resolution_scale
     
     # Set defaults if not provided (scale with resolution)
     if horizontal_offset_points is None:

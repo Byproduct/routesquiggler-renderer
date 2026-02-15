@@ -186,7 +186,7 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
                         facecolor=bg_color,
                         edgecolor=border_color,
                         alpha=0.9,
-                        linewidth=1
+                        linewidth=0.5 * image_scale
                     ),
                     zorder=100
                 )
@@ -934,6 +934,7 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
     text_x = 0.5
     text_y = 1.0 - padding_y
 
+    bbox_linewidth = 0.5 * resolution_scale
     ax.text(
         text_x, text_y, title_text,
         transform=ax.transAxes,
@@ -947,7 +948,7 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
             facecolor=bg_color,
             edgecolor=border_color,
             alpha=0.9,
-            linewidth=1
+            linewidth=bbox_linewidth
         ),
         zorder=110
     )

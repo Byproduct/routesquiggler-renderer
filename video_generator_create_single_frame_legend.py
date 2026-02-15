@@ -19,7 +19,7 @@ def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_lin
     if len(legend_handles) >= 10:
         font_size = font_size * 0.5
 
-    # Create legend
+    # Vertical space between legend entries: labelspacing is in font-size units, so it scales with font_size
     legend = ax.legend(
         legend_handles,
         legend_labels,
@@ -30,11 +30,15 @@ def create_legend(ax, legend_handles, legend_labels, theme_colors, effective_lin
         edgecolor=theme_colors['edgecolor'],
         framealpha=theme_colors['framealpha'],
         fontsize=font_size,
+        labelspacing=0.5,
         title=None
     )
 
     # Set zorder on the legend object after creation
     legend.set_zorder(45)  # Above tails but below statistics
+
+    # Legend box border: half of previous at scale 1, then scale with resolution
+    legend.get_frame().set_linewidth(0.25 * resolution_scale)
 
     # Set text color and bold (match statistics/attribution font)
     for text in legend.get_texts():
