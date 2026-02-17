@@ -378,12 +378,12 @@ def create_map_tiles(map_style: str):
         debug_log("Processing OpenStreetMap style")
         tile_delay = get_rate_limit_delay(map_style)
         
-        class RateLimitedOSM(cimgt.OSM):
+        class OSM(cimgt.OSM):
             def get_image(self, tile):
                 _rate_limit_tile_download(tile_delay)
                 return super().get_image(tile)
         
-        tiles = RateLimitedOSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
+        tiles = OSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
         debug_log(f"Created OSM tiles object: {type(tiles)}")
         return tiles
         
@@ -392,12 +392,12 @@ def create_map_tiles(map_style: str):
         print(f"Invalid map style '{map_style}', defaulting to OSM")
         tile_delay = get_rate_limit_delay(map_style)
         
-        class RateLimitedOSM(cimgt.OSM):
+        class OSM(cimgt.OSM):
             def get_image(self, tile):
                 _rate_limit_tile_download(tile_delay)
                 return super().get_image(tile)
         
-        tiles = RateLimitedOSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
+        tiles = OSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
         debug_log(f"Created default OSM tiles object: {type(tiles)}")
         return tiles
 

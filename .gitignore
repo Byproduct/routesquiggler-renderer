@@ -10,3 +10,6 @@ git-push.bat
 status_update_log.txt
 debug.log
 utils/verified_map_tiles.txt
+utils/mtimes_local.txt
+utils/mtimes_remote.txt
+utils/mtimes_remote_last.txt

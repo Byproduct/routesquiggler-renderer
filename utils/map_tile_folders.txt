@@ -2,14 +2,14 @@ CyclOSM/CyclOSMTiles
 GeoapifyBright/GeoapifyTiles
 GeoapifyBrightGrey/GeoapifyTiles
 GeoapifyBrightSmooth/GeoapifyTiles
-GeaopifyCarto/GeoapifyTiles
+GeoapifyCarto/GeoapifyTiles
 GeoapifyDark/GeoapifyTiles
 GeoapifyDarkBrown/GeoapifyTiles
 GeoapifyGrey/GeoapifyTiles
 GeoapifyKlokantech/GeoapifyTiles
 GeoapifyLiberty/GeoapifyTiles
 GeoapifyMaptiler/GeoapifyTiles
-GeaopifyPositron/GeoapifyTiles
+GeoapifyPositron/GeoapifyTiles
 GeoapifyPositronBlue/GeoapifyTiles
 GeoapifyPositronRed/GeoapifyTiles
 GeoapifyPurple/GeoapifyTiles

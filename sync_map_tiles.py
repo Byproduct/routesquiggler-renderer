@@ -3,6 +3,13 @@ Map Tile Cache Syncing Module
 This module handles syncing of map tile cache files between local machine and storage box.
 Syncs only folders that have changed (by last modified time), using a manual folder list
 and a synctime tracking file. Uses rsync over SSH for efficient file synchronization.
+
+Remote folder mtimes are read from a server-written mtimes.txt in the map tile cache root
+(storage box SSH does not provide a shell). The client rsyncs that file and parses it.
+
+SSH/rsync use IPv4 only on Windows (AddressFamily=inet) to avoid the IPV6_TCLASS
+"Operation not permitted" socket error on some environments. On Linux, both IPv4 and
+IPv6 are allowed for storage box connections.
 """
 
 # Standard library imports
@@ -22,8 +29,16 @@ def _folders_list_path():
     return _utils_dir() / "map_tile_folders.txt"
 
 
-def _synctime_path():
-    return _utils_dir() / "map_tile_folders_synctime.txt"
+def _local_mtimes_path():
+    return _utils_dir() / "mtimes_local.txt"
+
+
+def _remote_mtimes_path():
+    return _utils_dir() / "mtimes_remote.txt"
+
+
+def _remote_mtimes_last_path():
+    return _utils_dir() / "mtimes_remote_last.txt"
 
 
 def _load_folder_list():
@@ -40,52 +55,64 @@ def _load_folder_list():
     return folders
 
 
-def _load_synctime():
-    """
-    Load local and remote last-modified times from utils/map_tile_folders_synctime.txt.
-    Returns (dict_local, dict_remote) where each dict maps folder -> float timestamp.
-    """
-    path = _synctime_path()
-    local_times = {}
-    remote_times = {}
+def _load_local_mtimes():
+    """Load local folder mtimes from utils/mtimes_local.txt. Returns dict folder -> float timestamp."""
+    path = _local_mtimes_path()
+    out = {}
     if not path.exists():
-        return local_times, remote_times
-    section = None
+        return out
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
-            line = line.rstrip("\n")
-            if line.strip() == "[local]":
-                section = "local"
-                continue
-            if line.strip() == "[remote]":
-                section = "remote"
-                continue
-            if not line.strip() or section is None:
+            line = line.strip()
+            if not line:
                 continue
             parts = line.split("\t", 1)
             if len(parts) != 2:
                 continue
             folder, ts_str = parts[0].strip(), parts[1].strip()
             try:
-                ts = float(ts_str)
+                out[folder] = float(ts_str)
             except ValueError:
                 continue
-            if section == "local":
-                local_times[folder] = ts
-            elif section == "remote":
-                remote_times[folder] = ts
-    return local_times, remote_times
+    return out
 
 
-def _save_synctime(local_times, remote_times):
-    """Write utils/map_tile_folders_synctime.txt with [local] and [remote] sections."""
-    path = _synctime_path()
+def _save_local_mtimes(local_times):
+    """Write utils/mtimes_local.txt (folder\\ttimestamp per line)."""
+    path = _local_mtimes_path()
     _utils_dir().mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("[local]\n")
         for folder in sorted(local_times.keys()):
             f.write(f"{folder}\t{local_times[folder]}\n")
-        f.write("[remote]\n")
+
+
+def _load_remote_mtimes_last():
+    """Load last known remote mtimes from utils/mtimes_remote_last.txt (for comparison). Returns dict."""
+    path = _remote_mtimes_last_path()
+    out = {}
+    if not path.exists():
+        return out
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) != 2:
+                continue
+            folder, ts_str = parts[0].strip(), parts[1].strip()
+            try:
+                out[folder] = float(ts_str)
+            except ValueError:
+                continue
+    return out
+
+
+def _save_remote_mtimes_last(remote_times):
+    """Write utils/mtimes_remote_last.txt (folder\\ttimestamp per line) for next-run comparison."""
+    path = _remote_mtimes_last_path()
+    _utils_dir().mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
         for folder in sorted(remote_times.keys()):
             f.write(f"{folder}\t{remote_times[folder]}\n")
 
@@ -160,27 +187,32 @@ class MapTileSyncer:
                 self.sync_state_callback("complete")
                 return True, 0, 0
 
-            local_times, remote_times = _load_synctime()
+            local_times = _load_local_mtimes()
+            remote_times = _load_remote_mtimes_last()
 
             # Compare remote folder mtimes; mark need_sync and update remote_times in memory
             need_sync = set()
             remote_mtimes = self._get_remote_folder_mtimes(folder_list)
             for folder in folder_list:
                 rmt = remote_mtimes.get(folder)
-                if rmt is None:
-                    continue
-                prev = remote_times.get(folder)
-                if prev is None or rmt > prev:
+                prev_remote = remote_times.get(folder)
+                if prev_remote is None:
+                    # We don't know the remote state (e.g. [remote] empty or new folder) → need sync
+                    need_sync.add(folder)
+                    if rmt is not None:
+                        remote_times[folder] = rmt
+                elif rmt is not None and rmt > prev_remote:
                     need_sync.add(folder)
                     remote_times[folder] = rmt
 
             # Compare local folder mtimes; mark need_sync (do not update file yet)
             for folder in folder_list:
                 lmt = _get_local_folder_mtime(self.local_cache_dir, folder)
-                if lmt is None:
-                    continue
-                prev = local_times.get(folder)
-                if prev is None or lmt > prev:
+                prev_local = local_times.get(folder)
+                if prev_local is None:
+                    # We don't know the local state or never recorded → need sync
+                    need_sync.add(folder)
+                elif lmt is not None and lmt > prev_local:
                     need_sync.add(folder)
 
             need_sync_list = sorted(need_sync)
@@ -216,7 +248,14 @@ class MapTileSyncer:
                         lmt = _get_local_folder_mtime(self.local_cache_dir, folder)
                         if lmt is not None:
                             local_times[folder] = lmt
-                    _save_synctime(local_times, remote_times)
+                    # Re-fetch mtimes.txt so we have current server state; save as last-known for next run
+                    post_remote = self._get_remote_folder_mtimes(need_sync_list)
+                    for folder in need_sync_list:
+                        rmt = post_remote.get(folder)
+                        if rmt is not None:
+                            remote_times[folder] = rmt
+                    _save_local_mtimes(local_times)
+                    _save_remote_mtimes_last(remote_times)
                     self.progress_callback(
                         f"Syncing map tile cache: completed ({uploaded_count} uploaded, {downloaded_count} downloaded)"
                     )
@@ -280,6 +319,13 @@ class MapTileSyncer:
         rest = str(path.relative_to(path.anchor)).replace("\\", "/")
         return f"/mnt/{drive}/{rest}"
 
+    def _ssh_options(self):
+        """SSH -o options list. On Windows we add AddressFamily=inet to avoid IPV6_TCLASS errors."""
+        opts = ["-o", "StrictHostKeyChecking=no", "-o", "Compression=yes"]
+        if sys.platform == "win32":
+            opts.extend(["-o", "AddressFamily=inet"])
+        return opts
+
     def _run_ssh_command(self, remote_command, input_data=None):
         """Run SSH command with same auth as rsync (sshpass, port 23). Returns CompletedProcess."""
         using_wsl = self._rsync_cmd and self._rsync_cmd[0] == "wsl"
@@ -294,8 +340,8 @@ class MapTileSyncer:
             if self._wsl_sshpass_available:
                 cmd = [
                     "wsl", "sshpass", "-p", self.storage_box_password,
-                    "ssh", "-p", "23", "-o", "StrictHostKeyChecking=no",
-                    "-o", "Compression=yes", "-o", "CompressionLevel=6",
+                    "ssh", "-p", "23",
+                ] + self._ssh_options() + [
                     f"{self.storage_box_user}@{self.storage_box_address}",
                     remote_command,
                 ]
@@ -318,8 +364,8 @@ class MapTileSyncer:
 
         # Native Windows or Linux
         ssh_cmd = [
-            "ssh", "-p", "23", "-o", "StrictHostKeyChecking=no",
-            "-o", "Compression=yes", "-o", "CompressionLevel=6",
+            "ssh", "-p", "23",
+        ] + self._ssh_options() + [
             f"{self.storage_box_user}@{self.storage_box_address}",
             remote_command,
         ]
@@ -351,33 +397,62 @@ class MapTileSyncer:
         )
 
     def _get_remote_folder_mtimes(self, folder_list):
-        """Get last modified time of each folder on the remote (over SSH). Returns dict folder -> float mtime."""
+        """
+        Get last modified times from the server-written mtimes.txt in the map tile cache root.
+        Storage box SSH does not provide a shell, so we rsync that file and parse it.
+        Format: one line per folder, "folder_path\\ttimestamp" (tab-separated).
+        Returns dict folder -> float mtime.
+        """
         if not folder_list:
             return {}
-        # Remote script: read folder names from stdin, output "mtime folder" per line for existing dirs
-        base = "map tile cache"
-        script = (
-            f'base="{base}"; while IFS= read -r folder; do '
-            '[ -d "$base/$folder" ] && stat -c "%Y $folder" "$base/$folder"; done'
-        )
-        stdin = "\n".join(folder_list)
-        result = self._run_ssh_command(script, input_data=stdin)
+        n = len(folder_list)
+        if self.debug_logging:
+            self.debug_callback("Getting remote folder mtimes from mtimes.txt (rsync)...")
+        local_file = _remote_mtimes_path()
+        _utils_dir().mkdir(parents=True, exist_ok=True)
+        remote_spec = f"{self.storage_box_user}@{self.storage_box_address}:map tile cache/mtimes.txt"
+        if self._rsync_cmd and self._rsync_cmd[0] == "wsl":
+            local_path_str = self._convert_path_for_wsl(local_file)
+        else:
+            local_path_str = str(local_file)
+        cmd = self._rsync_cmd + [
+            "-e", "ssh -p 23 " + " ".join(self._ssh_options()),
+            "--no-motd",
+            remote_spec,
+            local_path_str,
+        ]
+        result = self._run_rsync_with_password(cmd, capture_output=True)
         out = {}
         if result.returncode != 0:
+            if self.debug_logging:
+                err = (result.stderr or b"").decode("utf-8", errors="ignore").strip()
+                self.debug_callback(f"Failed to fetch mtimes.txt (returncode={result.returncode}). {err[:300]}")
             return out
-        for line in (result.stdout or b"").decode("utf-8", errors="ignore").strip().splitlines():
+        if not local_file.exists():
+            if self.debug_logging:
+                self.debug_callback("mtimes.txt not found after rsync.")
+            return out
+        try:
+            raw = local_file.read_text(encoding="utf-8")
+        except Exception as e:
+            if self.debug_logging:
+                self.debug_callback(f"Could not read mtimes_remote.txt: {e}")
+            return out
+        for line in raw.strip().splitlines():
             line = line.strip()
             if not line:
                 continue
-            parts = line.split(None, 1)
+            parts = line.split("\t", 1)
             if len(parts) != 2:
                 continue
+            folder, ts_str = parts[0].strip(), parts[1].strip()
             try:
-                ts = float(parts[0])
-                folder = parts[1]
-                out[folder] = ts
+                out[folder] = float(ts_str)
             except ValueError:
                 continue
+        if self.debug_logging:
+            got = len(out)
+            self.debug_callback(f"Remote mtimes: got {got} folders from mtimes.txt.")
         return out
 
     def _run_rsync_with_password(self, cmd, capture_output=False, input_data=None):
@@ -450,11 +525,11 @@ class MapTileSyncer:
         else:
             local_path_str = str(local_path) + "/"
 
-        # Only transfer files that don't exist on destination; no modification checks (tiles are immutable)
+        # Only transfer files that don't exist on destination. No modification checks because tiles are immutable
         base_opts = [
-            "--recursive", "--links", "--perms", "--partial", "--stats", "--no-motd", "--human-readable",
+            "--recursive", "--links", "--perms", "--partial", "--no-motd",
             "--prune-empty-dirs", "--ignore-existing", "--no-inc-recursive",
-            "-e", "ssh -p 23 -o StrictHostKeyChecking=no -o Compression=yes -o CompressionLevel=6",
+            "-e", "ssh -p 23 " + " ".join(self._ssh_options()),
         ]
         if dry_run:
             base_opts.append("--dry-run")
@@ -538,7 +613,7 @@ def sync_map_tiles(
 ):
     """
     Sync map tiles: only folders that have changed (by mtime) are rsynced.
-    Folder list: utils/map_tile_folders.txt. Synctime tracking: utils/map_tile_folders_synctime.txt.
+    Folder list: utils/map_tile_folders.txt. Local mtimes: utils/mtimes_local.txt. Remote mtimes: server writes mtimes.txt, client uses utils/mtimes_remote.txt and utils/mtimes_remote_last.txt.
     Returns (success, uploaded_count, downloaded_count).
     """
     syncer = MapTileSyncer(
