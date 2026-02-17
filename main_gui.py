@@ -51,11 +51,12 @@ class FileCheckWorker(QObject):
     """Worker to check for files to upload in background thread."""
     finished = Signal(int)  # Emits number of files to upload
     
-    def __init__(self, storage_box_address, storage_box_user, storage_box_password):
+    def __init__(self, storage_box_address, storage_box_user, storage_box_password, debug_logging=False):
         super().__init__()
         self.storage_box_address = storage_box_address
         self.storage_box_user = storage_box_user
         self.storage_box_password = storage_box_password
+        self.debug_logging = debug_logging
     
     def check_files(self):
         """Check for files to upload using dry run."""
@@ -70,7 +71,8 @@ class FileCheckWorker(QObject):
                 progress_callback=lambda msg: None,  # Don't show progress during exit check
                 sync_state_callback=lambda state: None,  # Don't change UI state during exit check
                 dry_run=True,
-                upload_only=True  # Only check for uploads
+                upload_only=True,  # Only check for uploads
+                debug_logging=self.debug_logging
             )
             
             self.finished.emit(files_to_upload if success else 0)
@@ -84,11 +86,12 @@ class SyncWorker(QObject):
     """Worker to perform file syncing in background thread."""
     finished = Signal(bool, int, int)  # Emits success, uploaded_count, downloaded_count
     
-    def __init__(self, storage_box_address, storage_box_user, storage_box_password):
+    def __init__(self, storage_box_address, storage_box_user, storage_box_password, debug_logging=False):
         super().__init__()
         self.storage_box_address = storage_box_address
         self.storage_box_user = storage_box_user
         self.storage_box_password = storage_box_password
+        self.debug_logging = debug_logging
     
     def sync_files(self):
         """Perform the actual file sync."""
@@ -127,6 +130,7 @@ class SyncWorker(QObject):
                 sync_state_callback=lambda state: None,  # Don't change UI state during exit sync
                 max_workers=5,  # Use fewer workers for exit sync
                 dry_run=False,
+                debug_logging=self.debug_logging,
                 upload_only=True
             )
             
@@ -681,6 +685,7 @@ class MainWindow(QMainWindow):
                 return 0
             
             # Perform dry run to check for files to upload
+            debug_logging = getattr(self.bootup_manager.config, 'debug_logging', False)
             success, files_to_upload, files_to_download = sync_map_tiles(
                 storage_box_address=credentials['address'],
                 storage_box_user=credentials['user'],
@@ -690,7 +695,8 @@ class MainWindow(QMainWindow):
                 progress_callback=lambda msg: None,  # Don't show progress during exit check
                 sync_state_callback=lambda state: None,  # Don't change UI state during exit check
                 dry_run=True,
-                upload_only=True  # Only check for uploads
+                upload_only=True,  # Only check for uploads
+                debug_logging=debug_logging
             )
             
             return files_to_upload if success else 0
@@ -1424,7 +1430,9 @@ class MainWindow(QMainWindow):
 
     def start_background_file_check(self, credentials):
         """Start a background worker to check for files to upload."""
-        self.file_check_worker = FileCheckWorker(credentials['address'], credentials['user'], credentials['password'])
+        debug_logging = getattr(getattr(self, 'bootup_manager', None), 'config', None)
+        debug_logging = getattr(debug_logging, 'debug_logging', False) if debug_logging else False
+        self.file_check_worker = FileCheckWorker(credentials['address'], credentials['user'], credentials['password'], debug_logging=debug_logging)
         self.file_check_thread = QThread()
         self.file_check_worker.moveToThread(self.file_check_thread)
         
@@ -1451,7 +1459,9 @@ class MainWindow(QMainWindow):
 
     def start_background_sync(self, credentials):
         """Start a background worker to perform the actual sync."""
-        self.sync_worker = SyncWorker(credentials['address'], credentials['user'], credentials['password'])
+        debug_logging = getattr(getattr(self, 'bootup_manager', None), 'config', None)
+        debug_logging = getattr(debug_logging, 'debug_logging', False) if debug_logging else False
+        self.sync_worker = SyncWorker(credentials['address'], credentials['user'], credentials['password'], debug_logging=debug_logging)
         self.sync_thread = QThread()
         self.sync_worker.moveToThread(self.sync_thread)
         

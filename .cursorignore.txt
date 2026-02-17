@@ -1,0 +1,10 @@
+.vs/
+__pycache__/
+map tile cache/
+temporary files/
+log/
+config.txt
+ffmpeg.exe
+ffprobe.exe
+utils/verified_map_tiles.txt
+utils/map_tile_folders_synctime.txt

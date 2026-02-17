@@ -16,6 +16,7 @@ import cartopy.io.img_tiles as cimgt
 import numpy as np
 
 # Local imports
+from config import config
 from image_generator_maptileutils import calculate_tile_count, create_map_tiles, detect_zoom_level, set_cache_directory
 from job_request import set_attribution_from_theme
 from sync_map_tiles import sync_map_tiles
@@ -54,12 +55,13 @@ def trigger_background_sync(log_callback=None, debug_callback=None):
                 storage_box_user=STORAGE_BOX_CREDENTIALS['user'],
                 storage_box_password=STORAGE_BOX_CREDENTIALS['password'],
                 local_cache_dir="map tile cache",
-                log_callback=log_callback,  # Use the provided log callback
-                progress_callback=lambda msg: None,  # Don't show progress in UI
-                sync_state_callback=lambda state: None,  # Don't change UI state
-                max_workers=5,  # Use fewer workers for background sync
+                log_callback=log_callback,
+                progress_callback=lambda msg: None,
+                sync_state_callback=lambda state: None,
+                max_workers=5,
                 dry_run=False,
-                upload_only=False  # Full sync to upload new tiles
+                upload_only=False,
+                debug_logging=config.debug_logging
             )
             
             if success:

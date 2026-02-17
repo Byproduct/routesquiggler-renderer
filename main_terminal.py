@@ -50,12 +50,13 @@ def sync_map_tiles_terminal():
         storage_box_user=config.storage_box_user,
         storage_box_password=config.storage_box_password,
         local_cache_dir="map tile cache",
-        log_callback=lambda msg: write_debug_log(f"Sync: {msg}"),  
-        progress_callback=lambda msg: write_debug_log(f"Progress: {msg}"), 
-        sync_state_callback=lambda state: None,  
+        log_callback=lambda msg: write_debug_log(f"Sync: {msg}"),
+        progress_callback=lambda msg: write_debug_log(f"Progress: {msg}"),
+        sync_state_callback=lambda state: None,
         max_workers=1,
         dry_run=False,
-        upload_only=True
+        upload_only=True,
+        debug_logging=config.debug_logging
     )
             
     if success:

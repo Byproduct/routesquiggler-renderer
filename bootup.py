@@ -293,7 +293,8 @@ class BootupManager:
                 progress_callback=self.progress_callback,
                 sync_state_callback=self.sync_state_callback,
                 max_workers=10,
-                debug_callback=write_debug_log
+                debug_callback=write_debug_log,
+                debug_logging=self.config.debug_logging
             )
             
             # Show upload/download counts in main output if > 0
