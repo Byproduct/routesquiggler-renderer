@@ -25,7 +25,7 @@ RATE_LIMIT_DEFAULT = 0.05   # Default (OSM and Stadia and any unspecified servic
 RATE_LIMIT_OTM = 0.10      # OpenTopoMap
 RATE_LIMIT_CYCLOSM = 0.10  # CyclOSM
 RATE_LIMIT_GEOAPIFY = 0.20 # Geoapify
-RATE_LIMIT_THUNDERFOREST = 0.01  # Thunderforest
+RATE_LIMIT_THUNDERFOREST = 0.025  # Thunderforest
 
 # User-Agent for free OSM-based tile services (OSM, OpenTopoMap, CyclOSM).
 # Required by OpenStreetMap tile usage policy: https://operations.osmfoundation.org/policies/tiles/
