@@ -10,6 +10,8 @@ Remote folder mtimes are read from a server-written mtimes.txt in the map tile c
 SSH/rsync use IPv4 only on Windows (AddressFamily=inet) to avoid the IPV6_TCLASS
 "Operation not permitted" socket error on some environments. On Linux, both IPv4 and
 IPv6 are allowed for storage box connections.
+
+Typically runs integrated into the rendering client, but can also be run standalone.
 """
 
 # Standard library imports
@@ -628,3 +630,59 @@ def sync_map_tiles(
         debug_logging=debug_logging,
     )
     return syncer.sync(max_workers=max_workers, dry_run=dry_run, upload_only=upload_only)
+
+
+def _run_standalone():
+    """
+    Run map tile sync as a standalone script.
+    Loads config, runs cache sweep, then syncs - same flow as bootup.
+    """
+    from config import config
+    from write_log import write_debug_log, write_log
+
+    write_log("Map tile cache sync (standalone)")
+
+    if not config.sync_map_tile_cache:
+        write_log("Map tile cache syncing is disabled in config. Exiting.")
+        sys.exit(0)
+
+    if not all([config.storage_box_address, config.storage_box_user, config.storage_box_password]):
+        write_log("Cannot sync: missing storage box credentials in config.txt.")
+        sys.exit(1)
+
+    try:
+        write_log("Cleaning bad map tiles from local cache.")
+        import map_tile_cache_sweep
+        map_tile_cache_sweep.main()
+    except Exception as sweep_error:
+        write_log(f"Warning: Cache cleaning failed: {str(sweep_error)}")
+        # Continue with sync even if sweep fails
+
+    write_log("Checking and uploading map tiles")
+    success, uploaded_count, downloaded_count = sync_map_tiles(
+        storage_box_address=config.storage_box_address,
+        storage_box_user=config.storage_box_user,
+        storage_box_password=config.storage_box_password,
+        local_cache_dir="map tile cache",
+        log_callback=write_log,
+        progress_callback=write_log,
+        sync_state_callback=lambda state: None,
+        max_workers=10,
+        dry_run=False,
+        upload_only=False,
+        debug_callback=write_debug_log,
+        debug_logging=config.debug_logging,
+    )
+
+    if success:
+        if uploaded_count > 0 or downloaded_count > 0:
+            write_log(f"Uploaded {uploaded_count} tiles, downloaded {downloaded_count} tiles")
+        write_log("Map tile cache sync completed successfully.")
+        sys.exit(0)
+    else:
+        write_log("Map tile cache sync failed.")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    _run_standalone()

@@ -175,15 +175,10 @@ def process_cache_directory(cache_dir: str, use_progress_bar: bool = False, test
     
     # Process each file
     for npy_file in iterator:
-        # Skip if already verified
+        # Skip if already verified (paths from find_npy_files exist by definition)
         if npy_file in verified_tiles:
-            # Verify file still exists (might have been deleted externally)
-            if os.path.exists(npy_file):
-                skipped_tiles += 1
-                continue
-            else:
-                # File was deleted, remove from verified set
-                verified_tiles.discard(npy_file)
+            skipped_tiles += 1
+            continue
         
         # Check the tile
         if is_blank_or_erroneous_tile(npy_file):
