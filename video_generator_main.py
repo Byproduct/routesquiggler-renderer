@@ -249,8 +249,8 @@ def upload_video_to_storage_box(
     # Wrap the upload operation with retry logic
     return retry_operation(
         operation=_do_upload,
-        max_attempts=15,
-        retry_delay=60,
+        max_attempts=50,
+        retry_delay=20,
         log_callback=log_callback,
         operation_name=f"Video upload ({filename})"
     )

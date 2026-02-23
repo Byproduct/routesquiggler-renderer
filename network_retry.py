@@ -9,23 +9,23 @@ from typing import Callable, Any, Optional
 
 
 def with_network_retry(
-    max_attempts: int = 15,
-    retry_delay: int = 60,
+    max_attempts: int = 50,
+    retry_delay: int = 20,
     log_callback: Optional[Callable[[str], None]] = None
 ):
     """
     Decorator that adds retry logic to network operations.
     
     Args:
-        max_attempts: Maximum number of attempts (default: 15)
-        retry_delay: Delay in seconds between retries (default: 60)
+        max_attempts: Maximum number of attempts (default: 50)
+        retry_delay: Delay in seconds between retries (default: 20)
         log_callback: Optional callback function for logging messages
         
     Returns:
         Decorated function with retry logic
         
     Example:
-        @with_network_retry(max_attempts=15, retry_delay=60)
+        @with_network_retry(max_attempts=50, retry_delay=20)
         def upload_file():
             # Upload logic here
             pass
@@ -90,8 +90,8 @@ def with_network_retry(
 
 def retry_operation(
     operation: Callable,
-    max_attempts: int = 15,
-    retry_delay: int = 60,
+    max_attempts: int = 50,
+    retry_delay: int = 20,
     log_callback: Optional[Callable[[str], None]] = None,
     operation_name: str = "Operation"
 ) -> Any:
@@ -101,8 +101,8 @@ def retry_operation(
     
     Args:
         operation: The callable to execute with retry logic
-        max_attempts: Maximum number of attempts (default: 15)
-        retry_delay: Delay in seconds between retries (default: 60)
+        max_attempts: Maximum number of attempts (default: 50)
+        retry_delay: Delay in seconds between retries (default: 20)
         log_callback: Optional callback function for logging messages
         operation_name: Name of the operation for logging purposes
         
@@ -112,8 +112,8 @@ def retry_operation(
     Example:
         result = retry_operation(
             lambda: upload_file(file_path),
-            max_attempts=15,
-            retry_delay=60,
+            max_attempts=50,
+            retry_delay=20,
             log_callback=print,
             operation_name="File upload"
         )
@@ -131,14 +131,15 @@ def retry_operation(
                     return result
                 else:
                     # Function returned False - treat as failure
-                    if log_callback:
-                        if attempt < max_attempts:
+                    if attempt < max_attempts:
+                        if log_callback:
                             log_callback(f"⚠️ {operation_name} attempt {attempt}/{max_attempts} failed. Retrying in {retry_delay} seconds")
-                            time.sleep(retry_delay)
-                            continue
-                        else:
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        if log_callback:
                             log_callback(f"❌ {operation_name}: All {max_attempts} attempts failed. Giving up.")
-                    return False
+                        return False
             else:
                 # For non-boolean returns, assume success if no exception was raised
                 if attempt > 1 and log_callback:

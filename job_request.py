@@ -198,8 +198,8 @@ def update_job_status(api_url, user, hardware_id, app_version, job_id, status, l
     # Wrap the status update operation with retry logic
     return retry_operation(
         operation=_do_update,
-        max_attempts=15,
-        retry_delay=60,
+        max_attempts=50,
+        retry_delay=20,
         log_callback=log_callback,
         operation_name=f"Status update for job {job_id}"
     )

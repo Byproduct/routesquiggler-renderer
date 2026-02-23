@@ -786,6 +786,9 @@ def run_job_processing_loop_terminal(bootup_manager, app):
     retry_delay = 10  # Delay between retries when no jobs are available
     tiles_synced_after_last_job = True  # Track if we've synced tiles after the last successful job
     # Start as True since bootup already synced tiles - reset to False after first successful job
+
+    # Sync strategy: True = sync after every job completion (fast sync). False = sync only when no jobs (old "sync in free time" behavior).
+    SYNC_AFTER_EVERY_JOB = True
     
     while not shutdown_requested:
         try:
@@ -840,8 +843,20 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                 write_debug_log(f"Job processing completed with success={success}")
                 
                 if success:
-                    # Reset flag after successful job completion - we can sync tiles again after next job
-                    tiles_synced_after_last_job = False
+                    if SYNC_AFTER_EVERY_JOB:
+                        # Sync map tiles immediately after every job (sync is now fast)
+                        try:
+                            sync_success = bootup_manager.do_sync_map_tile_cache()
+                            if not sync_success:
+                                write_log("Warning: Map tile cache sync failed, but continuing")
+                            tiles_synced_after_last_job = True
+                        except Exception as e:
+                            write_log(f"Error during map tile cache sync: {str(e)}")
+                            write_debug_log(traceback.format_exc())
+                            tiles_synced_after_last_job = True  # Avoid retrying immediately
+                    else:
+                        # Old behavior: sync only when no jobs available ("free time")
+                        tiles_synced_after_last_job = False
                     if not shutdown_requested:
                         write_log("Job completed. Requesting next job")
                         # Small delay before requesting next job
@@ -861,7 +876,7 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             else:
                 # No jobs available
                 if not shutdown_requested:
-                    # If we haven't synced tiles after the last successful job, do it now
+                    # Sync on "free time" (only when SYNC_AFTER_EVERY_JOB is False - old behavior)
                     if not tiles_synced_after_last_job:
                         try:
                             # Use the bootup manager's sync method which includes cache sweep
