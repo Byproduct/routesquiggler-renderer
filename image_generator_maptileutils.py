@@ -100,6 +100,20 @@ def _is_tile_cached_in_memory(tiles, tile) -> bool:
         # If cache introspection fails, fall back to safe behavior (rate-limit).
         return False
 
+
+def _make_get_image(tile_delay: float, map_style: str, log_cache_miss: bool, parent_get_image):
+    """
+    Factory that returns a get_image method with rate limiting and cache-miss logging.
+    parent_get_image is the parent class's get_image (e.g. cimgt.GoogleTiles.get_image).
+    """
+    def get_image(self, tile):
+        if not _is_tile_cached_in_memory(self, tile):
+            if log_cache_miss:
+                debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+            _rate_limit_tile_download(tile_delay)
+        return parent_get_image(self, tile)
+    return get_image
+
 def set_cache_directory(map_style: str):
     """Set the appropriate cache directory for the given map style."""
     debug_log(f"set_cache_directory called with map_style: '{map_style}'")
@@ -243,12 +257,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                     debug_log(f"Generated Stadia URL: {url}")
                     return url
                 
-                def get_image(self, tile):
-                    if not _is_tile_cached_in_memory(self, tile):
-                        if log_cache_miss:
-                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                        _rate_limit_tile_download(tile_delay)
-                    return super().get_image(tile)
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
             
             tiles = StadiaTiles(cache=True)
             debug_log(f"Created StadiaTiles object: {type(tiles)}")
@@ -267,12 +276,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                     debug_log(f"Generated fallback Stadia URL: {url}")
                     return url
                 
-                def get_image(self, tile):
-                    if not _is_tile_cached_in_memory(self, tile):
-                        if log_cache_miss:
-                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                        _rate_limit_tile_download(tile_delay)
-                    return super().get_image(tile)
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
             
             tiles = StadiaTiles(cache=True)
             debug_log(f"Created fallback StadiaTiles object: {type(tiles)}")
@@ -289,12 +293,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                 debug_log(f"Generated OTM URL: {url}")
                 return url
             
-            def get_image(self, tile):
-                if not _is_tile_cached_in_memory(self, tile):
-                    if log_cache_miss:
-                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                    _rate_limit_tile_download(tile_delay)
-                return super().get_image(tile)
+            get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.OSM.get_image)
         
         tiles = OpenTopoMapTiles(cache=True, user_agent=FREE_TILE_USER_AGENT)
         debug_log(f"Created OpenTopoMapTiles object: {type(tiles)}")
@@ -311,12 +310,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                 debug_log(f"Generated CyclOSM URL: {url}")
                 return url
             
-            def get_image(self, tile):
-                if not _is_tile_cached_in_memory(self, tile):
-                    if log_cache_miss:
-                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                    _rate_limit_tile_download(tile_delay)
-                return super().get_image(tile)
+            get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.OSM.get_image)
         
         tiles = CyclOSMTiles(cache=True, user_agent=FREE_TILE_USER_AGENT)
         debug_log(f"Created CyclOSMTiles object: {type(tiles)}")
@@ -336,12 +330,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                     debug_log(f"Generated Geoapify URL: {url}")
                     return url
                 
-                def get_image(self, tile):
-                    if not _is_tile_cached_in_memory(self, tile):
-                        if log_cache_miss:
-                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                        _rate_limit_tile_download(tile_delay)
-                    return super().get_image(tile)
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
             
             tiles = GeoapifyTiles(cache=True)
             debug_log(f"Created GeoapifyTiles object: {type(tiles)}")
@@ -357,12 +346,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                     debug_log(f"Generated fallback Geoapify URL: {url}")
                     return url
                 
-                def get_image(self, tile):
-                    if not _is_tile_cached_in_memory(self, tile):
-                        if log_cache_miss:
-                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                        _rate_limit_tile_download(tile_delay)
-                    return super().get_image(tile)
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
             
             tiles = GeoapifyTiles(cache=True)
             debug_log(f"Created fallback GeoapifyTiles object: {type(tiles)}")
@@ -382,12 +366,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                     debug_log(f"Generated Thunderforest URL: {url}")
                     return url
                 
-                def get_image(self, tile):
-                    if not _is_tile_cached_in_memory(self, tile):
-                        if log_cache_miss:
-                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                        _rate_limit_tile_download(tile_delay)
-                    return super().get_image(tile)
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
             
             tiles = ThunderforestTiles(cache=True)
             debug_log(f"Created ThunderforestTiles object: {type(tiles)}")
@@ -403,12 +382,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
                     debug_log(f"Generated fallback Thunderforest URL: {url}")
                     return url
                 
-                def get_image(self, tile):
-                    if not _is_tile_cached_in_memory(self, tile):
-                        if log_cache_miss:
-                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                        _rate_limit_tile_download(tile_delay)
-                    return super().get_image(tile)
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
             
             tiles = ThunderforestTiles(cache=True)
             debug_log(f"Created fallback ThunderforestTiles object: {type(tiles)}")
@@ -419,12 +393,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
         tile_delay = get_rate_limit_delay(map_style)
         
         class OSM(cimgt.OSM):
-            def get_image(self, tile):
-                if not _is_tile_cached_in_memory(self, tile):
-                    if log_cache_miss:
-                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                    _rate_limit_tile_download(tile_delay)
-                return super().get_image(tile)
+            get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.OSM.get_image)
         
         tiles = OSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
         debug_log(f"Created OSM tiles object: {type(tiles)}")
@@ -436,12 +405,7 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
         tile_delay = get_rate_limit_delay(map_style)
         
         class OSM(cimgt.OSM):
-            def get_image(self, tile):
-                if not _is_tile_cached_in_memory(self, tile):
-                    if log_cache_miss:
-                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
-                    _rate_limit_tile_download(tile_delay)
-                return super().get_image(tile)
+            get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.OSM.get_image)
         
         tiles = OSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
         debug_log(f"Created default OSM tiles object: {type(tiles)}")

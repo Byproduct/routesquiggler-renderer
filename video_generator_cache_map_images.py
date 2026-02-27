@@ -35,6 +35,7 @@ class _CacheOnlyTilesWrapper:
     """
     Wraps a CartoPy tile source so get_image() only serves from disk cache.
     Raises if a tile is requested that is not cached (guarantees no network in step 4).
+    Debug feature disabled by default.
     """
     def __init__(self, tiles, map_style):
         self._tiles = tiles

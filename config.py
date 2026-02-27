@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Configuration variables set by the user in config.txt.
 """
@@ -20,7 +20,6 @@ class Config:
         self.debug_logging = False
         self.sync_map_tile_cache = True
         self.gpu_rendering = True
-        self.leave_temporary_files = False
     
     def load_from_file(self, config_path):
         """Load configuration from a file."""
