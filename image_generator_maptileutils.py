@@ -84,6 +84,22 @@ def _rate_limit_tile_download(delay: Optional[float] = None):
             time.sleep(delay - time_since_last)
         _last_tile_download_time = time.time()
 
+
+def _is_tile_cached_in_memory(tiles, tile) -> bool:
+    """
+    Return True when CartoPy already knows this tile exists in disk cache.
+    This allows us to avoid download rate-limiting for local cache hits.
+    """
+    try:
+        if getattr(tiles, "cache_path", None) is None:
+            return False
+        filename = "_".join([str(i) for i in tile]) + ".npy"
+        cached_file = tiles._cache_dir / filename
+        return cached_file in tiles.cache
+    except Exception:
+        # If cache introspection fails, fall back to safe behavior (rate-limit).
+        return False
+
 def set_cache_directory(map_style: str):
     """Set the appropriate cache directory for the given map style."""
     debug_log(f"set_cache_directory called with map_style: '{map_style}'")
@@ -150,7 +166,7 @@ def set_cache_directory(map_style: str):
     if MAP_TILE_CACHING_DEBUG:
         print(f"Set cache directory to: {cache_dir}")
 
-def create_map_tiles(map_style: str):
+def create_map_tiles(map_style: str, log_cache_miss: bool = False):
     """
     Create map tiles based on the selected style.
     
@@ -228,7 +244,10 @@ def create_map_tiles(map_style: str):
                     return url
                 
                 def get_image(self, tile):
-                    _rate_limit_tile_download(tile_delay)
+                    if not _is_tile_cached_in_memory(self, tile):
+                        if log_cache_miss:
+                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                        _rate_limit_tile_download(tile_delay)
                     return super().get_image(tile)
             
             tiles = StadiaTiles(cache=True)
@@ -249,7 +268,10 @@ def create_map_tiles(map_style: str):
                     return url
                 
                 def get_image(self, tile):
-                    _rate_limit_tile_download(tile_delay)
+                    if not _is_tile_cached_in_memory(self, tile):
+                        if log_cache_miss:
+                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                        _rate_limit_tile_download(tile_delay)
                     return super().get_image(tile)
             
             tiles = StadiaTiles(cache=True)
@@ -268,7 +290,10 @@ def create_map_tiles(map_style: str):
                 return url
             
             def get_image(self, tile):
-                _rate_limit_tile_download(tile_delay)
+                if not _is_tile_cached_in_memory(self, tile):
+                    if log_cache_miss:
+                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                    _rate_limit_tile_download(tile_delay)
                 return super().get_image(tile)
         
         tiles = OpenTopoMapTiles(cache=True, user_agent=FREE_TILE_USER_AGENT)
@@ -287,7 +312,10 @@ def create_map_tiles(map_style: str):
                 return url
             
             def get_image(self, tile):
-                _rate_limit_tile_download(tile_delay)
+                if not _is_tile_cached_in_memory(self, tile):
+                    if log_cache_miss:
+                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                    _rate_limit_tile_download(tile_delay)
                 return super().get_image(tile)
         
         tiles = CyclOSMTiles(cache=True, user_agent=FREE_TILE_USER_AGENT)
@@ -309,7 +337,10 @@ def create_map_tiles(map_style: str):
                     return url
                 
                 def get_image(self, tile):
-                    _rate_limit_tile_download(tile_delay)
+                    if not _is_tile_cached_in_memory(self, tile):
+                        if log_cache_miss:
+                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                        _rate_limit_tile_download(tile_delay)
                     return super().get_image(tile)
             
             tiles = GeoapifyTiles(cache=True)
@@ -327,7 +358,10 @@ def create_map_tiles(map_style: str):
                     return url
                 
                 def get_image(self, tile):
-                    _rate_limit_tile_download(tile_delay)
+                    if not _is_tile_cached_in_memory(self, tile):
+                        if log_cache_miss:
+                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                        _rate_limit_tile_download(tile_delay)
                     return super().get_image(tile)
             
             tiles = GeoapifyTiles(cache=True)
@@ -349,7 +383,10 @@ def create_map_tiles(map_style: str):
                     return url
                 
                 def get_image(self, tile):
-                    _rate_limit_tile_download(tile_delay)
+                    if not _is_tile_cached_in_memory(self, tile):
+                        if log_cache_miss:
+                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                        _rate_limit_tile_download(tile_delay)
                     return super().get_image(tile)
             
             tiles = ThunderforestTiles(cache=True)
@@ -367,7 +404,10 @@ def create_map_tiles(map_style: str):
                     return url
                 
                 def get_image(self, tile):
-                    _rate_limit_tile_download(tile_delay)
+                    if not _is_tile_cached_in_memory(self, tile):
+                        if log_cache_miss:
+                            debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                        _rate_limit_tile_download(tile_delay)
                     return super().get_image(tile)
             
             tiles = ThunderforestTiles(cache=True)
@@ -380,7 +420,10 @@ def create_map_tiles(map_style: str):
         
         class OSM(cimgt.OSM):
             def get_image(self, tile):
-                _rate_limit_tile_download(tile_delay)
+                if not _is_tile_cached_in_memory(self, tile):
+                    if log_cache_miss:
+                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                    _rate_limit_tile_download(tile_delay)
                 return super().get_image(tile)
         
         tiles = OSM(cache=True, user_agent=FREE_TILE_USER_AGENT)
@@ -394,7 +437,10 @@ def create_map_tiles(map_style: str):
         
         class OSM(cimgt.OSM):
             def get_image(self, tile):
-                _rate_limit_tile_download(tile_delay)
+                if not _is_tile_cached_in_memory(self, tile):
+                    if log_cache_miss:
+                        debug_log(f"Step 4 cache miss: downloading tile {tile} for style '{map_style}'")
+                    _rate_limit_tile_download(tile_delay)
                 return super().get_image(tile)
         
         tiles = OSM(cache=True, user_agent=FREE_TILE_USER_AGENT)

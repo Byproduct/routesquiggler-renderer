@@ -98,64 +98,52 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
         bool: True if tile is cached, False otherwise
     """
     try:
-        # CartoPy creates nested subdirectories. Check both possible locations:
-        # 1. Direct in cache directory: {cache_dir}/{x}_{y}_{zoom}.npy
-        # 2. For Stadia maps: {cache_dir}/StadiaTiles/{x}_{y}_{zoom}.npy
-        # 3. For other maps: {cache_dir}/{subdir}/{x}_{y}_{zoom}.npy
-        
-        # First try direct location
-        tile_file = os.path.join(cache_dir, f"{x}_{y}_{zoom}.npy")
-        
-        # If not found, try nested subdirectory based on map style
-        if not os.path.exists(tile_file):
-            if map_style.startswith('stadia'):
-                # For Stadia maps, check the StadiaTiles subdirectory
-                tile_file = os.path.join(cache_dir, 'StadiaTiles', f"{x}_{y}_{zoom}.npy")
-            elif map_style.startswith('geoapify'):
-                # For Geoapify maps, check the GeoapifyTiles subdirectory
-                tile_file = os.path.join(cache_dir, 'GeoapifyTiles', f"{x}_{y}_{zoom}.npy")
-            elif map_style.startswith('thunderforest'):
-                # For Thunderforest maps, check the ThunderforestTiles subdirectory
-                tile_file = os.path.join(cache_dir, 'ThunderforestTiles', f"{x}_{y}_{zoom}.npy")
-            else:
-                # For non-Stadia maps, check if there's a nested subdirectory
-                # This handles cases like OSM/OSM structure
-                style_subdir_mapping = {
-                    'osm': 'OSM',
-                    'otm': 'OpenTopoMap',
-                    'cyclosm': 'CyclOSM',
-                    'geoapify_carto': 'GeoapifyCarto',
-                    'geoapify_bright': 'GeoapifyBright',
-                    'geoapify_bright_grey': 'GeoapifyBrightGrey',
-                    'geoapify_bright_smooth': 'GeoapifyBrightSmooth',
-                    'geoapify_klokantech': 'GeoapifyKlokantech',
-                    'geoapify_liberty': 'GeoapifyLiberty',
-                    'geoapify_maptiler': 'GeoapifyMaptiler',
-                    'geoapify_toner': 'GeoapifyToner',
-                    'geoapify_toner_grey': 'GeoapifyTonerGrey',
-                    'geoapify_positron': 'GeoapifyPositron',
-                    'geoapify_positron_blue': 'GeoapifyPositronBlue',
-                    'geoapify_positron_red': 'GeoapifyPositronRed',
-                    'geoapify_dark': 'GeoapifyDark',
-                    'geoapify_dark_brown': 'GeoapifyDarkBrown',
-                    'geoapify_grey': 'GeoapifyGrey',
-                    'geoapify_purple': 'GeoapifyPurple',
-                    'geoapify_purple_roads': 'GeoapifyPurpleRoads',
-                    'geoapify_yellow_roads': 'GeoapifyYellowRoads',
-                    'thunderforest_atlas': 'ThunderforestAtlas',
-                    'thunderforest_mobile_atlas': 'ThunderforestMobileAtlas',
-                    'thunderforest_cycle': 'ThunderforestCycle',
-                    'thunderforest_landscape': 'ThunderforestLandscape',
-                    'thunderforest_neighbourhood': 'ThunderforestNeighbourhood',
-                    'thunderforest_outdoors': 'ThunderforestOutdoors',
-                    'thunderforest_pioneer': 'ThunderforestPioneer',
-                    'thunderforest_spinal': 'ThunderforestSpinal',
-                    'thunderforest_transport': 'ThunderforestTransport',
-                    'thunderforest_transport_dark': 'ThunderforestTransportDark'
-                }
-                subdir = style_subdir_mapping.get(map_style, map_style.upper())
-                tile_file = os.path.join(cache_dir, subdir, f"{x}_{y}_{zoom}.npy")
-        
+        # Tiles are always under a style-specific subdirectory of cache_dir, never in the root.
+        # Resolve subdir from map_style, then check {cache_dir}/{subdir}/{x}_{y}_{zoom}.npy
+        if map_style.startswith('stadia'):
+            subdir = 'StadiaTiles'
+        elif map_style.startswith('geoapify'):
+            subdir = 'GeoapifyTiles'
+        elif map_style.startswith('thunderforest'):
+            subdir = 'ThunderforestTiles'
+        else:
+            style_subdir_mapping = {
+                'osm': 'OSM',
+                'otm': 'OpenTopoMap',
+                'cyclosm': 'CyclOSM',
+                'geoapify_carto': 'GeoapifyCarto',
+                'geoapify_bright': 'GeoapifyBright',
+                'geoapify_bright_grey': 'GeoapifyBrightGrey',
+                'geoapify_bright_smooth': 'GeoapifyBrightSmooth',
+                'geoapify_klokantech': 'GeoapifyKlokantech',
+                'geoapify_liberty': 'GeoapifyLiberty',
+                'geoapify_maptiler': 'GeoapifyMaptiler',
+                'geoapify_toner': 'GeoapifyToner',
+                'geoapify_toner_grey': 'GeoapifyTonerGrey',
+                'geoapify_positron': 'GeoapifyPositron',
+                'geoapify_positron_blue': 'GeoapifyPositronBlue',
+                'geoapify_positron_red': 'GeoapifyPositronRed',
+                'geoapify_dark': 'GeoapifyDark',
+                'geoapify_dark_brown': 'GeoapifyDarkBrown',
+                'geoapify_grey': 'GeoapifyGrey',
+                'geoapify_purple': 'GeoapifyPurple',
+                'geoapify_purple_roads': 'GeoapifyPurpleRoads',
+                'geoapify_yellow_roads': 'GeoapifyYellowRoads',
+                'thunderforest_atlas': 'ThunderforestAtlas',
+                'thunderforest_mobile_atlas': 'ThunderforestMobileAtlas',
+                'thunderforest_cycle': 'ThunderforestCycle',
+                'thunderforest_landscape': 'ThunderforestLandscape',
+                'thunderforest_neighbourhood': 'ThunderforestNeighbourhood',
+                'thunderforest_outdoors': 'ThunderforestOutdoors',
+                'thunderforest_pioneer': 'ThunderforestPioneer',
+                'thunderforest_spinal': 'ThunderforestSpinal',
+                'thunderforest_transport': 'ThunderforestTransport',
+                'thunderforest_transport_dark': 'ThunderforestTransportDark'
+            }
+            subdir = style_subdir_mapping.get(map_style, map_style.upper())
+
+        tile_file = os.path.join(cache_dir, subdir, f"{x}_{y}_{zoom}.npy")
+
         # Debug output
         if MAP_TILE_CACHING_DEBUG:
             print(f"Looking for tile file: {tile_file}")

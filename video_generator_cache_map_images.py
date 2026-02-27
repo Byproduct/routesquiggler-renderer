@@ -24,7 +24,36 @@ from image_generator_maptileutils import create_map_tiles, detect_zoom_level, se
 from job_request import set_attribution_from_theme
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 from video_generator_coordinate_encoder import encode_coords
+from video_generator_cache_map_tiles import is_tile_cached
 from video_generator_create_single_frame import _convert_bbox_to_web_mercator, _gps_to_web_mercator
+
+# Debug feature to check that map image creation (step 4) has all required tiles available in local cache.
+USE_CACHE_ONLY_TILES_WRAPPER = False
+
+
+class _CacheOnlyTilesWrapper:
+    """
+    Wraps a CartoPy tile source so get_image() only serves from disk cache.
+    Raises if a tile is requested that is not cached (guarantees no network in step 4).
+    """
+    def __init__(self, tiles, map_style):
+        self._tiles = tiles
+        self._map_style = map_style
+        self.crs = tiles.crs
+        import cartopy
+        self._cache_dir = cartopy.config.get('cache_dir', '')
+
+    def get_image(self, tile):
+        x, y, z = tile
+        if not is_tile_cached(self._cache_dir, x, y, z, self._map_style):
+            raise RuntimeError(
+                f"Map tile ({x},{y},{z}) not in cache; step 4 must not download from network. "
+                "Ensure step 3 (cache map tiles) completed successfully."
+            )
+        return self._tiles.get_image(tile)
+
+    def __getattr__(self, name):
+        return getattr(self._tiles, name)
 
 def _get_from_cache_safe(shared_map_cache, encoded_bbox):
     """
@@ -97,78 +126,18 @@ def create_map_image_worker(args):
         dpi = 100  # Hardcoded as specified
         figsize = (width / dpi, height / dpi)
         
-        # Set up the cartopy cache directory
+        # Set up the cartopy cache directory (tiles are already cached in step 3)
         set_cache_directory(map_style)
-        
-        # Get and display the current cache directory being used
-        import cartopy
-        current_cache_dir = cartopy.config.get('cache_dir', 'Not set')
-        
-        # Write debug info to debug.log since print doesn't work in multiprocess
-        debug_msg = f"Map image creation for bbox {bbox_index + 1}: Using map tile cache directory: {current_cache_dir}\n"
-        
-        # Show expected vs actual cache path
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-        expected_base_cache = os.path.join(current_directory, 'map tile cache')
-        debug_msg += f"  Expected base cache directory: {expected_base_cache}\n"
-        debug_msg += f"  Map style: {map_style}\n"
-        
-        # Verify cache directory exists and show some stats
-        if os.path.exists(current_cache_dir):
-            try:
-                cache_contents = os.listdir(current_cache_dir)
-                tile_files = [f for f in cache_contents if f.endswith('.npy')]
-                debug_msg += f"  Cache directory exists with {len(cache_contents)} items ({len(tile_files)} tile files)\n"
-                
-                # Show first few tile files as examples
-                if tile_files:
-                    debug_msg += f"  Example tile files: {tile_files[:3]}\n"
-                
-                # Show subdirectories if any
-                subdirs = [f for f in cache_contents if os.path.isdir(os.path.join(current_cache_dir, f))]
-                if subdirs:
-                    debug_msg += f"  Subdirectories found: {subdirs}\n"
-                    # Check first subdirectory for tile files
-                    first_subdir = os.path.join(current_cache_dir, subdirs[0])
-                    if os.path.exists(first_subdir):
-                        subdir_contents = os.listdir(first_subdir)
-                        subdir_tiles = [f for f in subdir_contents if f.endswith('.npy')]
-                        debug_msg += f"  Subdirectory '{subdirs[0]}' contains {len(subdir_tiles)} tile files\n"
-                        if subdir_tiles:
-                            debug_msg += f"  Example tiles in subdirectory: {subdir_tiles[:3]}\n"
-                        
-            except Exception as e:
-                debug_msg += f"  Error checking cache directory contents: {e}\n"
-        else:
-            debug_msg += f"  WARNING: Cache directory does not exist!\n"
-            # Check if base cache directory exists
-            if os.path.exists(expected_base_cache):
-                debug_msg += f"  Base cache directory exists: {expected_base_cache}\n"
-                try:
-                    base_contents = os.listdir(expected_base_cache)
-                    debug_msg += f"  Base cache contains: {base_contents}\n"
-                except Exception as e:
-                    debug_msg += f"  Error listing base cache: {e}\n"
-            else:
-                debug_msg += f"  Base cache directory does not exist: {expected_base_cache}\n"
-        
-        # Write debug info to debug.log file
-        try:
-            # Use absolute path to ensure debug.log is created in project root
-            project_root = os.path.dirname(os.path.abspath(__file__))
-            debug_log_path = os.path.join(project_root, 'debug.log')
-            with open(debug_log_path, 'a', encoding='utf-8') as debug_file:
-                debug_file.write(debug_msg)
-                debug_file.flush()
-        except Exception as e:
-            pass  # Ignore debug file write errors
-        
+
         # Map opacity from percentage to alpha value
         map_alpha = map_opacity / 100.0
-        
-        # Create map tiles with the specified style
-        map_tiles = create_map_tiles(map_style)
-        
+
+        # Create map tiles; the CacheOnlyTilesWrapper is a debug feature that checks if all map tiles are locally cached like they should be in this step
+        if USE_CACHE_ONLY_TILES_WRAPPER:
+            map_tiles = _CacheOnlyTilesWrapper(create_map_tiles(map_style, log_cache_miss=True), map_style)
+        else:
+            map_tiles = create_map_tiles(map_style, log_cache_miss=True)
+
         # Detect appropriate zoom level for this bounding box
         zoom_levels = detect_zoom_level((lon_min, lon_max, lat_min, lat_max), max_tiles=max_map_tiles, map_style=map_style)
         
@@ -284,8 +253,9 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         if progress_callback:
             progress_callback("progress_bar_map_images", 0, "Preparing map image caching")
         
-        # Convert bounding boxes to list for processing
-        bbox_list = list(unique_bounding_boxes)
+        # Convert bounding boxes to list and sort for locality (lat_min, lon_min)
+        # so that chunks processed by the same worker tend to share tile cache
+        bbox_list = sorted(unique_bounding_boxes, key=lambda b: (b[2], b[0]))  # (lat_min, lon_min)
         total_bboxes = len(bbox_list)
         
         if debug_callback:
@@ -364,8 +334,8 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
                     # Submit all work
                     if progress_callback:
                         progress_callback("progress_bar_map_images", 0, "Starting map image creation")
-                    
-                    # Process results as they complete
+
+                    # Process results as they complete (one bbox per task)
                     for result in pool.imap_unordered(create_map_image_worker, work_args):
                         results.append(result)
                         
@@ -405,7 +375,7 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         return None
 
 
-def cache_map_images(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None):
+def cache_map_images(json_data=None, combined_route_data=None, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, unique_bounding_boxes=None):
     """
     Cache map images needed for video generation using shared memory exclusively.
     
@@ -468,16 +438,28 @@ def cache_map_images(json_data=None, combined_route_data=None, progress_callback
             if debug_callback:
                 debug_callback(f"Route time per frame: {route_time_per_frame:.4f} seconds")
         
-        # Calculate unique bounding boxes across all frames
-        unique_bounding_boxes = calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback, max_workers, combined_route_data, debug_callback)
-        
+        # Fallback to calculate unique bounding boxes again if providing them from earlier step fails.
         if unique_bounding_boxes is None:
-            if log_callback:
-                log_callback("Error: Could not calculate unique bounding boxes")
-            return None
-        
-        if debug_callback:
-            debug_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
+            debug_callback(f"Warning: Unique bounding boxes should have been calculated earlier and provided as parameter, but weren't. Calculating again.")
+            unique_bounding_boxes = calculate_unique_bounding_boxes(
+                json_data,
+                route_time_per_frame,
+                log_callback,
+                max_workers,
+                combined_route_data,
+                debug_callback,
+            )
+            
+            if unique_bounding_boxes is None:
+                if log_callback:
+                    log_callback("Error: Could not calculate unique bounding boxes")
+                return None
+            
+            if debug_callback:
+                debug_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
+        else:
+            if debug_callback:
+                debug_callback(f"Reusing {len(unique_bounding_boxes)} precomputed unique bounding boxes")
         
         # Cache map images for all unique bounding boxes
         cache_result = cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback, log_callback, debug_callback, max_workers, shared_map_cache)

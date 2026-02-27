@@ -8,3 +8,4 @@ storage_box_password: R0uteSquigglerBocks
 debug_logging: false
 sync_map_tile_cache: true
 gpu_rendering: false
+leave_temporary_files: false

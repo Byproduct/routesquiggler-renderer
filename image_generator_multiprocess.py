@@ -5,6 +5,7 @@ Multiprocessing utilities for generating images at different zoom levels.
 # Standard library imports
 import ftplib
 import multiprocessing as mp
+import os
 import time
 import traceback
 from io import BytesIO
@@ -1096,9 +1097,42 @@ def upload_to_storage_box(
     Returns:
         bool: True if upload successful and verified, False otherwise
     """
+    def _persist_uploaded_files_locally(
+        image_bytes_local: bytes,
+        image_filename_local: str,
+        thumbnail_bytes_local: Optional[bytes],
+        gallery_html_local: Optional[str]
+    ) -> None:
+        """Optionally keep uploaded files on disk for debugging/manual inspection."""
+        if not getattr(config, 'leave_temporary_files', False):
+            return
+
+        try:
+            local_dir = os.path.join('temporary files', str(job_id), str(folder))
+            os.makedirs(local_dir, exist_ok=True)
+
+            image_path = os.path.join(local_dir, image_filename_local)
+            with open(image_path, 'wb') as f:
+                f.write(image_bytes_local)
+
+            if thumbnail_bytes_local:
+                thumb_path = os.path.join(local_dir, 'thumbnail.png')
+                with open(thumb_path, 'wb') as f:
+                    f.write(thumbnail_bytes_local)
+
+            if gallery_html_local:
+                html_path = os.path.join(local_dir, 'images.html')
+                with open(html_path, 'w', encoding='utf-8') as f:
+                    f.write(gallery_html_local)
+
+            write_debug_log(f"Kept local image outputs at: {os.path.abspath(local_dir)}")
+        except Exception as e:
+            write_log(f"Warning: Failed to keep local image outputs: {str(e)}")
+
     def _do_upload():
         """Internal function that performs the actual upload."""
         ftp = None
+        gallery_html = None
         try:
             # Update server status to "uploading (job_id)"
             try:
@@ -1158,8 +1192,8 @@ def upload_to_storage_box(
             # Upload gallery HTML first (while still in media/job_id/folder)
             if thumbnail_bytes and route_name and zoom_levels:
                 try:
-                    html_content = generate_image_gallery_html(route_name, zoom_levels)
-                    ftp.storbinary('STOR images.html', BytesIO(html_content.encode('utf-8')))
+                    gallery_html = generate_image_gallery_html(route_name, zoom_levels)
+                    ftp.storbinary('STOR images.html', BytesIO(gallery_html.encode('utf-8')))
                     try:
                         html_size = ftp.size('images.html')
                         if html_size <= 0:
@@ -1203,6 +1237,7 @@ def upload_to_storage_box(
                     write_log(f"File {thumb_filename} has zero or negative size")
                     return False
 
+            _persist_uploaded_files_locally(image_bytes, filename, thumbnail_bytes, gallery_html)
             return True
             
         except Exception as e:

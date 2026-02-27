@@ -7,6 +7,7 @@ This module handles the main video generation workflow in separate threads.
 import ftplib
 import os
 import re
+import shutil
 import time
 from io import BytesIO
 
@@ -20,6 +21,7 @@ from PySide6.QtCore import QObject, QThread, Signal
 from job_request import update_job_status
 from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 from network_retry import retry_operation
+from config import config
 from video_generator_cache_map_images import cache_map_images
 from video_generator_cache_map_tiles import cache_map_tiles
 from video_generator_cache_video_frames import cache_video_frames
@@ -304,6 +306,34 @@ class VideoGeneratorWorker(QObject):
             remaining_seconds = seconds % 60
             return f"{hours} hour{'s' if hours != 1 else ''} {remaining_minutes} minute{'s' if remaining_minutes != 1 else ''} {remaining_seconds:.2f} seconds"
 
+    def cleanup_temporary_job_folder(self, job_id):
+        """Delete temporary files for a completed job unless explicitly configured to keep them."""
+        if getattr(config, 'leave_temporary_files', False):
+            self.debug_message.emit("leave_temporary_files=true, keeping temporary job files")
+            return
+
+        if not job_id:
+            self.debug_message.emit("Skipping temporary file cleanup: missing job_id")
+            return
+
+        temporary_root = os.path.abspath(os.path.join(os.getcwd(), 'temporary files'))
+        job_temp_dir = os.path.abspath(os.path.join('temporary files', str(job_id)))
+
+        # Safety check: only allow deletions under the temporary files root.
+        if not (job_temp_dir == temporary_root or job_temp_dir.startswith(temporary_root + os.sep)):
+            self.log_message.emit(f"Warning: Skipping cleanup for unsafe path: {job_temp_dir}")
+            return
+
+        if not os.path.isdir(job_temp_dir):
+            self.debug_message.emit(f"No temporary job folder to clean: {job_temp_dir}")
+            return
+
+        try:
+            shutil.rmtree(job_temp_dir)
+            self.debug_message.emit(f"Deleted temporary job folder: {job_temp_dir}")
+        except Exception as e:
+            self.log_message.emit(f"Warning: Failed to delete temporary job folder '{job_temp_dir}': {str(e)}")
+
     def video_generator_process(self):
         """Main processing method that runs in the worker thread."""
         try:
@@ -415,6 +445,7 @@ class VideoGeneratorWorker(QObject):
             with Manager() as manager:
                 shared_map_cache = manager.dict()
                 shared_route_cache = manager.dict()  # Add shared route cache for performance
+                unique_bounding_boxes = cache_result.get('unique_bounding_boxes') if cache_result else None
                 
                 # Step 4: Cache map images for unique bounding boxes
                 self.log_message.emit("Step 4: Caching map images for unique bounding boxes")           
@@ -425,7 +456,8 @@ class VideoGeneratorWorker(QObject):
                     progress_callback=self.progress_update.emit,
                     log_callback=self.log_message.emit,
                     max_workers=self.max_workers,
-                    shared_map_cache=shared_map_cache
+                    shared_map_cache=shared_map_cache,
+                    unique_bounding_boxes=unique_bounding_boxes
                 )
                 
                 if not map_images_result:
@@ -609,6 +641,7 @@ class VideoGeneratorWorker(QObject):
                             'ok',
                             self.log_message.emit
                         )
+                        self.cleanup_temporary_job_folder(job_id)
                     else:
                         self.log_message.emit("❌ Video upload failed")
                         raise ValueError("Video upload to storage box failed")
