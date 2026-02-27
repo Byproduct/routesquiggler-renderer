@@ -832,6 +832,15 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                     write_log(f"ERROR: Cannot process job #{job_id}: user/api_key not yet available (bootup may not be complete)")
                     continue
                 
+                # Sync map tile cache after receipt confirmation and before processing starts.
+                try:
+                    sync_success = bootup_manager.do_sync_map_tile_cache()
+                    if not sync_success:
+                        write_log("Warning: Map tile cache sync failed before job start, but continuing with processing")
+                except Exception as e:
+                    write_log(f"Error during pre-job map tile cache sync: {str(e)}")
+                    write_debug_log(traceback.format_exc())
+
                 # Process the job first - status will be updated inside process_job_terminal
                 # after verifying the worker can actually start
                 success = process_job_terminal(json_data, gpx_files_info, bootup_manager, app)
