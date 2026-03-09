@@ -98,7 +98,6 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
         bool: True if tile is cached, False otherwise
     """
     try:
-        # Tiles are always under a style-specific subdirectory of cache_dir, never in the root.
         # Resolve subdir from map_style, then check {cache_dir}/{subdir}/{x}_{y}_{zoom}.npy
         if map_style.startswith('stadia'):
             subdir = 'StadiaTiles'

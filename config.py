@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Configuration variables set by the user in config.txt.
 """
@@ -18,6 +18,7 @@ class Config:
         self.storage_box_user = None
         self.storage_box_password = None
         self.debug_logging = False
+        self.text_effect = False
         self.sync_map_tile_cache = True
         self.gpu_rendering = True
     
@@ -49,6 +50,8 @@ class Config:
                             self.storage_box_password = value
                         elif key == 'debug_logging':
                             self.debug_logging = value.lower() == 'true'
+                        elif key == 'text_effect':
+                            self.text_effect = value.lower() == 'true'
                         elif key == 'sync_map_tile_cache':
                             self.sync_map_tile_cache = value.lower() == 'true'
                         elif key == 'gpu_rendering':

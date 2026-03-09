@@ -36,3 +36,6 @@ psutil>=5.9.0
 # Optional: Progress bar for cache sweep (gracefully handled if missing)
 tqdm>=4.65.0
 
+# Terminal visual effects for debug log output
+terminaltexteffects>=0.11.0
+
