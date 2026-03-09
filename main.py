@@ -157,8 +157,12 @@ def parse_and_handle_arguments():
         
     if thread_override is not None:
         config.thread_count = thread_override
-    else:
+        config._thread_count_from_file = False
+    elif config.thread_count is None:
         config.thread_count = default_threads
+        config._thread_count_from_file = False
+    else:
+        config._thread_count_from_file = True
     
     if debuglog_override is not None:
         config.debug_logging = debuglog_override
@@ -207,8 +211,12 @@ def main():
     # Show thread count being used
     if thread_override is not None:
         write_log(f"Using {config.thread_count} threads (overridden by command line)")
+    elif config._thread_count_from_file:
+        write_log(f"Using {config.thread_count} threads (from config.txt)")
     else:
         write_log(f"Using {config.thread_count} threads (default: max-2, min 1)")
+    if config.thread_count > mp.cpu_count():
+        write_log(f"Warning: Thread count ({config.thread_count}) exceeds CPU cores ({mp.cpu_count()})")
     
     # Show debug logging status
     if debuglog_override is not None:

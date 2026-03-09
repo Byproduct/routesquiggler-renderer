@@ -23,6 +23,9 @@ class Config:
         self.gpu_rendering = True
         self.low_spec = False
         self.map_tile_cache_folder = "default"
+        # Thread count for rendering: None = "auto" (max(1, cpu_count - 2)), or int for fixed value
+        self.thread_count = None
+        self._thread_count_from_file = False
         self._base_dir = os.path.dirname(os.path.abspath(__file__))
 
     @property
@@ -70,6 +73,21 @@ class Config:
                             self.low_spec = value.lower() == 'true'
                         elif key == 'map_tile_cache_folder':
                             self.map_tile_cache_folder = value
+                        elif key == 'threads':
+                            val = value.strip().lower()
+                            if val in ('', 'auto'):
+                                self.thread_count = None
+                            else:
+                                try:
+                                    n = int(val)
+                                    if n < 1:
+                                        print("Warning: threads in config.txt must be >= 1; using 'auto'.")
+                                        self.thread_count = None
+                                    else:
+                                        self.thread_count = n
+                                except ValueError:
+                                    print(f"Warning: invalid threads value '{value}' in config.txt; using 'auto'.")
+                                    self.thread_count = None
                         elif key == 'leave_temporary_files':
                             self.leave_temporary_files = value.lower() == 'true'
         except FileNotFoundError:

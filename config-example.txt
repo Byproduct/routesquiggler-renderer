@@ -1,6 +1,13 @@
 api_url: https://routesquiggler.com/jobs_api/v1/
 user: juhgu_renderer
 
+# Number of CPU threads used for rendering images and videos. Default is available-2 (e.g. 6 threads in a 8-core system) 
+threads: auto
+
+# If this machine has a NVidia card with CUDA cores, enable this to encode videos using GPU (nvenc) instead of CPU.
+# This affects video encoding only (frames are still made using CPU), so the effect isn't dramatic, but it is recommended if supported. 
+gpu_rendering: false
+
 # Low spec hardware - will only be given light, 0-cost jobs and only if no other renderers are available
 # Map tile cache will only be stored for OSM, OTM and CyclOSM (others cost credits)
 low_spec: false
@@ -11,10 +18,6 @@ map_tile_cache_folder: default
 
 # Animated text using TerminalTextEffects 
 text_effect: false
-
-# If this machine has a NVidia card with CUDA cores, enable this to encode videos using GPU (nvenc) instead of CPU.
-# This affects video encoding only (frames are still made using CPU), so the effect isn't dramatic, but it is recommended if supported. 
-gpu_rendering: false
 
 # Storage box credentials - don't edit unless explicitly needed for some reason
 storage_box_address: u465900.your-storagebox.de
