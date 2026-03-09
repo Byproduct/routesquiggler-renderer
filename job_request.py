@@ -5,6 +5,7 @@ This module handles requesting and processing new jobs from the server.
 
 # Standard library imports
 import json
+import time
 import traceback
 import zipfile
 from io import BytesIO
@@ -239,6 +240,7 @@ class JobRequestManager:
         self.job_request_thread = None
         self.job_retry_timer = None
         self.current_status = None  # Track current status to avoid redundant updates
+        self.last_request_start_time = None  # For minimum 1-minute spacing between request starts
     
     def request_new_job(self):
         """Request a new job from the server using simple synchronous approach (was working)."""
@@ -657,6 +659,22 @@ class JobRequestManager:
 
     def request_new_job_qt_network(self):
         """Request a new job using QNetworkAccessManager (Qt native networking, non-blocking)."""
+        # Enforce minimum 1-minute spacing between request starts (avoids rapid retries when
+        # requests end immediately; long polls that take >1 min naturally satisfy this)
+        now = time.time()
+        if self.last_request_start_time is not None:
+            elapsed = now - self.last_request_start_time
+            if elapsed < 60:
+                wait_seconds = 60 - elapsed
+                wait_ms = int(wait_seconds * 1000)
+                self.main_window.log_widget.add_log(
+                    f"Enforcing 1-minute minimum between requests; waiting {wait_seconds:.1f}s before next request"
+                )
+                QTimer.singleShot(wait_ms, self.request_new_job_qt_network)
+                return
+
+        self.last_request_start_time = time.time()
+
         # Show the no_jobs_label when starting a job request
         self.main_window.no_jobs_label.show()
         

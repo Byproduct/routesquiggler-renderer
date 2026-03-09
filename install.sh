@@ -1,4 +1,7 @@
-# Installs venv and requirements.txt and create a systemd service for this renderer. Program will automatically start on reboot afterwards.
+# Installs venv and packages in requirements.txt
+# Installs sshpass and rsync at system level.
+# Creates a systemd service for this renderer. (Will autostart on reboot.)
+# Run with sudo bash install.sh    (or sudo chmod +x install.sh && sudo ./install.sh)
 
 #!/usr/bin/env bash
 set -euo pipefail
@@ -22,6 +25,12 @@ fi
 REAL_USER="${SUDO_USER:-$(whoami)}"
 REAL_GROUP="$(id -gn "$REAL_USER")"
 
+# ── 1. Install system dependencies ───────────────────────────────────────────
+
+echo "Installing system packages (sshpass, rsync)..."
+apt-get update -qq
+apt-get install -y -qq sshpass rsync
+
 # Check Python 3 is available
 if ! command -v "$PYTHON_BIN" &>/dev/null; then
     echo "Error: ${PYTHON_BIN} not found. Please install Python 3.9+ first."
@@ -31,7 +40,7 @@ fi
 PY_VERSION=$("$PYTHON_BIN" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 echo "Found Python ${PY_VERSION}"
 
-# ── 1. Create / update virtual environment ──────────────────────────────────
+# ── 2. Create / update virtual environment ──────────────────────────────────
 
 if [[ -d "$VENV_DIR" ]]; then
     echo "Virtual environment already exists at ${VENV_DIR}, updating..."
@@ -48,7 +57,18 @@ sudo -u "$REAL_USER" "${VENV_DIR}/bin/pip" install -r "${SCRIPT_DIR}/requirement
 
 echo "Requirements installed."
 
-# ── 2. Create / update systemd service ──────────────────────────────────────
+# ── 3. Create required directories ──────────────────────────────────────────
+
+for DIR_NAME in "log" "map tile cache"; do
+    TARGET="${SCRIPT_DIR}/${DIR_NAME}"
+    if [[ ! -d "$TARGET" ]]; then
+        echo "Creating directory: ${TARGET}"
+        sudo -u "$REAL_USER" mkdir -p "$TARGET"
+    fi
+    chmod 777 "$TARGET"
+done
+
+# ── 4. Create / update systemd service ──────────────────────────────────────
 
 echo "Writing systemd service to ${SERVICE_FILE}..."
 
@@ -79,7 +99,7 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=multi-user.target
 EOF
 
-# ── 3. Reload, enable, and (re)start ────────────────────────────────────────
+# ── 5. Reload, enable, and (re)start ────────────────────────────────────────
 
 echo "Reloading systemd daemon..."
 systemctl daemon-reload

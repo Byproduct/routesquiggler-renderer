@@ -57,6 +57,7 @@ def _write_to_log_file(message: str) -> None:
     """Append a timestamped message to today's daily log file."""
     try:
         log_dir = "log"
+        os.makedirs(log_dir, exist_ok=True)
         today = datetime.now().strftime("%Y-%m-%d")
         log_file = os.path.join(log_dir, f"{today}.txt")
         timestamp = datetime.now().strftime("%H:%M:%S")

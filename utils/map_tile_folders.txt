@@ -18,6 +18,7 @@ GeoapifyToner/GeoapifyTiles
 GeoapifyTonerGrey/GeoapifyTiles
 GeoapifyYellowRoads/GeoapifyTiles
 OSM/OSM
+OpenTopoMap/OpenTopoMapTiles
 StadiaDark/StadiaTiles
 StadiaLight/StadiaTiles
 StadiaOutdoors/StadiaTiles

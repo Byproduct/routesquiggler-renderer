@@ -784,6 +784,8 @@ def run_job_processing_loop_terminal(bootup_manager, app):
     write_log("Starting job processing loop. Press Ctrl+C to stop.")
     
     retry_delay = 10  # Delay between retries when no jobs are available
+    min_request_interval = 60  # Minimum seconds between request starts (avoids rapid retries when requests end immediately)
+    last_request_start_time = None  # For enforcing min_request_interval
     tiles_synced_after_last_job = True  # Track if we've synced tiles after the last successful job
     # Start as True since bootup already synced tiles - reset to False after first successful job
 
@@ -796,6 +798,26 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             write_debug_log("Processing Qt events")
             app.processEvents()
             
+            # Enforce minimum 1-minute spacing between request starts (avoids rapid retries when
+            # requests end immediately; long polls that take >1 min naturally satisfy this)
+            now = time.time()
+            if last_request_start_time is not None:
+                elapsed = now - last_request_start_time
+                if elapsed < min_request_interval:
+                    wait_seconds = min_request_interval - elapsed
+                    write_log(f"Enforcing 1-minute minimum between requests; waiting {wait_seconds:.1f}s before next request")
+                    # Sleep in small increments to allow quick response to shutdown
+                    for _ in range(int(wait_seconds * 10)):
+                        if shutdown_requested:
+                            write_debug_log("Shutdown requested during minimum-interval wait.")
+                            break
+                        time.sleep(0.1)
+                        app.processEvents()
+                    if shutdown_requested:
+                        break
+
+            last_request_start_time = time.time()
+
             # Request a new job
             write_debug_log("Calling request_job_terminal()")
             # Update status to "idle" if not already idle
