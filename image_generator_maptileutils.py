@@ -118,8 +118,8 @@ def set_cache_directory(map_style: str):
     """Set the appropriate cache directory for the given map style."""
     debug_log(f"set_cache_directory called with map_style: '{map_style}'")
     
-    current_directory = os.path.dirname(os.path.abspath(__file__))
-    base_cache_dir = os.path.join(current_directory, 'map tile cache')
+    from config import config
+    base_cache_dir = config.map_tile_cache_path
     
     # Map styles to their cache subdirectories
     style_cache_mapping = {

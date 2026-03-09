@@ -243,8 +243,8 @@ def main():
     start_time = time.time()
     
     # Determine which cache directory to use
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    local_cache = os.path.join(script_dir, "map tile cache")
+    from config import config
+    local_cache = config.map_tile_cache_path
     remote_cache1 = "/mnt/storage-box/map tile cache"
     remote_cache2 = "/var/cache/map_tile_cache"
     

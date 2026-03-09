@@ -62,11 +62,12 @@ class FileCheckWorker(QObject):
         """Check for files to upload using dry run."""
         try:
             # Perform dry run to check for files to upload
+            from config import config
             success, files_to_upload, files_to_download = sync_map_tiles(
                 storage_box_address=self.storage_box_address,
                 storage_box_user=self.storage_box_user,
                 storage_box_password=self.storage_box_password,
-                local_cache_dir="map tile cache",
+                local_cache_dir=config.map_tile_cache_path,
                 log_callback=lambda msg: None,  # Don't log during exit check
                 progress_callback=lambda msg: None,  # Don't show progress during exit check
                 sync_state_callback=lambda state: None,  # Don't change UI state during exit check
@@ -120,11 +121,12 @@ class SyncWorker(QObject):
                 pass
             
             # Perform the actual sync
+            from config import config
             success, uploaded_count, downloaded_count = sync_map_tiles(
                 storage_box_address=self.storage_box_address,
                 storage_box_user=self.storage_box_user,
                 storage_box_password=self.storage_box_password,
-                local_cache_dir="map tile cache",
+                local_cache_dir=config.map_tile_cache_path,
                 log_callback=lambda msg: None,  # Don't log during exit sync
                 progress_callback=lambda msg: None,  # Don't show progress during exit sync
                 sync_state_callback=lambda state: None,  # Don't change UI state during exit sync
@@ -686,11 +688,12 @@ class MainWindow(QMainWindow):
             
             # Perform dry run to check for files to upload
             debug_logging = getattr(self.bootup_manager.config, 'debug_logging', False)
+            from config import config
             success, files_to_upload, files_to_download = sync_map_tiles(
                 storage_box_address=credentials['address'],
                 storage_box_user=credentials['user'],
                 storage_box_password=credentials['password'],
-                local_cache_dir="map tile cache",
+                local_cache_dir=config.map_tile_cache_path,
                 log_callback=lambda msg: None,  # Don't log during exit check
                 progress_callback=lambda msg: None,  # Don't show progress during exit check
                 sync_state_callback=lambda state: None,  # Don't change UI state during exit check

@@ -139,11 +139,14 @@ class MapTileSyncer:
     """
 
     def __init__(self, storage_box_address, storage_box_user, storage_box_password,
-                 local_cache_dir="map tile cache", log_callback=None, progress_callback=None,
+                 local_cache_dir=None, log_callback=None, progress_callback=None,
                  sync_state_callback=None, debug_callback=None, debug_logging=False):
         self.storage_box_address = storage_box_address
         self.storage_box_user = storage_box_user
         self.storage_box_password = storage_box_password
+        if local_cache_dir is None:
+            from config import config
+            local_cache_dir = config.map_tile_cache_path
         self.local_cache_dir = Path(local_cache_dir)
         self.log_callback = log_callback or (lambda msg: None)
         self.progress_callback = progress_callback or (lambda msg: None)
@@ -188,6 +191,17 @@ class MapTileSyncer:
                 self.log_callback("No folders listed in utils/map_tile_folders.txt. Skipping sync.")
                 self.sync_state_callback("complete")
                 return True, 0, 0
+
+            from config import config
+            if config.low_spec:
+                LOW_SPEC_TILESETS = {"OSM", "OpenTopoMap", "CyclOSM"}
+                folder_list = [f for f in folder_list if f.split("/")[0] in LOW_SPEC_TILESETS]
+                if self.debug_logging:
+                    self.debug_callback(f"Low-spec mode: syncing only {', '.join(LOW_SPEC_TILESETS)}")
+                if not folder_list:
+                    self.debug_callback("Low-spec mode: no matching folders to sync.")
+                    self.sync_state_callback("complete")
+                    return True, 0, 0
 
             local_times = _load_local_mtimes()
             remote_times = _load_remote_mtimes_last()
@@ -603,7 +617,7 @@ def sync_map_tiles(
     storage_box_address,
     storage_box_user,
     storage_box_password,
-    local_cache_dir="map tile cache",
+    local_cache_dir=None,
     log_callback=None,
     progress_callback=None,
     sync_state_callback=None,
@@ -663,7 +677,7 @@ def _run_standalone():
         storage_box_address=config.storage_box_address,
         storage_box_user=config.storage_box_user,
         storage_box_password=config.storage_box_password,
-        local_cache_dir="map tile cache",
+        local_cache_dir=config.map_tile_cache_path,
         log_callback=write_log,
         progress_callback=write_log,
         sync_state_callback=lambda state: None,

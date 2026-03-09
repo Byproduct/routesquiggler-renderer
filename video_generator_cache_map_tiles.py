@@ -54,7 +54,7 @@ def trigger_background_sync(log_callback=None, debug_callback=None):
                 storage_box_address=STORAGE_BOX_CREDENTIALS['address'],
                 storage_box_user=STORAGE_BOX_CREDENTIALS['user'],
                 storage_box_password=STORAGE_BOX_CREDENTIALS['password'],
-                local_cache_dir="map tile cache",
+                local_cache_dir=config.map_tile_cache_path,
                 log_callback=log_callback,
                 progress_callback=lambda msg: None,
                 sync_state_callback=lambda state: None,

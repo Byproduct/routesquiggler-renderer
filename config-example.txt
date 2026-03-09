@@ -1,11 +1,31 @@
-app_version: 0.10
 api_url: https://routesquiggler.com/jobs_api/v1/
-gui: true
 user: juhgu_renderer
+
+# Low spec hardware - will only be given light, 0-cost jobs and only if no other renderers are available
+# Map tile cache will only be stored for OSM, OTM and CyclOSM (others cost credits)
+low_spec: false
+
+# Default folder is "map tile cache" inside program folder.
+# If you'd like to store the cache elsewhere, enter full (absolute) path.
+map_tile_cache_folder: default
+
+# Animated text using TerminalTextEffects 
+text_effect: false
+
+# If this machine has a NVidia card with CUDA cores, enable this to encode videos using GPU (nvenc) instead of CPU.
+# This affects video encoding only (frames are still made using CPU), so the effect isn't dramatic, but it is recommended if supported. 
+gpu_rendering: false
+
+# Storage box credentials - don't edit unless explicitly needed for some reason
 storage_box_address: u465900.your-storagebox.de
 storage_box_user: u465900
 storage_box_password: R0uteSquigglerBocks
-debug_logging: false
+
+
+# The GUI version is outdated and you probably shouldn't use it unless there's a very good reason 
+gui: false
+
+# Debug-related options
 sync_map_tile_cache: true
-gpu_rendering: false
+debug_logging: false
 leave_temporary_files: false

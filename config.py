@@ -21,6 +21,16 @@ class Config:
         self.text_effect = False
         self.sync_map_tile_cache = True
         self.gpu_rendering = True
+        self.low_spec = False
+        self.map_tile_cache_folder = "default"
+        self._base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    @property
+    def map_tile_cache_path(self):
+        """Resolved absolute path to the map tile cache folder."""
+        if self.map_tile_cache_folder.lower() == "default" or not self.map_tile_cache_folder:
+            return os.path.join(self._base_dir, "map tile cache")
+        return self.map_tile_cache_folder
     
     def load_from_file(self, config_path):
         """Load configuration from a file."""
@@ -28,7 +38,9 @@ class Config:
             with open(config_path, 'r', encoding='utf-8') as file:
                 for line in file:
                     line = line.strip()
-                    if line and ':' in line:
+                    if line.startswith('#') or not line:
+                        continue
+                    if ':' in line:
                         key, value = line.split(':', 1)
                         key = key.strip()
                         value = value.strip()
@@ -36,8 +48,6 @@ class Config:
                         # Set attributes based on config
                         if key == 'gui':
                             self.gui = value.lower() == 'true'
-                        elif key == 'app_version':
-                            self.app_version = value
                         elif key == 'api_url':
                             self.api_url = value
                         elif key == 'user':
@@ -56,6 +66,10 @@ class Config:
                             self.sync_map_tile_cache = value.lower() == 'true'
                         elif key == 'gpu_rendering':
                             self.gpu_rendering = value.lower() == 'true'
+                        elif key == 'low_spec':
+                            self.low_spec = value.lower() == 'true'
+                        elif key == 'map_tile_cache_folder':
+                            self.map_tile_cache_folder = value
                         elif key == 'leave_temporary_files':
                             self.leave_temporary_files = value.lower() == 'true'
         except FileNotFoundError:
@@ -67,8 +81,13 @@ class Config:
 def load_config():
     """Load configuration from config.txt file and return Config object."""
     config = Config()
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.txt')
-    config.load_from_file(config_path)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config.load_from_file(os.path.join(base_dir, 'config.txt'))
+    try:
+        with open(os.path.join(base_dir, 'app_version.txt'), 'r', encoding='utf-8') as f:
+            config.app_version = f.read().strip()
+    except FileNotFoundError:
+        print("Warning: app_version.txt not found.")
     return config
 
 

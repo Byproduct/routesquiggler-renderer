@@ -288,7 +288,7 @@ class BootupManager:
                 storage_box_address=self.config.storage_box_address,
                 storage_box_user=self.config.storage_box_user,
                 storage_box_password=self.config.storage_box_password,
-                local_cache_dir="map tile cache",
+                local_cache_dir=self.config.map_tile_cache_path,
                 log_callback=self.log_callback,
                 progress_callback=self.progress_callback,
                 sync_state_callback=self.sync_state_callback,
