@@ -10,7 +10,7 @@ CACHE_DIR="$BASE_DIR/map tile cache"
 TEMP_DIR="$BASE_DIR/map tile cache temp"
 IMAGE_FILE="$BASE_DIR/map_tile_cache_btrfs.img"
 
-SIZE="1000G"
+SIZE="500G"
 
 echo "Base directory: $BASE_DIR"
 
@@ -26,7 +26,8 @@ echo "Creating new cache directory"
 mkdir "$CACHE_DIR"
 
 echo "Creating sparse Btrfs image ($SIZE)"
-fallocate -l $SIZE "$IMAGE_FILE"
+# Use truncate (not fallocate): creates a sparse file that only uses disk as data is written
+truncate -s $SIZE "$IMAGE_FILE"
 
 echo "Formatting Btrfs filesystem"
 mkfs.btrfs -f "$IMAGE_FILE"
