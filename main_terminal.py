@@ -6,6 +6,7 @@ Terminal-specific functions for Route Squiggler render client
 # Standard library imports
 import json
 import os
+import shutil
 import signal
 import sys
 import threading
@@ -353,6 +354,23 @@ def run_test_video_terminal(bootup_manager, folder_name=None, app=None):
         write_log(f"Failed to run test video job: {str(e)}")
         write_log(traceback.format_exc())
         return False
+
+
+def get_free_disk_space_gb(path):
+    """Return free disk space in GB for the filesystem containing path.
+    Works on Windows and Linux. Uses shutil.disk_usage."""
+    path = os.path.abspath(path)
+    if not os.path.exists(path):
+        path = os.path.dirname(path)
+    while path and not os.path.exists(path):
+        path = os.path.dirname(path)
+    if not path:
+        return 0.0
+    try:
+        usage = shutil.disk_usage(path)
+        return usage.free / (1024 ** 3)
+    except OSError:
+        return 0.0
 
 
 def signal_handler(signum, frame):
@@ -817,6 +835,21 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                         break
 
             last_request_start_time = time.time()
+
+            # Check free space on map tile cache drive before requesting a job
+            cache_path = bootup_manager.config.map_tile_cache_path
+            free_gb = get_free_disk_space_gb(cache_path)
+            if free_gb < 2.0:
+                write_log(f"Job request aborted: low disk space on cache drive ({free_gb:.2f} GB free, need at least 2 GB). Trying again in a minute.")
+                update_status("error", api_key=bootup_manager.config.user)
+                for _ in range(60):
+                    if shutdown_requested:
+                        break
+                    time.sleep(1)
+                    app.processEvents()
+                if shutdown_requested:
+                    break
+                continue
 
             # Request a new job
             write_debug_log("Calling request_job_terminal()")
