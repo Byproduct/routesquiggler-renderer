@@ -31,7 +31,7 @@ fallocate -l $SIZE "$IMAGE_FILE"
 echo "Formatting Btrfs filesystem"
 mkfs.btrfs -f "$IMAGE_FILE"
 
-echo "Mounting Btrfs filesystem with zstd:6 compression"
+echo "Mounting Btrfs filesystem with zstd:5 compression"
 
 sudo mount -o loop,compress=zstd:6,noatime "$IMAGE_FILE" "$CACHE_DIR"
 
