@@ -51,7 +51,7 @@ def get_service_from_map_style(map_style):
         return "osm"
 
 
-def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None):
+def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None, status_callback=None):
     """
     Acquire a lock for the map tile service before downloading tiles.
     
@@ -63,6 +63,7 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None):
         json_data (dict): Job data containing map_style
         log_callback (callable, optional): Function to call for important logging messages
         debug_callback (callable, optional): Function to call for debug logging messages (only shown in debug mode)
+        status_callback (callable, optional): Function to call when waiting due to lock (e.g. to set renderer status "Map downloads queued")
         
     Returns:
         tuple: (success: bool, error_message: str or None)
@@ -112,6 +113,11 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None):
             
             elif response.status_code == 423:
                 # Locked - another user is downloading
+                if status_callback:
+                    try:
+                        status_callback()
+                    except Exception:
+                        pass  # Don't let status update failure block lock retry
                 remaining_time = MAX_LOCK_WAIT_TIME - elapsed_time
                 remaining_minutes = int(remaining_time / 60)
                 if debug_callback:

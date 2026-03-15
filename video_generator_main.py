@@ -396,10 +396,15 @@ class VideoGeneratorWorker(QObject):
             self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
             
             # Acquire map tile lock before downloading
+            def on_map_downloads_queued():
+                from update_status import update_status
+                update_status("Map downloads queued", api_key=self.user)
+
             lock_acquired, lock_error = acquire_map_tile_lock(
                 self.json_data,
                 log_callback=self.log_message.emit,
-                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
+                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
+                status_callback=on_map_downloads_queued
             )
             
             if not lock_acquired:
