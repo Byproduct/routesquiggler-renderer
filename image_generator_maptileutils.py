@@ -158,7 +158,12 @@ def set_cache_directory(map_style: str):
         'thunderforest_pioneer': 'ThunderforestPioneer',
         'thunderforest_spinal': 'ThunderforestSpinal',
         'thunderforest_transport': 'ThunderforestTransport',
-        'thunderforest_transport_dark': 'ThunderforestTransportDark'
+        'thunderforest_transport_dark': 'ThunderforestTransportDark',
+        'esri256_natgeo': 'Esri256NatGeo',
+        'esri256_satellite': 'Esri256Satellite',
+        'esri256_topo': 'Esri256Topo',
+        'esri256_transport_nomap': 'Esri256TransportNomap',
+        'esri256_elevation_nomap': 'Esri256ElevationNomap',
     }
     
     cache_subdir = style_cache_mapping.get(map_style, 'OSM')
@@ -186,7 +191,9 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
     
     Args:
         map_style: String, one of 'osm', 'otm', 'cyclosm', 'stadia_light', 'stadia_dark', 
-                  'stadia_outdoors', 'stadia_toner', 'stadia_watercolor', or various 'geoapify_*' styles
+                  'stadia_outdoors', 'stadia_toner', 'stadia_watercolor', various 'geoapify_*' and
+                  'thunderforest_*' styles, or 'esri256_natgeo', 'esri256_satellite', 'esri256_topo',
+                  'esri256_transport_nomap', 'esri256_elevation_nomap'.
     
     Returns:
         CartoPy image tiles object
@@ -236,6 +243,15 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
         "thunderforest_spinal": "spinal-map",
         "thunderforest_transport": "transport",
         "thunderforest_transport_dark": "transport-dark"
+    }
+    
+    # ESRI ArcGIS Online style mapping (map_style -> SERVICE in URL; tiles use z/y/x order)
+    esri256_style_url_mapping = {
+        "esri256_natgeo": "NatGeo_World_Map",
+        "esri256_satellite": "World_Imagery",
+        "esri256_topo": "World_Topo_Map",
+        "esri256_transport_nomap": "Reference/World_Transportation",
+        "esri256_elevation_nomap": "Elevation/World_Hillshade",
     }
     
     debug_log(f"Available Stadia styles: {list(stadia_style_url_mapping.keys())}")
@@ -386,6 +402,45 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
             
             tiles = ThunderforestTiles(cache=True)
             debug_log(f"Created fallback ThunderforestTiles object: {type(tiles)}")
+            return tiles
+        
+    elif map_style.startswith('esri256_'):
+        debug_log(f"Processing ESRI (esri256) map style: {map_style}")
+        tile_delay = get_rate_limit_delay(map_style)
+        if map_style in esri256_style_url_mapping:
+            service = esri256_style_url_mapping[map_style]
+            debug_log(f"Mapped {map_style} to ESRI service: {service}")
+            
+            class Esri256Tiles(cimgt.GoogleTiles):
+                """ESRI ArcGIS Online tiles; URL order is z/y/x (not z/x/y)."""
+                _name = 'Esri256Tiles'
+                
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://services.arcgisonline.com/ArcGIS/rest/services/{service}/MapServer/tile/{z}/{y}/{x}'
+                    debug_log(f"Generated ESRI URL: {url}")
+                    return url
+                
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
+            
+            tiles = Esri256Tiles(cache=True)
+            debug_log(f"Created Esri256Tiles object: {type(tiles)}")
+            return tiles
+        else:
+            debug_log(f"Unknown ESRI style: {map_style}, defaulting to esri256_topo")
+            service = esri256_style_url_mapping["esri256_topo"]
+            
+            class Esri256Tiles(cimgt.GoogleTiles):
+                _name = 'Esri256Tiles'
+                
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://services.arcgisonline.com/ArcGIS/rest/services/{service}/MapServer/tile/{z}/{y}/{x}'
+                    return url
+                
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
+            
+            tiles = Esri256Tiles(cache=True)
             return tiles
         
     elif map_style == "osm":

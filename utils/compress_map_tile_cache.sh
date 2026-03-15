@@ -14,6 +14,15 @@ SIZE="500G"
 
 echo "Base directory: $BASE_DIR"
 
+# Check for required Btrfs tools (e.g. Raspberry Pi may not have them by default)
+if ! command -v mkfs.btrfs &>/dev/null; then
+    echo "ERROR: mkfs.btrfs not found. Install Btrfs tools first:"
+    echo "  Debian / Ubuntu / Raspberry Pi OS:  sudo apt install btrfs-progs"
+    echo "  Fedora:  sudo dnf install btrfs-progs"
+    echo "  Arch:    sudo pacman -S btrfs-progs"
+    exit 1
+fi
+
 if [ ! -d "$CACHE_DIR" ]; then
     echo "ERROR: 'map tile cache' directory not found."
     exit 1
@@ -41,6 +50,17 @@ mv "$TEMP_DIR"/* "$CACHE_DIR"/
 
 echo "Removing temporary directory"
 rmdir "$TEMP_DIR"
+
+# Add fstab entry for mount at boot (mount point with spaces as \040)
+FSTAB_MOUNTPOINT="${BASE_DIR}/map\\040tile\\040cache"
+FSTAB_OPTS="loop,compress=zstd:6,noatime,nofail"
+if grep -qF "$IMAGE_FILE" /etc/fstab 2>/dev/null; then
+    echo "fstab already contains an entry for this image; skipping."
+else
+    echo "Adding entry to /etc/fstab for mount at boot."
+    printf '%s  %s  btrfs  %s  0  0\n' "$IMAGE_FILE" "$FSTAB_MOUNTPOINT" "$FSTAB_OPTS" | sudo tee -a /etc/fstab > /dev/null
+    echo "fstab updated."
+fi
 
 echo ""
 echo "Done!"

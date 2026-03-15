@@ -33,3 +33,8 @@ ThunderforestPioneer/ThunderforestTiles
 ThunderforestSpinal/ThunderforestTiles
 ThunderforestTransport/ThunderforestTiles
 ThunderforestTransportDark/ThunderforestTiles
+Esri256NatGeo/Esri256Tiles
+Esri256Satellite/Esri256Tiles
+Esri256Topo/Esri256Tiles
+Esri256TransportNomap/Esri256Tiles
+Esri256ElevationNomap/Esri256Tiles

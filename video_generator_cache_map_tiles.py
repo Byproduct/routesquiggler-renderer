@@ -105,6 +105,8 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
             subdir = 'GeoapifyTiles'
         elif map_style.startswith('thunderforest'):
             subdir = 'ThunderforestTiles'
+        elif map_style.startswith('esri256'):
+            subdir = 'Esri256Tiles'
         else:
             style_subdir_mapping = {
                 'osm': 'OSM',
@@ -137,7 +139,7 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
                 'thunderforest_pioneer': 'ThunderforestPioneer',
                 'thunderforest_spinal': 'ThunderforestSpinal',
                 'thunderforest_transport': 'ThunderforestTransport',
-                'thunderforest_transport_dark': 'ThunderforestTransportDark'
+                'thunderforest_transport_dark': 'ThunderforestTransportDark',
             }
             subdir = style_subdir_mapping.get(map_style, map_style.upper())
 
@@ -247,6 +249,11 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             'thunderforest_spinal': 100,
             'thunderforest_transport': 100,
             'thunderforest_transport_dark': 100,
+            'esri256_natgeo': 100,
+            'esri256_satellite': 100,
+            'esri256_topo': 100,
+            'esri256_transport_nomap': 100,
+            'esri256_elevation_nomap': 100,
         }
         max_tiles = max_tiles_config.get(map_style, 100)
         

@@ -393,7 +393,9 @@ def get_attribution_text(map_style):
         return "Route Squiggler & Geoapify"
     if ms.startswith("thunderforest"):
         return "Route Squiggler & Thunderforest"
-    return "Route Squiggler & OpenStreetMap"
+    if ms.startswith("esri256"):
+        return "Route Squiggler & Esri"
+    return "Route Squiggler"
 
 
 def format_scale_for_label_filename(image_scale: float) -> str:
