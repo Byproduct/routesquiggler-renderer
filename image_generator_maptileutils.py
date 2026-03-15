@@ -24,6 +24,7 @@ STADIA_API_KEY = os.environ.get('STADIA_API_KEY', '')
 GEOAPIFY_API_KEY = os.environ.get('GEOAPIFY_API_KEY', '')
 THUNDERFOREST_API_KEY = os.environ.get('THUNDERFOREST_API_KEY', '')
 ESRI_API_KEY = os.environ.get('ESRI_API_KEY', '')
+MAPBOX_API_KEY = os.environ.get('MAPBOX_API_KEY', '')
 
 LOGGING_INTO_FILE = False   #render.log
 
@@ -185,6 +186,13 @@ def set_cache_directory(map_style: str):
         'esri512_roads_nomap': 'Esri512RoadsNomap',
         'esri512_navigation': 'Esri512Navigation',
         'esri512_navigation_night': 'Esri512NavigationNight',
+        'mapbox_outdoors': 'MapboxOutdoors',
+        'mapbox_satellite': 'MapboxSatellite',
+        'mapbox_hybrid': 'MapboxHybrid',
+        'mapbox_pencil': 'MapboxPencil',
+        'mapbox_oilcompany': 'MapboxOilcompany',
+        'mapbox_japanese': 'MapboxJapanese',
+        'mapbox_blueprint': 'MapboxBlueprint',
     }
     
     cache_subdir = style_cache_mapping.get(map_style, 'OSM')
@@ -289,6 +297,17 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
         "esri512_roads_nomap": "open/hybrid/detail",
         "esri512_navigation": "open/navigation",
         "esri512_navigation_night": "open/navigation-dark",
+    }
+    
+    # Mapbox 512px styles (map_style -> style path in URL; tiles use z/x/y; requires MAPBOX_API_KEY)
+    mapbox_style_url_mapping = {
+        "mapbox_outdoors": "mapbox/outdoors-v12",
+        "mapbox_satellite": "mapbox/satellite-v9",
+        "mapbox_hybrid": "mapbox/satellite-streets-v12",
+        "mapbox_pencil": "juhgu/cmmsa65el000l01r04xibax9b",
+        "mapbox_oilcompany": "juhgu/cmmsa8mzx00do01s718o524df",
+        "mapbox_japanese": "juhgu/cmms9zkc700qf01ra3bzx5z54",
+        "mapbox_blueprint": "juhgu/cmms9ls7o000k01r05bk50vwm",
     }
     
     debug_log(f"Available Stadia styles: {list(stadia_style_url_mapping.keys())}")
@@ -519,6 +538,45 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
             tiles = Esri512Tiles(cache=True)
             return tiles
         
+    elif map_style.startswith('mapbox_'):
+        debug_log(f"Processing Mapbox map style: {map_style}")
+        tile_delay = get_rate_limit_delay(map_style)
+        if map_style in mapbox_style_url_mapping:
+            style_path = mapbox_style_url_mapping[map_style]
+            debug_log(f"Mapped {map_style} to Mapbox style path: {style_path}")
+            
+            class MapboxTiles(cimgt.GoogleTiles):
+                """Mapbox 512px tiles; URL order is z/x/y; requires MAPBOX_API_KEY."""
+                _name = 'MapboxTiles'
+                
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://api.mapbox.com/styles/v1/{style_path}/tiles/512/{z}/{x}/{y}?access_token={MAPBOX_API_KEY}'
+                    debug_log(f"Generated Mapbox URL: {url}")
+                    return url
+                
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
+            
+            tiles = MapboxTiles(cache=True)
+            debug_log(f"Created MapboxTiles object: {type(tiles)}")
+            return tiles
+        else:
+            debug_log(f"Unknown Mapbox style: {map_style}, defaulting to mapbox_outdoors")
+            style_path = mapbox_style_url_mapping["mapbox_outdoors"]
+            
+            class MapboxTiles(cimgt.GoogleTiles):
+                _name = 'MapboxTiles'
+                
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://api.mapbox.com/styles/v1/{style_path}/tiles/512/{z}/{x}/{y}?access_token={MAPBOX_API_KEY}'
+                    return url
+                
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
+            
+            tiles = MapboxTiles(cache=True)
+            return tiles
+        
     elif map_style == "osm":
         debug_log("Processing OpenStreetMap style")
         tile_delay = get_rate_limit_delay(map_style)
@@ -705,9 +763,9 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
         debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints, using max_zoom {max_zoom} as fallback")
         suitable_zooms = [max_zoom]
     
-    # esri512 tiles are 512px (twice as large as 256px); use one zoom level smaller for equivalent coverage
-    if map_style.startswith('esri512_'):
+    # esri512 and mapbox tiles are 512px (twice as large as 256px); use one zoom level smaller for equivalent coverage
+    if map_style.startswith('esri512_') or map_style.startswith('mapbox_'):
         suitable_zooms = [max(1, z - 1) for z in suitable_zooms]
-        debug_log(f"esri512 style: using zoom levels one step smaller: {suitable_zooms}")
+        debug_log(f"512px style: using zoom levels one step smaller: {suitable_zooms}")
         
     return suitable_zooms 

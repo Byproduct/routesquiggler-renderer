@@ -50,3 +50,12 @@ Esri512Outdoor/Esri512Tiles
 Esri512Streets/Esri512Tiles
 Esri512TransportNomap/Esri512Tiles
 Esri512RoadsNomap/Esri512Tiles
+Esri512Navigation/Esri512Tiles
+Esri512NavigationNight/Esri512Tiles
+MapboxOutdoors/MapboxTiles
+MapboxSatellite/MapboxTiles
+MapboxHybrid/MapboxTiles
+MapboxPencil/MapboxTiles
+MapboxOilcompany/MapboxTiles
+MapboxJapanese/MapboxTiles
+MapboxBlueprint/MapboxTiles

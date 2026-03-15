@@ -28,7 +28,7 @@ def get_service_from_map_style(map_style):
         map_style (str): The map style from json_data
         
     Returns:
-        str: The service name ("osm", "otm", "cyclosm", "stadia", "geoapify", "thunderforest", "esri256", or "esri512")
+        str: The service name ("osm", "otm", "cyclosm", "stadia", "geoapify", "thunderforest", "esri256", "esri512", or "mapbox")
     """
     if map_style == "osm":
         return "osm"
@@ -46,6 +46,8 @@ def get_service_from_map_style(map_style):
         return "esri256"
     elif map_style.startswith("esri512_"):
         return "esri512"
+    elif map_style.startswith("mapbox_"):
+        return "mapbox"
     else:
         # Default to osm for unknown styles
         return "osm"

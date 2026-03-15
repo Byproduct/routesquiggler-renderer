@@ -395,6 +395,8 @@ def get_attribution_text(map_style):
         return "Route Squiggler & Thunderforest"
     if ms.startswith("esri256") or ms.startswith("esri512"):
         return "Route Squiggler & Esri"
+    if ms.startswith("mapbox"):
+        return "Route Squiggler & Mapbox"
     return "Route Squiggler"
 
 

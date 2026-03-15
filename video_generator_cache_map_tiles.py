@@ -107,6 +107,8 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
             subdir = 'Esri256Tiles'
         elif map_style.startswith('esri512'):
             subdir = 'Esri512Tiles'
+        elif map_style.startswith('mapbox'):
+            subdir = 'MapboxTiles'
         else:
             style_subdir_mapping = {
                 'osm': 'OSM',
@@ -268,6 +270,13 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             'esri512_roads_nomap': 100,
             'esri512_navigation': 100,
             'esri512_navigation_night': 100,
+            'mapbox_outdoors': 100,
+            'mapbox_satellite': 100,
+            'mapbox_hybrid': 100,
+            'mapbox_pencil': 100,
+            'mapbox_oilcompany': 100,
+            'mapbox_japanese': 100,
+            'mapbox_blueprint': 100,
         }
         max_tiles = max_tiles_config.get(map_style, 100)
         
