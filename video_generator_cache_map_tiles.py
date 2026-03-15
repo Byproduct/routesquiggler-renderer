@@ -22,8 +22,6 @@ from job_request import set_attribution_from_theme
 from sync_map_tiles import sync_map_tiles
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 
-STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
-
 # Debug flag to control console output
 MAP_TILE_CACHING_DEBUG = False
 
@@ -107,6 +105,8 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
             subdir = 'ThunderforestTiles'
         elif map_style.startswith('esri256'):
             subdir = 'Esri256Tiles'
+        elif map_style.startswith('esri512'):
+            subdir = 'Esri512Tiles'
         else:
             style_subdir_mapping = {
                 'osm': 'OSM',
@@ -254,6 +254,18 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             'esri256_topo': 100,
             'esri256_transport_nomap': 100,
             'esri256_elevation_nomap': 100,
+            'esri512_community': 100,
+            'esri512_darkgray_nolabels': 100,
+            'esri512_darkgray': 100,
+            'esri512_lightgray': 100,
+            'esri512_lightgray_nolabels': 100,
+            'esri512_midcentury': 100,
+            'esri512_newspaper': 100,
+            'esri512_nova': 100,
+            'esri512_outdoor': 100,
+            'esri512_streets': 100,
+            'esri512_transport_nomap': 100,
+            'esri512_roads_nomap': 100,
         }
         max_tiles = max_tiles_config.get(map_style, 100)
         

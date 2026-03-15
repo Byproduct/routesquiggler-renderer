@@ -393,7 +393,7 @@ def get_attribution_text(map_style):
         return "Route Squiggler & Geoapify"
     if ms.startswith("thunderforest"):
         return "Route Squiggler & Thunderforest"
-    if ms.startswith("esri256"):
+    if ms.startswith("esri256") or ms.startswith("esri512"):
         return "Route Squiggler & Esri"
     return "Route Squiggler"
 

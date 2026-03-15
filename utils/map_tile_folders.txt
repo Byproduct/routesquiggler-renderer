@@ -38,3 +38,15 @@ Esri256Satellite/Esri256Tiles
 Esri256Topo/Esri256Tiles
 Esri256TransportNomap/Esri256Tiles
 Esri256ElevationNomap/Esri256Tiles
+Esri512Community/Esri512Tiles
+Esri512DarkgrayNolabels/Esri512Tiles
+Esri512Darkgray/Esri512Tiles
+Esri512Lightgray/Esri512Tiles
+Esri512LightgrayNolabels/Esri512Tiles
+Esri512Midcentury/Esri512Tiles
+Esri512Newspaper/Esri512Tiles
+Esri512Nova/Esri512Tiles
+Esri512Outdoor/Esri512Tiles
+Esri512Streets/Esri512Tiles
+Esri512TransportNomap/Esri512Tiles
+Esri512RoadsNomap/Esri512Tiles

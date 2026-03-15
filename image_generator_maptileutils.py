@@ -14,10 +14,17 @@ import cartopy
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import numpy as np
+from dotenv import load_dotenv
 
-STADIA_API_KEY = "2413a338-8b10-4302-a96c-439cb795b285"
-GEOAPIFY_API_KEY = "1180c192019b43b9a366c498deadcc4b"
-THUNDERFOREST_API_KEY = "43413e30756b4dd489d7e62d5c0a9245"
+# Load API keys from .env in project root (same dir as this file)
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(_env_path)
+
+STADIA_API_KEY = os.environ.get('STADIA_API_KEY', '')
+GEOAPIFY_API_KEY = os.environ.get('GEOAPIFY_API_KEY', '')
+THUNDERFOREST_API_KEY = os.environ.get('THUNDERFOREST_API_KEY', '')
+ESRI_API_KEY = os.environ.get('ESRI_API_KEY', '')
+
 LOGGING_INTO_FILE = False   #render.log
 
 # Service-specific rate limits (minimum seconds between tile download requests).
@@ -164,6 +171,18 @@ def set_cache_directory(map_style: str):
         'esri256_topo': 'Esri256Topo',
         'esri256_transport_nomap': 'Esri256TransportNomap',
         'esri256_elevation_nomap': 'Esri256ElevationNomap',
+        'esri512_community': 'Esri512Community',
+        'esri512_darkgray_nolabels': 'Esri512DarkgrayNolabels',
+        'esri512_darkgray': 'Esri512Darkgray',
+        'esri512_lightgray': 'Esri512Lightgray',
+        'esri512_lightgray_nolabels': 'Esri512LightgrayNolabels',
+        'esri512_midcentury': 'Esri512Midcentury',
+        'esri512_newspaper': 'Esri512Newspaper',
+        'esri512_nova': 'Esri512Nova',
+        'esri512_outdoor': 'Esri512Outdoor',
+        'esri512_streets': 'Esri512Streets',
+        'esri512_transport_nomap': 'Esri512TransportNomap',
+        'esri512_roads_nomap': 'Esri512RoadsNomap',
     }
     
     cache_subdir = style_cache_mapping.get(map_style, 'OSM')
@@ -190,10 +209,8 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
     Create map tiles based on the selected style.
     
     Args:
-        map_style: String, one of 'osm', 'otm', 'cyclosm', 'stadia_light', 'stadia_dark', 
-                  'stadia_outdoors', 'stadia_toner', 'stadia_watercolor', various 'geoapify_*' and
-                  'thunderforest_*' styles, or 'esri256_natgeo', 'esri256_satellite', 'esri256_topo',
-                  'esri256_transport_nomap', 'esri256_elevation_nomap'.
+        map_style: String, one of 'osm', 'otm', 'cyclosm', 'stadia_*', 'geoapify_*', 'thunderforest_*',
+                  'esri256_*' (natgeo, satellite, topo, etc.), or 'esri512_*' (community, streets, etc.).
     
     Returns:
         CartoPy image tiles object
@@ -252,6 +269,22 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
         "esri256_topo": "World_Topo_Map",
         "esri256_transport_nomap": "Reference/World_Transportation",
         "esri256_elevation_nomap": "Elevation/World_Hillshade",
+    }
+    
+    # ESRI 512px static basemap tiles (map_style -> SERVICE in URL; tiles use z/y/x order; requires ESRI_API_KEY)
+    esri512_style_url_mapping = {
+        "esri512_community": "arcgis/community",
+        "esri512_darkgray_nolabels": "arcgis/dark-gray",
+        "esri512_darkgray": "open/dark-gray",
+        "esri512_lightgray": "open/light-gray",
+        "esri512_lightgray_nolabels": "arcgis/light-gray",
+        "esri512_midcentury": "arcgis/midcentury",
+        "esri512_newspaper": "arcgis/newspaper",
+        "esri512_nova": "arcgis/nova",
+        "esri512_outdoor": "arcgis/outdoor",
+        "esri512_streets": "open/streets",
+        "esri512_transport_nomap": "arcgis/imagery/labels",
+        "esri512_roads_nomap": "open/hybrid/detail",
     }
     
     debug_log(f"Available Stadia styles: {list(stadia_style_url_mapping.keys())}")
@@ -443,6 +476,45 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
             tiles = Esri256Tiles(cache=True)
             return tiles
         
+    elif map_style.startswith('esri512_'):
+        debug_log(f"Processing ESRI (esri512) map style: {map_style}")
+        tile_delay = get_rate_limit_delay(map_style)
+        if map_style in esri512_style_url_mapping:
+            service = esri512_style_url_mapping[map_style]
+            debug_log(f"Mapped {map_style} to ESRI 512 service: {service}")
+            
+            class Esri512Tiles(cimgt.GoogleTiles):
+                """ESRI 512px static basemap tiles; URL order is z/y/x; requires API token."""
+                _name = 'Esri512Tiles'
+                
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/{service}/static/tile/{z}/{y}/{x}?token={ESRI_API_KEY}'
+                    debug_log(f"Generated ESRI 512 URL: {url}")
+                    return url
+                
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
+            
+            tiles = Esri512Tiles(cache=True)
+            debug_log(f"Created Esri512Tiles object: {type(tiles)}")
+            return tiles
+        else:
+            debug_log(f"Unknown ESRI 512 style: {map_style}, defaulting to esri512_streets")
+            service = esri512_style_url_mapping["esri512_streets"]
+            
+            class Esri512Tiles(cimgt.GoogleTiles):
+                _name = 'Esri512Tiles'
+                
+                def _image_url(self, tile):
+                    x, y, z = tile
+                    url = f'https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/{service}/static/tile/{z}/{y}/{x}?token={ESRI_API_KEY}'
+                    return url
+                
+                get_image = _make_get_image(tile_delay, map_style, log_cache_miss, cimgt.GoogleTiles.get_image)
+            
+            tiles = Esri512Tiles(cache=True)
+            return tiles
+        
     elif map_style == "osm":
         debug_log("Processing OpenStreetMap style")
         tile_delay = get_rate_limit_delay(map_style)
@@ -628,5 +700,10 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
         # This ensures we always return at least one zoom level, even if it exceeds max_tiles
         debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints, using max_zoom {max_zoom} as fallback")
         suitable_zooms = [max_zoom]
+    
+    # esri512 tiles are 512px (twice as large as 256px); use one zoom level smaller for equivalent coverage
+    if map_style.startswith('esri512_'):
+        suitable_zooms = [max(1, z - 1) for z in suitable_zooms]
+        debug_log(f"esri512 style: using zoom levels one step smaller: {suitable_zooms}")
         
     return suitable_zooms 
