@@ -312,6 +312,20 @@ class ImageGeneratorWorker(QObject):
             # detect_zoom_level now always returns at least one zoom level (fallback to max_zoom)
             # So we don't need to check for empty list anymore
             
+            # If extra_zoom is true, add one image at one zoom level higher (images only, not videos)
+            if self.json_data.get('extra_zoom', False) and zoom_levels:
+                map_style = self.json_data.get('map_style', 'osm')
+                if map_style == "otm":
+                    style_max_zoom = 15
+                elif map_style == "cyclosm":
+                    style_max_zoom = 17
+                else:
+                    style_max_zoom = 20
+                extra_z = max(zoom_levels) + 1
+                if extra_z <= style_max_zoom:
+                    zoom_levels = list(zoom_levels) + [extra_z]
+                    self.debug_message.emit(f"extra_zoom enabled: added zoom level {extra_z}")
+            
             # Emit zoom levels immediately so UI can create status labels
             self.zoom_levels_ready.emit(zoom_levels)
             
