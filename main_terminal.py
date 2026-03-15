@@ -907,6 +907,10 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                 write_debug_log(f"Job processing completed with success={success}")
                 
                 if success:
+                    # Skip the 1-minute minimum interval after a successful job —
+                    # that guard is only meant to prevent hammering on errors/empty responses.
+                    last_request_start_time = None
+
                     if SYNC_AFTER_EVERY_JOB:
                         # Sync map tiles immediately after every job (sync is now fast)
                         try:
