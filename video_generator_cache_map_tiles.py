@@ -266,6 +266,8 @@ def pre_cache_map_tiles_for_video(unique_bounding_boxes, json_data, progress_cal
             'esri512_streets': 100,
             'esri512_transport_nomap': 100,
             'esri512_roads_nomap': 100,
+            'esri512_navigation': 100,
+            'esri512_navigation_night': 100,
         }
         max_tiles = max_tiles_config.get(map_style, 100)
         

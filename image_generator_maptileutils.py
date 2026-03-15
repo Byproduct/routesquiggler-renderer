@@ -183,6 +183,8 @@ def set_cache_directory(map_style: str):
         'esri512_streets': 'Esri512Streets',
         'esri512_transport_nomap': 'Esri512TransportNomap',
         'esri512_roads_nomap': 'Esri512RoadsNomap',
+        'esri512_navigation': 'Esri512Navigation',
+        'esri512_navigation_night': 'Esri512NavigationNight',
     }
     
     cache_subdir = style_cache_mapping.get(map_style, 'OSM')
@@ -285,6 +287,8 @@ def create_map_tiles(map_style: str, log_cache_miss: bool = False):
         "esri512_streets": "open/streets",
         "esri512_transport_nomap": "arcgis/imagery/labels",
         "esri512_roads_nomap": "open/hybrid/detail",
+        "esri512_navigation": "open/navigation",
+        "esri512_navigation_night": "open/navigation-dark",
     }
     
     debug_log(f"Available Stadia styles: {list(stadia_style_url_mapping.keys())}")
