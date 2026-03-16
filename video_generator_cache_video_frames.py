@@ -7,6 +7,7 @@ The actual map plotting is in video_generator_create_single_frame.py.
 # Standard library imports
 import gc
 import json
+import math
 import multiprocessing
 import os
 import pickle
@@ -555,23 +556,32 @@ def _streaming_frame_worker(args):
                     if frame_number <= 3 and config.debug_logging:
                         write_debug_log(f"Frame {frame_number}: Filtered out {original_count - filtered_count} points from {len(completed_filenames)} completed file(s). Remaining: {filtered_count} points")
         
-        # Check if we have any points (either as a list of lists or a single list)
-        has_points = False
+        # Check if we have enough geographically distinct points to draw lines.
+        # Point interpolation can create many synthetic points that all share
+        # the exact same lat/lon (filling time gaps without actual movement).
+        # Drawing these produces a degenerate bounding box / "vertical slice".
+        has_drawable_content = False
         if all_routes and len(all_routes) > 1:
             # Multiple routes mode - check if any route has points
-            has_points = any(len(route_points) > 0 for route_points in points_for_frame)
-            # Enhanced debug for multiple routes mode (only if debug logging and hide_complete_routes are enabled)
+            has_drawable_content = any(len(route_points) > 0 for route_points in points_for_frame)
             if hide_complete_routes and frame_number <= 10 and config.debug_logging:
                 route_count = len(points_for_frame)
                 total_points = sum(len(route_points) for route_points in points_for_frame)
-                write_debug_log(f"Frame {frame_number} FINAL: {route_count} routes in points_for_frame, {total_points} total points, has_points={has_points}")
+                write_debug_log(f"Frame {frame_number} FINAL: {route_count} routes in points_for_frame, {total_points} total points, has_drawable_content={has_drawable_content}")
         else:
-            # Single route mode - check if the list has points
-            has_points = len(points_for_frame) > 0
+            # Single route mode - need at least 2 geographically distinct points
+            if len(points_for_frame) >= 2:
+                ref_lat = points_for_frame[0].lat
+                ref_lon = points_for_frame[0].lon
+                has_drawable_content = any(
+                    abs(p.lat - ref_lat) > 1e-9 or abs(p.lon - ref_lon) > 1e-9
+                    for p in points_for_frame[1:]
+                )
         
-        if not has_points:
-            if hide_complete_routes and frame_number <= 10 and config.debug_logging:
-                write_debug_log(f"Frame {frame_number}: No points found, returning None")
+        if not has_drawable_content:
+            if frame_number <= 10 and config.debug_logging:
+                point_count = sum(len(rp) for rp in points_for_frame) if (all_routes and len(all_routes) > 1) else len(points_for_frame)
+                write_debug_log(f"Frame {frame_number}: No geographically distinct points ({point_count} total), skipping frame")
             return frame_number, None
         
         # Validate that shared map cache is provided
@@ -899,10 +909,53 @@ class StreamingFrameGenerator:
         self.last_successfully_returned_frame = None  # Track last successfully returned frame for fallback
         self.frames_to_generate = frames_to_generate
         
-        # 10% status update tracking
-        # Calculate frame count for each 10% milestone (total frames are always divisible by 10)
-        self.ten_percent_frame_count = frames_to_generate // 10 if frames_to_generate >= 10 else 0
+        # Pre-calculate leading frames to skip (sequential mode only).
+        # In sequential mode, early frames may not contain enough geographically
+        # distinct points to draw a meaningful line. This happens when:
+        #   a) There are fewer than 2 GPS points in the time window, or
+        #   b) Point interpolation has filled a large time gap between the first
+        #      two real GPS points with synthetic points that all share the exact
+        #      same lat/lon as the first point (no actual movement).
+        # In either case the bounding box degenerates into a "vertical slice"
+        # artifact. Skip these frames to produce a shorter, cleaner video and
+        # save CPU on rendering.
+        self.frames_to_skip = 0
+        if not is_simultaneous_mode:
+            combined_route = combined_route_data.get('combined_route', [])
+            if len(combined_route) >= 2 and self.route_time_per_frame > 0:
+                # Find the first point whose lat/lon differs from point[0].
+                # This handles interpolated points that copy coordinates verbatim.
+                first_lat = combined_route[0].lat
+                first_lon = combined_route[0].lon
+                first_diverse_time = None
+                for pt in combined_route[1:]:
+                    if abs(pt.lat - first_lat) > 1e-9 or abs(pt.lon - first_lon) > 1e-9:
+                        first_diverse_time = pt.accumulated_time
+                        break
+                
+                if first_diverse_time is not None and first_diverse_time > 0:
+                    first_drawable_frame = math.ceil(first_diverse_time / self.route_time_per_frame) + 1
+                    self.frames_to_skip = max(0, min(first_drawable_frame - 1, frames_to_generate - 1))
+                elif first_diverse_time is None:
+                    # All points at the same location - skip all but the last frame
+                    self.frames_to_skip = max(0, frames_to_generate - 1)
+            elif len(combined_route) < 2:
+                self.frames_to_skip = max(0, frames_to_generate - 1)
+        
+        self.renderable_frames = self.frames_to_generate - self.frames_to_skip
+        
+        if self.frames_to_skip > 0:
+            skipped_duration = self.frames_to_skip / video_fps
+            self.final_video_length -= skipped_duration
+            self.total_frames = int(self.final_video_length * video_fps)
+            write_debug_log(f"Sequential mode: skipping {self.frames_to_skip} leading frames ({skipped_duration:.2f}s) with < 2 points")
+            if progress_callback:
+                progress_callback("progress_bar_frames", 0, f"Skipping {self.frames_to_skip} leading frames ({skipped_duration:.2f}s) with insufficient points for lines")
+        
+        # 10% status update tracking (based on renderable frames, not total)
+        self.ten_percent_frame_count = self.renderable_frames // 10 if self.renderable_frames >= 10 else 0
         self.last_status_update_milestone = 0  # Track last reported milestone (0, 10, 20, ..., 90)
+        self.last_status_update_time = time.time()  # 5-second rate limit for server status updates
         
         # Initialize multiprocessing components with improved buffering
         self.manager = multiprocessing.Manager()
@@ -921,12 +974,12 @@ class StreamingFrameGenerator:
             # Large videos: use 15x workers buffer, but cap at 200 frames for memory efficiency
             self.buffer_size = min(15 * self.num_workers, 200, self.total_frames)
         
-        write_debug_log(f"Buffer size: {self.buffer_size} frames (total frames: {self.total_frames})")
+        write_debug_log(f"Buffer size: {self.buffer_size} frames (total frames: {self.total_frames}, skipped: {self.frames_to_skip})")
         
         self.current_frame = 0
         self.pool = None
         self.pending_results = {}  # {frame_number: AsyncResult}
-        self.next_frame_to_request = 1
+        self.next_frame_to_request = self.frames_to_skip + 1
         self.frames_requested = 0
         self.frames_generated = 0  # Track total frames generated
         self.last_reported_progress_percent = -1  # Track last reported progress to only update every 5%
@@ -972,11 +1025,11 @@ class StreamingFrameGenerator:
         write_debug_log(f"Pre-warming buffer with initial frames")
         
         # Calculate how many frames to pre-warm (aim for 50% of buffer size)
-        pre_warm_count = min(self.buffer_size // 2, self.total_frames)
+        pre_warm_count = min(self.buffer_size // 2, self.renderable_frames)
         
         # Request initial frames to get the pipeline started
         for _ in range(pre_warm_count):
-            if self.next_frame_to_request <= self.total_frames:
+            if self.next_frame_to_request <= self.frames_to_generate:
                 frame_number = self.next_frame_to_request
                 work_item = self.work_items[frame_number - 1]
                 
@@ -1011,7 +1064,7 @@ class StreamingFrameGenerator:
         if available_slots > 0:
             # Request frames in batches to maintain continuous pipeline
             batch_size = min(available_slots, self.num_workers * 2)  # Request 2x workers worth of frames
-            frames_to_request = min(batch_size, self.total_frames - self.next_frame_to_request + 1)
+            frames_to_request = min(batch_size, self.frames_to_generate - self.next_frame_to_request + 1)
         
         # NEW: Prioritize frames that are likely to be requested soon
         priority_frames_to_request = []
@@ -1049,7 +1102,8 @@ class StreamingFrameGenerator:
             self.frames_requested += 1
     
     def _check_ten_percent_status_update(self):
-        """Check if we've reached a 10% milestone and update status if so."""
+        """Check if we've reached a 10% milestone and update status if so.
+        Rate-limited to at most one update every 5 seconds."""
         if not self.user or not self.job_id or self.ten_percent_frame_count == 0:
             return
         
@@ -1058,10 +1112,12 @@ class StreamingFrameGenerator:
         
         # Only report milestones 10-90 (not 0% or 100%)
         if current_milestone > self.last_status_update_milestone and 10 <= current_milestone <= 90:
-            # Check if we're exactly at a 10% boundary
             if self.frames_generated % self.ten_percent_frame_count == 0:
-                from update_status import update_status
-                update_status(f"rendering ({self.job_id}) {current_milestone}%", api_key=self.user)
+                now = time.time()
+                if now - self.last_status_update_time >= 5:
+                    from update_status import update_status
+                    update_status(f"Rendering frames ({self.job_id}) {current_milestone}%", api_key=self.user)
+                    self.last_status_update_time = now
                 self.last_status_update_milestone = current_milestone
     
     def _collect_ready_frames(self):
@@ -1074,15 +1130,12 @@ class StreamingFrameGenerator:
                     result_frame_number, frame_array = async_result.get(timeout=0.1)
                     if frame_array is not None:
                         self.frame_buffer[frame_number] = frame_array
-                        # Increment frames generated counter
                         self.frames_generated += 1
                         
-                        # Update progress if callback is provided (only every 5% to reduce debug log spam)
                         if self.progress_callback:
-                            progress_percent = int((self.frames_generated / self.frames_to_generate) * 100)  # Use frames_to_generate
-                            # Only update progress every 5% or at 100%
+                            progress_percent = int((self.frames_generated / self.renderable_frames) * 100)
                             if progress_percent >= self.last_reported_progress_percent + 5 or progress_percent >= 100:
-                                progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
+                                progress_text = f"Generated frame {self.frames_generated}/{self.renderable_frames}"
                                 self.progress_callback("progress_bar_frames", progress_percent, progress_text)
                                 self.last_reported_progress_percent = progress_percent
                     else:
@@ -1090,15 +1143,12 @@ class StreamingFrameGenerator:
                         height = int(self.json_data.get('video_resolution_y', 1080))
                         width = int(self.json_data.get('video_resolution_x', 1920))
                         self.frame_buffer[frame_number] = np.zeros((height, width, 3), dtype=np.uint8)
-                        # Still count as generated (even if it's a black frame)
                         self.frames_generated += 1
                         
-                        # Update progress if callback is provided (only every 5% to reduce debug log spam)
                         if self.progress_callback:
-                            progress_percent = int((self.frames_generated / self.frames_to_generate) * 100)  # Use frames_to_generate
-                            # Only update progress every 5% or at 100%
+                            progress_percent = int((self.frames_generated / self.renderable_frames) * 100)
                             if progress_percent >= self.last_reported_progress_percent + 5 or progress_percent >= 100:
-                                progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
+                                progress_text = f"Generated frame {self.frames_generated}/{self.renderable_frames}"
                                 self.progress_callback("progress_bar_frames", progress_percent, progress_text)
                                 self.last_reported_progress_percent = progress_percent
                     
@@ -1110,15 +1160,12 @@ class StreamingFrameGenerator:
                     height = int(self.json_data.get('video_resolution_y', 1080))
                     width = int(self.json_data.get('video_resolution_x', 1920))
                     self.frame_buffer[frame_number] = np.zeros((height, width, 3), dtype=np.uint8)
-                    # Still count as generated (even if it's a black frame)
                     self.frames_generated += 1
                     
-                    # Update progress if callback is provided (only every 5% to reduce debug log spam)
                     if self.progress_callback:
-                        progress_percent = int((self.frames_generated / self.frames_to_generate) * 100)  # Use frames_to_generate
-                        # Only update progress every 5% or at 100%
+                        progress_percent = int((self.frames_generated / self.renderable_frames) * 100)
                         if progress_percent >= self.last_reported_progress_percent + 5 or progress_percent >= 100:
-                            progress_text = f"Generated frame {self.frames_generated}/{self.frames_to_generate}"
+                            progress_text = f"Generated frame {self.frames_generated}/{self.renderable_frames}"
                             self.progress_callback("progress_bar_frames", progress_percent, progress_text)
                             self.last_reported_progress_percent = progress_percent
                     
@@ -1199,7 +1246,7 @@ class StreamingFrameGenerator:
         if available_slots > 0:
             # Request up to 3x workers worth of frames
             batch_size = min(available_slots, self.num_workers * 3)
-            frames_to_request = min(batch_size, self.total_frames - self.next_frame_to_request + 1)
+            frames_to_request = min(batch_size, self.frames_to_generate - self.next_frame_to_request + 1)
             
             # NEW: Prioritize frames during aggressive refill
             priority_frames_to_request = []
@@ -1246,12 +1293,13 @@ class StreamingFrameGenerator:
         Returns:
             numpy array representing the frame
         """
-        # Calculate frame number from time
+        # Calculate frame number from time, offset by frames_to_skip so t=0
+        # maps to the first frame that has enough points to draw a line.
         video_fps = float(self.json_data.get('video_fps', 30))
-        frame_number = int(t * video_fps) + 1
+        frame_number = int(t * video_fps) + 1 + self.frames_to_skip
         
-        # Clamp frame number to valid range
-        frame_number = max(1, min(frame_number, self.total_frames))
+        # Clamp to valid range in original frame space
+        frame_number = max(self.frames_to_skip + 1, min(frame_number, self.frames_to_skip + self.total_frames))
         
         # NEW: Handle cloned frames (frames beyond the extended video length)
         if frame_number > self.frames_to_generate:
@@ -1286,11 +1334,11 @@ class StreamingFrameGenerator:
         # NEW: Update frame prioritization based on sequential access pattern
         if frame_number > self.last_requested_frame:
             # Sequential forward access - prioritize upcoming frames
-            upcoming_frames = range(frame_number + 1, min(frame_number + 10, min(self.frames_to_generate, self.total_frames) + 1))
+            upcoming_frames = range(frame_number + 1, min(frame_number + 10, self.frames_to_generate + 1))
             self.priority_frames.update(upcoming_frames)
         elif frame_number < self.last_requested_frame:
             # Backward access - might be seeking, prioritize nearby frames
-            nearby_frames = range(max(1, frame_number - 5), min(frame_number + 15, min(self.frames_to_generate, self.total_frames) + 1))
+            nearby_frames = range(max(self.frames_to_skip + 1, frame_number - 5), min(frame_number + 15, self.frames_to_generate + 1))
             self.priority_frames.update(nearby_frames)
         
         self.last_requested_frame = frame_number
@@ -1576,6 +1624,9 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         if progress_callback:
             progress_callback("progress_bar_frames", 0, "Starting frame generation")
         
+        if frame_generator.frames_to_skip > 0 and debug_callback:
+            debug_callback(f"Skipping {frame_generator.frames_to_skip} leading frames with < 2 points (video shortened by {frame_generator.frames_to_skip / video_fps:.2f}s)")
+        
         # Create the video clip
         clip = VideoClip(frame_generator.make_frame, duration=frame_generator.final_video_length)
         
@@ -1855,15 +1906,39 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
                 extended_video_length = video_length + tail_length if tail_length > 0 else video_length
                 final_video_length = extended_video_length + cloned_ending_duration
             
+            # Account for skipped leading frames in sequential mode (mirrors
+            # the geographic-diversity scan in StreamingFrameGenerator.__init__)
+            frames_to_skip = 0
+            if not is_simultaneous_mode:
+                combined_route = combined_route_data.get('combined_route', [])
+                route_time_per_frame_local = gpx_time_per_video_time / video_fps if gpx_time_per_video_time else 0
+                if len(combined_route) >= 2 and route_time_per_frame_local > 0:
+                    first_lat = combined_route[0].lat
+                    first_lon = combined_route[0].lon
+                    first_diverse_time = None
+                    for pt in combined_route[1:]:
+                        if abs(pt.lat - first_lat) > 1e-9 or abs(pt.lon - first_lon) > 1e-9:
+                            first_diverse_time = pt.accumulated_time
+                            break
+                    if first_diverse_time is not None and first_diverse_time > 0:
+                        frames_to_generate_total = int(extended_video_length * video_fps)
+                        first_drawable = math.ceil(first_diverse_time / route_time_per_frame_local) + 1
+                        frames_to_skip = max(0, min(first_drawable - 1, frames_to_generate_total - 1))
+                
+                if frames_to_skip > 0:
+                    skipped_duration = frames_to_skip / video_fps
+                    final_video_length -= skipped_duration
+            
             total_frames = int(final_video_length * video_fps)
-            frames_generated = int(extended_video_length * video_fps)  # Only frames that were actually generated
+            frames_generated = int(extended_video_length * video_fps) - frames_to_skip
             cloned_frames = int(cloned_ending_duration * video_fps)
             
             if debug_callback:
                 if is_simultaneous_mode:
                     debug_callback(f"SIMULTANEOUS MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames")
                 else:
-                    debug_callback(f"SEQUENTIAL MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames")
+                    skip_info = f" (skipped {frames_to_skip} leading frames)" if frames_to_skip > 0 else ""
+                    debug_callback(f"SEQUENTIAL MODE: Video creation completed: {frames_generated} frames generated + {cloned_frames} frames cloned = {total_frames} total frames{skip_info}")
             
             return {
                 'total_frames_created': frames_generated,  # Frames actually generated (not including cloned)

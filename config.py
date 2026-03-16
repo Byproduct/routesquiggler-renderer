@@ -23,6 +23,8 @@ class Config:
         self.gpu_rendering = True
         self.low_spec = False
         self.map_tile_cache_folder = "default"
+        # None means unlimited (no pruning); otherwise a number in gigabytes
+        self.map_tile_cache_size = None
         # Thread count for rendering: None = "auto" (max(1, cpu_count - 2)), or int for fixed value
         self.thread_count = None
         self._thread_count_from_file = False
@@ -73,6 +75,16 @@ class Config:
                             self.low_spec = value.lower() == 'true'
                         elif key == 'map_tile_cache_folder':
                             self.map_tile_cache_folder = value
+                        elif key == 'map_tile_cache_size':
+                            val = value.strip().lower()
+                            if val in ('', 'unlimited'):
+                                self.map_tile_cache_size = None
+                            else:
+                                try:
+                                    self.map_tile_cache_size = float(val)
+                                except ValueError:
+                                    print(f"Warning: invalid map_tile_cache_size '{value}' in config.txt; treating as unlimited.")
+                                    self.map_tile_cache_size = None
                         elif key == 'threads':
                             val = value.strip().lower()
                             if val in ('', 'auto'):

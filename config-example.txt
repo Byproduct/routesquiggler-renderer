@@ -8,6 +8,11 @@ threads: auto
 # This affects video encoding only (frames are still made using CPU), so the effect isn't dramatic, but it is recommended if supported. 
 gpu_rendering: false
 
+# Cache size in gigabytes. If the local map tile cache exceeds this size, oldest files will be deleted until within this limit again.
+# This setting can also be "unlimited" in which case cache will grow indefinitely, but jobs have a guard not to start if there is less than 2gb free.
+# The cache is checked hourly. If omitted, assumes unlimited.
+map_tile_cache_size: 100
+
 # Low spec hardware - will only be given light, 0-cost jobs and only if no other renderers are available
 # Map tile cache will only be stored for OSM, OTM and CyclOSM (others cost credits)
 low_spec: false
@@ -24,11 +29,9 @@ storage_box_address: u465900.your-storagebox.de
 storage_box_user: u465900
 storage_box_password: R0uteSquigglerBocks
 
-
-# The GUI version is outdated and you probably shouldn't use it unless there's a very good reason 
+# The GUI version is outdated and you probably shouldn't use it unless there's a good reason (like an entirely separate animation project outside Route Squiggler)
 gui: false
 
-# Debug-related options
-sync_map_tile_cache: true
+# Debug options
 debug_logging: false
 leave_temporary_files: false

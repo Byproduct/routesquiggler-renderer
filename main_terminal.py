@@ -24,7 +24,6 @@ from config import config
 from image_generator_multiprocess import StatusUpdate
 from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
 from job_request import apply_vertical_video_swap, set_attribution_from_theme
-from sync_map_tiles import sync_map_tiles
 from update_status import update_status
 from write_log import write_debug_log, write_log
 
@@ -34,38 +33,6 @@ shutdown_force_count = 0  # Count how many times Ctrl+C was pressed
 
 # Global status tracking for status updates
 current_status = None
-
-
-def sync_map_tiles_terminal():
-    """Sync map tiles to storage box."""
-    try:
-        write_log("Cleaning bad map tiles from local cache.")
-        import map_tile_cache_sweep
-        map_tile_cache_sweep.main()           
-    except Exception as sweep_error:
-        write_log(f"Warning: Cache cleaning failed: {sweep_error}")
-            
-    write_log("Syncing map tiles to storage box.")
-    success, uploaded_count, downloaded_count = sync_map_tiles(
-        storage_box_address=config.storage_box_address,
-        storage_box_user=config.storage_box_user,
-        storage_box_password=config.storage_box_password,
-        local_cache_dir=config.map_tile_cache_path,
-        log_callback=lambda msg: write_debug_log(f"Sync: {msg}"),
-        progress_callback=lambda msg: write_debug_log(f"Progress: {msg}"),
-        sync_state_callback=lambda state: None,
-        max_workers=1,
-        dry_run=False,
-        upload_only=True,
-        debug_logging=config.debug_logging
-    )
-            
-    if success:
-        write_log(f"Map tile sync completed successfully. Uploaded: {uploaded_count}, Downloaded: {downloaded_count}")
-        return success, uploaded_count, downloaded_count
-    else:
-        write_log(f"Map tile sync failed. Uploaded: {uploaded_count}, Downloaded: {downloaded_count}")
-        return False, 0, 0
 
 
 def monitor_status_queue_terminal(status_queue):
@@ -331,7 +298,9 @@ def run_test_video_terminal(bootup_manager, folder_name=None, app=None):
         
         # Connect progress updates for terminal mode
         def on_progress_update(progress_bar_name, percentage, progress_text):
-            """Log progress updates to console."""
+            """Log progress updates to console. For map images, only log every 10% to reduce noise."""
+            if progress_bar_name == "progress_bar_map_images" and percentage % 10 != 0 and percentage != 100:
+                return
             write_debug_log(f"{progress_bar_name}: {percentage}% - {progress_text}")
         
         worker.progress_update.connect(on_progress_update)
@@ -702,8 +671,10 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
             if hasattr(worker, 'debug_message'):
                 worker.debug_message.connect(lambda msg: write_debug_log(msg))
             
-            # Connect progress updates
+            # Connect progress updates (for map images, only log every 10% to reduce noise)
             def on_progress_update(progress_bar_name, percentage, progress_text):
+                if progress_bar_name == "progress_bar_map_images" and percentage % 10 != 0 and percentage != 100:
+                    return
                 write_debug_log(f"{progress_bar_name}: {percentage}% - {progress_text}")
             worker.progress_update.connect(on_progress_update)
             
@@ -804,11 +775,6 @@ def run_job_processing_loop_terminal(bootup_manager, app):
     retry_delay = 10  # Delay between retries when no jobs are available
     min_request_interval = 60  # Minimum seconds between request starts (avoids rapid retries when requests end immediately)
     last_request_start_time = None  # For enforcing min_request_interval
-    tiles_synced_after_last_job = True  # Track if we've synced tiles after the last successful job
-    # Start as True since bootup already synced tiles - reset to False after first successful job
-
-    # Sync strategy: True = sync after every job completion (fast sync). False = sync only when no jobs (old "sync in free time" behavior).
-    SYNC_AFTER_EVERY_JOB = True
     
     while not shutdown_requested:
         try:
@@ -851,6 +817,13 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                     break
                 continue
 
+            # Enforce cache size limit if 1+ hour since last check
+            try:
+                from utils.cache_size_limit import check_and_enforce_if_due
+                check_and_enforce_if_due(bootup_manager.config, write_log)
+            except Exception as e:
+                write_debug_log(f"Cache size limit check failed: {e}")
+
             # Request a new job
             write_debug_log("Calling request_job_terminal()")
             # Update status to "idle" if not already idle
@@ -887,15 +860,6 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                     write_log(f"ERROR: Cannot process job #{job_id}: user/api_key not yet available (bootup may not be complete)")
                     continue
                 
-                # Sync map tile cache after receipt confirmation and before processing starts.
-                try:
-                    sync_success = bootup_manager.do_sync_map_tile_cache()
-                    if not sync_success:
-                        write_log("Warning: Map tile cache sync failed before job start, but continuing with processing")
-                except Exception as e:
-                    write_log(f"Error during pre-job map tile cache sync: {str(e)}")
-                    write_debug_log(traceback.format_exc())
-
                 # Process the job first - status will be updated inside process_job_terminal
                 # after verifying the worker can actually start
                 success = process_job_terminal(json_data, gpx_files_info, bootup_manager, app)
@@ -911,20 +875,6 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                     # that guard is only meant to prevent hammering on errors/empty responses.
                     last_request_start_time = None
 
-                    if SYNC_AFTER_EVERY_JOB:
-                        # Sync map tiles immediately after every job (sync is now fast)
-                        try:
-                            sync_success = bootup_manager.do_sync_map_tile_cache()
-                            if not sync_success:
-                                write_log("Warning: Map tile cache sync failed, but continuing")
-                            tiles_synced_after_last_job = True
-                        except Exception as e:
-                            write_log(f"Error during map tile cache sync: {str(e)}")
-                            write_debug_log(traceback.format_exc())
-                            tiles_synced_after_last_job = True  # Avoid retrying immediately
-                    else:
-                        # Old behavior: sync only when no jobs available ("free time")
-                        tiles_synced_after_last_job = False
                     if not shutdown_requested:
                         write_log("Job completed. Requesting next job")
                         # Small delay before requesting next job
@@ -944,20 +894,6 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             else:
                 # No jobs available
                 if not shutdown_requested:
-                    # Sync on "free time" (only when SYNC_AFTER_EVERY_JOB is False - old behavior)
-                    if not tiles_synced_after_last_job:
-                        try:
-                            # Use the bootup manager's sync method which includes cache sweep
-                            # The "Checking and uploading map tiles" message is shown inside do_sync_map_tile_cache
-                            sync_success = bootup_manager.do_sync_map_tile_cache()
-                            if not sync_success:
-                                write_log("Warning: Map tile cache sync failed, but continuing")
-                            tiles_synced_after_last_job = True  # Mark as synced so we don't do it again until next job
-                        except Exception as e:
-                            write_log(f"Error during map tile cache sync: {str(e)}")
-                            write_debug_log(traceback.format_exc())
-                            tiles_synced_after_last_job = True  # Mark as synced even on error to avoid retrying immediately
-                    
                     write_debug_log(f"No jobs available. Checking again in {retry_delay} seconds")
                     # Sleep in small increments to allow quick response to shutdown
                     for i in range(retry_delay * 10):

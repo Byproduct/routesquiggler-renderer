@@ -23,7 +23,7 @@ OUTPUT_DIR = os.path.join("temporary files", "cache test")
 # Number of parallel FTP connections. Hetzner Storage Box allows 10 simultaneous connections
 # per account (FTP, SMB mount, SSH, etc. all count). If the box is mounted elsewhere, use
 # 5–8 to leave headroom so mount + this test don't exceed 10.
-MAX_WORKERS = 5
+MAX_WORKERS = 8
 
 
 def load_storage_box_credentials():

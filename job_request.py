@@ -675,6 +675,14 @@ class JobRequestManager:
 
         self.last_request_start_time = time.time()
 
+        # Enforce cache size limit if 1+ hour since last check
+        try:
+            from config import config
+            from utils.cache_size_limit import check_and_enforce_if_due
+            check_and_enforce_if_due(config, self.main_window.log_widget.add_log)
+        except Exception as e:
+            write_debug_log(f"Cache size limit check failed: {e}")
+
         # Show the no_jobs_label when starting a job request
         self.main_window.no_jobs_label.show()
         
@@ -934,18 +942,6 @@ class JobRequestManager:
                     else:
                         self.main_window.log_widget.add_debug_log(f"Job #{job_id} confirmed successfully")
 
-                # Sync map tile cache after receipt confirmation and before job processing.
-                if hasattr(self.main_window, 'bootup_manager') and self.main_window.bootup_manager:
-                    try:
-                        sync_success = self.main_window.bootup_manager.do_sync_map_tile_cache()
-                        if not sync_success:
-                            self.main_window.log_widget.add_log("Warning: Map tile cache sync failed before job start, but continuing with processing")
-                    except Exception as sync_error:
-                        self.main_window.log_widget.add_log(f"Warning: Error during pre-job map tile cache sync: {str(sync_error)}")
-                        self.main_window.log_widget.add_debug_log(traceback.format_exc())
-                else:
-                    self.main_window.log_widget.add_log("Warning: bootup_manager unavailable, skipping pre-job map tile cache sync")
-                
                 # Process the job data
                 self.on_job_received(json_data, gpx_files_info)
                 

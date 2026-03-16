@@ -14,3 +14,4 @@ utils/mtimes_local.txt
 utils/mtimes_remote.txt
 utils/mtimes_remote_last.txt
 .env
+img/clock/

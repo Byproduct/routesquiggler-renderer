@@ -421,9 +421,14 @@ class VideoGeneratorWorker(QObject):
                 cache_result = cache_map_tiles(
                     self.json_data,
                     combined_route_data=self.combined_route_data,
+                    storage_box_credentials={
+                        'address': self.storage_box_address,
+                        'user': self.storage_box_user,
+                        'password': self.storage_box_password,
+                    },
                     progress_callback=self.progress_update.emit,
                     log_callback=self.log_message.emit,
-                    max_workers=self.max_workers
+                    max_workers=self.max_workers,
                 )
             finally:
                 # Always release the lock after map tile caching, even if it fails
@@ -435,9 +440,6 @@ class VideoGeneratorWorker(QObject):
             
             if not cache_result:
                 raise ValueError("Map tile caching failed")
-            
-            # Update status to "rendering (job_id)" after map tile download completes
-            update_status(f"rendering ({job_id})", api_key=self.user)
             
             # Summary already logged in cache_map_tiles function - no need to repeat
             
@@ -455,10 +457,31 @@ class VideoGeneratorWorker(QObject):
                 # Step 4: Cache map images for unique bounding boxes
                 self.log_message.emit("Step 4: Caching map images for unique bounding boxes")           
                 
+                # Send initial "Rendering maps" status and create a rate-limited
+                # progress wrapper that sends 10% milestone updates to the server.
+                # The wrapper intercepts progress_bar_map_images callbacks from the
+                # main process (not worker threads), ensuring non-spammy updates.
+                update_status(f"Rendering maps ({job_id})", api_key=self.user)
+                _last_map_status_time = time.time()
+                _last_map_milestone = 0
+
+                def _map_progress_with_status(bar_name, percent, text):
+                    nonlocal _last_map_status_time, _last_map_milestone
+                    self.progress_update.emit(bar_name, percent, text)
+                    if bar_name != "progress_bar_map_images":
+                        return
+                    milestone = (percent // 10) * 10
+                    if milestone > _last_map_milestone and 10 <= milestone <= 90:
+                        now = time.time()
+                        if now - _last_map_status_time >= 5:
+                            update_status(f"Rendering maps ({job_id}) {milestone}%", api_key=self.user)
+                            _last_map_status_time = now
+                            _last_map_milestone = milestone
+
                 map_images_result = cache_map_images(
                     self.json_data,
                     combined_route_data=self.combined_route_data,
-                    progress_callback=self.progress_update.emit,
+                    progress_callback=_map_progress_with_status,
                     log_callback=self.log_message.emit,
                     max_workers=self.max_workers,
                     shared_map_cache=shared_map_cache,
@@ -480,6 +503,7 @@ class VideoGeneratorWorker(QObject):
                 
                 # Step 5: Generate video frames using shared map cache
                 self.log_message.emit("Step 5: Generating video frames")
+                update_status(f"Rendering frames ({job_id})", api_key=self.user)
                 
                 video_frames_result = cache_video_frames(
                     self.json_data,

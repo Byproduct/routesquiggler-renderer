@@ -28,14 +28,12 @@ from PySide6.QtWidgets import (
 
 # Local imports
 import map_tile_cache_sweep
-import video_generator_cache_map_tiles
 from bootup import BootupManager, BootupThread, BootupWorker
 from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
 from image_generator_multiprocess import StatusUpdate
 from image_generator_test import TestImageManager
 from job_request import JobRequestManager
 from log_widget import LogWidget
-from sync_map_tiles import sync_map_tiles
 from video_generator_test import TestVideoManager
 
 # System tray (optional)
@@ -1359,13 +1357,6 @@ class MainWindow(QMainWindow):
             # Show exit and hide buttons
             self.exit_button.show()
             self.hide_button.show()
-            
-            # Set storage box credentials for background tile syncing
-            if hasattr(self, 'bootup_manager') and self.bootup_manager:
-                credentials = self.bootup_manager.storage_box_credentials
-                if all([credentials['address'], credentials['user'], credentials['password']]):
-                    video_generator_cache_map_tiles.set_storage_box_credentials(credentials)
-                    self.log_widget.add_log("Storage box credentials set for background tile syncing")
             
             self.log_widget.add_log("Bootup completed successfully.")
         else:

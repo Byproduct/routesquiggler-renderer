@@ -5,23 +5,18 @@ This module handles initialization tasks like loading config, getting hardware I
 
 # Standard library imports
 import ftplib
-import hashlib
 import os
 import random
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
-from pathlib import Path
 
 # Third-party imports
 import requests
 from PySide6.QtCore import QObject, QThread, Signal
 
 # Local imports
-import map_tile_cache_sweep
 from debug_logger import setup_debug_logging
 from get_hardware_id import get_hardware_id
-from sync_map_tiles import sync_map_tiles
+from utils.clock_generator import EXPECTED_CLOCK_FILE_COUNT, generate_all_clocks
 from write_log import write_debug_log, write_log
 
 # Conditionally import SystemTray - it handles its own platform detection
@@ -243,73 +238,32 @@ class BootupManager:
                 except:
                     pass  # Ignore disconnection errors
 
-    def do_sync_map_tile_cache(self):
-        """Sync map tile cache files between local machine and storage box using the modular syncer."""
-        # Check if map tile cache syncing is disabled in config
-        if not self.config.sync_map_tile_cache:
-            self.log_callback("Map tile cache syncing is disabled in config. Skipping sync.")
-            return True  # Return True to not block bootup
-        
-        if not all([self.config.storage_box_address, self.config.storage_box_user, self.config.storage_box_password]):
-            self.log_callback("Cannot sync map tile cache: missing storage box credentials.")
-            return False
-
+    def do_generate_clock_cache(self):
+        """Generate clock .npy files into img/clock if not already complete. Does not block bootup on failure."""
         try:
-            # Show main output message
-            self.log_callback("Checking and uploading map tiles")
-            
-            try:
-                # Run cache sweep in production mode (actually delete files)
-                import sys
-                original_argv = sys.argv
-                sys.argv = ['map_tile_cache_sweep.py']  # Production mode (no 'test' parameter)
-                
-                # Capture the main function from our sweep script
-                import importlib.util
-                spec = importlib.util.spec_from_file_location("map_tile_cache_sweep", "map_tile_cache_sweep.py")
-                sweep_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(sweep_module)
-                
-                # Run the sweep
-                sweep_module.main()
-                
-                # Restore original argv
-                sys.argv = original_argv
-                
-            except Exception as sweep_error:
-                self.log_callback(f"Warning: Cache cleaning failed: {str(sweep_error)}")
-                # Continue with sync even if sweep fails
-            
-            # Import debug logging function for terminal mode
-            from write_log import write_debug_log
-            
-            # Use the modular sync_map_tiles function
-            success, uploaded_count, downloaded_count = sync_map_tiles(
-                storage_box_address=self.config.storage_box_address,
-                storage_box_user=self.config.storage_box_user,
-                storage_box_password=self.config.storage_box_password,
-                local_cache_dir=self.config.map_tile_cache_path,
-                log_callback=self.log_callback,
-                progress_callback=self.progress_callback,
-                sync_state_callback=self.sync_state_callback,
-                max_workers=10,
-                debug_callback=write_debug_log,
-                debug_logging=self.config.debug_logging
-            )
-            
-            # Show upload/download counts in main output if > 0
-            if success:
-                if uploaded_count > 0 or downloaded_count > 0:
-                    if downloaded_count > 0:
-                        self.log_callback(f"Uploaded {uploaded_count} tiles, downloaded {downloaded_count} tiles")
-                    else:
-                        self.log_callback(f"Uploaded {uploaded_count} tiles")
-            
-            return success
-
+            self.log_callback("Checking clock images")
+            ran = generate_all_clocks()
+            if ran:
+                self.log_callback("Clock cache generated.")
+            else:
+                write_debug_log(f"Clock cache already complete ({EXPECTED_CLOCK_FILE_COUNT} files); skipped.")
+            return True
         except Exception as e:
-            self.log_callback(f"Map tile cache sync failed: {str(e)}")
-            return False
+            self.log_callback(f"Clock generation failed: {str(e)}. Continuing bootup.")
+            return True  # Do not block bootup
+
+    def do_enforce_cache_size_limit(self):
+        """Delete oldest map-tile cache files if the cache exceeds the configured size limit."""
+        try:
+            from utils.cache_size_limit import enforce_cache_size_limit
+            return enforce_cache_size_limit(self.config, self.log_callback)
+        except Exception as e:
+            self.log_callback(f"Cache size limit check failed: {str(e)}. Continuing bootup.")
+            return True
+
+    def do_sync_map_tile_cache(self):
+        """Legacy stub — map tile syncing is now handled per-job by map_tile_caching.py."""
+        return True
 
     def check_drive_space(self):
         """Check both current and system drives for sufficient free space."""
@@ -409,12 +363,15 @@ class BootupManager:
                 write_log("Storage box connection failed.")
                 return False
             
-            # Sync map tile cache (message is shown inside do_sync_map_tile_cache)
-            if not self.do_sync_map_tile_cache():
-                write_log("Warning: map tile cache sync failed. Continuing regardless.")
+            # Generate clock cache (skips if img/clock already has 8640 files)
+            write_debug_log("Generating clock images.")
+            self.do_generate_clock_cache()
             
             write_debug_log("Checking drive space.")
             self.check_drive_space()
+            
+            write_debug_log("Enforcing cache size limit.")
+            self.do_enforce_cache_size_limit()
             return True
             
         except Exception as e:
@@ -467,8 +424,9 @@ class BootupWorker(QObject):
             ("Setting up system tray", self.bootup_manager.setup_system_tray),
             ("Testing web server connection", self.bootup_manager.make_heartbeat_call),
             ("Testing storage box connection", self.bootup_manager.test_storage_box),
-            ("Syncing map tile cache", self.bootup_manager.do_sync_map_tile_cache),
-            ("Checking drive space", self.bootup_manager.check_drive_space)
+            ("Checking for clock images and generating if needed", self.bootup_manager.do_generate_clock_cache),
+            ("Checking drive space", self.bootup_manager.check_drive_space),
+            ("Enforcing cache size limit", self.bootup_manager.do_enforce_cache_size_limit)
         ]
         
         overall_success = True

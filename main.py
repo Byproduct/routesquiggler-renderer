@@ -185,11 +185,8 @@ from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
 from image_generator_multiprocess import StatusUpdate
 from image_generator_test import TestImageManager
 from job_request import JobRequestManager
-import map_tile_cache_sweep
-from sync_map_tiles import sync_map_tiles
 from video_generator_test import TestVideoManager
-import video_generator_cache_map_tiles
-from main_terminal import sync_map_tiles_terminal, run_test_image_terminal, run_test_video_terminal, run_job_processing_loop_terminal
+from main_terminal import run_test_image_terminal, run_test_video_terminal, run_job_processing_loop_terminal
 
 # GUI-specific imports
 if config.gui:

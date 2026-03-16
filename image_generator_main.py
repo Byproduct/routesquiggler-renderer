@@ -375,9 +375,7 @@ class ImageGeneratorWorker(QObject):
                 # Update status to "downloading maps (job_id)"
                 job_id = str(self.json_data.get('job_id', ''))
                 update_status(f"downloading maps ({job_id})", api_key=self.user)
-                
-                self.log_message.emit("Pre-caching map tiles for all zoom levels")
-                
+                               
                 # Pre-cache tiles for all zoom levels
                 cache_success = pre_cache_map_tiles_for_images(
                     zoom_levels=zoom_levels,
@@ -385,6 +383,11 @@ class ImageGeneratorWorker(QObject):
                     map_style=self.json_data.get('map_style', 'osm'),
                     resolution_x=resolution_x_value,
                     resolution_y=resolution_y_value,
+                    storage_box_credentials={
+                        'address': self.storage_box_address,
+                        'user': self.storage_box_user,
+                        'password': self.storage_box_password,
+                    },
                     log_callback=self.log_message.emit,
                     debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
                     progress_callback=None  # Could add progress callback if needed
