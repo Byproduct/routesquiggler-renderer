@@ -14,8 +14,31 @@ DEFAULT_CLOCK_OUTPUT_DIR = os.path.join(_PROJECT_ROOT, "img", "clock")
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.font_manager as fm
 import datetime as dt
 from PIL import Image
+
+# Optional bundled font (e.g. Verdana.ttf) in the same folder as this script.
+# If present, used on Linux etc. where Verdana may not be installed.
+_BUNDLED_FONT_NAMES = ("Verdana.ttf", "verdana.ttf", "clock_font.ttf")
+_cached_clock_font = None
+
+
+def _get_clock_font():
+    """Return a FontProperties for clock labels: bundled font in script dir if present, else Verdana."""
+    global _cached_clock_font
+    if _cached_clock_font is not None:
+        return _cached_clock_font
+    for name in _BUNDLED_FONT_NAMES:
+        path = os.path.join(_SCRIPT_DIR, name)
+        if os.path.isfile(path):
+            try:
+                _cached_clock_font = fm.FontProperties(fname=path)
+                return _cached_clock_font
+            except Exception:
+                continue
+    _cached_clock_font = fm.FontProperties(family="Verdana")
+    return _cached_clock_font
 
 # Define your closure here
 def clock_hand(r: float):  # do not change this function name and parameter list
@@ -86,10 +109,10 @@ def render_clock(hour: int, minute: int) -> np.ndarray:
         theta = np.pi / 2 - n * np.pi / 6
         x = number_radius * np.cos(theta)
         y = number_radius * np.sin(theta)
-        ax_carthesian.text(x, y, str(n), ha="center", va="center", fontname="Verdana", fontsize=18, color="#000000", zorder=10)
+        ax_carthesian.text(x, y, str(n), ha="center", va="center", fontproperties=_get_clock_font(), fontsize=18, color="#000000", zorder=10)
 
     am_pm = "AM" if hour < 12 else "PM"
-    ax_carthesian.text(0, number_radius - 4.5, am_pm, ha="center", va="top", fontname="Verdana", fontsize=18, color="#000000", zorder=10)
+    ax_carthesian.text(0, number_radius - 4.5, am_pm, ha="center", va="top", fontproperties=_get_clock_font(), fontsize=18, color="#000000", zorder=10)
 
     ax_carthesian.axis("off")
 
