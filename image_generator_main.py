@@ -292,13 +292,10 @@ class ImageGeneratorWorker(QObject):
 
             total_pixels = resolution_x * resolution_y
             if total_pixels < 8_000_000:  # Less than 8MP
-                min_tiles = 5
                 max_tiles = 100
             elif total_pixels < 20_000_000:  # 8MP to 20MP
-                min_tiles = 10
                 max_tiles = 250
             else:  # More than 20MP
-                min_tiles = 20
                 max_tiles = 500
 
             # Calculate map bounds
@@ -307,20 +304,21 @@ class ImageGeneratorWorker(QObject):
                 min(all_lats), max(all_lats)
             )
             
-            # Get suitable zoom levels
-            # Pass resolution to use padded bounds (same as image generation)
-            # This ensures zoom level selection matches actual tile usage
-            zoom_levels = detect_zoom_level(
+            # Get the maximum zoom that fits within max_tiles.
+            # Pass resolution to use padded bounds (same as image generation).
+            # Cap at 19 for image mode (no map service has tiles beyond 20).
+            max_zoom = detect_zoom_level(
                 map_bounds,
-                min_tiles=min_tiles,
                 max_tiles=max_tiles,
                 map_style=self.json_data.get('map_style', 'osm'),
                 resolution_x=resolution_x,
-                resolution_y=resolution_y
+                resolution_y=resolution_y,
+                max_zoom_cap=19,
             )
-            
-            # detect_zoom_level now always returns at least one zoom level (fallback to max_zoom)
-            # So we don't need to check for empty list anymore
+
+            # Render three zoom levels: (max-2), (max-1), and max.
+            # This is easier for users to understand than rendering every zoom in range.
+            zoom_levels = sorted(set(z for z in [max_zoom - 2, max_zoom - 1, max_zoom] if z >= 1))
             
             # If extra_zoom is true, add one image at one zoom level higher (images only, not videos)
             if self.json_data.get('extra_zoom', False) and zoom_levels:

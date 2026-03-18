@@ -179,17 +179,10 @@ def pre_cache_map_tiles_for_video(
         for bbox in bbox_list:
             lon_min, lon_max, lat_min, lat_max = bbox
             map_bounds = (lon_min, lon_max, lat_min, lat_max)
-            zoom_levels = detect_zoom_level(
-                map_bounds, min_tiles=10, max_tiles=max_tiles,
+            zoom_level = detect_zoom_level(
+                map_bounds, max_tiles=max_tiles,
                 map_style=map_style,
             )
-
-            if zoom_levels:
-                zoom_level = max(zoom_levels)
-            else:
-                zoom_level = 17
-                if log_callback:
-                    log_callback(f"Warning: No suitable zoom found for bbox, using zoom {zoom_level}")
 
             def deg2num(lat_deg, lon_deg, zoom):
                 lat_rad = math.radians(lat_deg)

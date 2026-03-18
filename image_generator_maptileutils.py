@@ -677,30 +677,31 @@ def calculate_tile_count(map_bounds: Tuple[float, float, float, float], zoom_lev
         debug_log(f"Error calculating tile count for bounds {map_bounds} at zoom {zoom_level}: {str(e)}")
         raise e
 
-def detect_zoom_level(map_bounds: Tuple[float, float, float, float], 
-                     min_tiles: int = 10,
+def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
                      max_tiles: int = 200,
                      map_style: str = "osm",
                      resolution_x: Optional[int] = None,
-                     resolution_y: Optional[int] = None) -> List[int]:
+                     resolution_y: Optional[int] = None,
+                     max_zoom_cap: Optional[int] = 17) -> int:
     """
-    Detect all suitable zoom levels for map bounds based on the number of tiles required.
+    Detect the maximum zoom level for map bounds whose tile count stays within *max_tiles*.
     
     Args:
         map_bounds: Tuple (lon_min, lon_max, lat_min, lat_max)
-        min_tiles: Minimum acceptable number of tiles
         max_tiles: Maximum acceptable number of tiles
         map_style: Map tile style being used (e.g., "osm", "otm")
         resolution_x: Optional image width in pixels (for padded bounds calculation)
         resolution_y: Optional image height in pixels (for padded bounds calculation)
+        max_zoom_cap: Optional hard cap on returned zoom (e.g. 17 for video).
+            If None, the style's natural maximum is used (e.g. up to 20 for OSM).
     
     Returns:
-        List of suitable zoom levels where tile count is between min_tiles and max_tiles
+        The maximum zoom level where tile count <= max_tiles (always at least 1).
     """
     if not map_bounds:
         debug_log("ERROR: no coordinates found for detecting zoom level!")
         print("Error: no coordinates found for detecting zoom level!")
-        return []
+        return 1
     
     # Apply minimum latitude distance of 0.01 degrees to ensure consistent zoom level calculation
     # This matches the logic in calculate_bounding_box_for_wrapped_coordinates()
@@ -739,36 +740,34 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
     else:
         max_zoom = 20
     
-    # Find all suitable zoom levels
-    suitable_zooms = []
-    
+    highest_zoom_under_max = None
+
     for zoom in range(1, max_zoom + 1):
         try:
             tile_count = calculate_tile_count(bounds_for_tile_calculation, zoom)
             debug_log(f"Zoom level {zoom}: tile count {tile_count}")
-            
-            if min_tiles <= tile_count <= max_tiles:
-                suitable_zooms.append(zoom)
-            elif tile_count > max_tiles:
-                break  # No need to check higher zooms as they'll have even more tiles
+
+            if tile_count <= max_tiles:
+                highest_zoom_under_max = zoom
+            else:
+                break  # Higher zooms will only have more tiles
         except Exception as e:
             print(f"Error calculating tiles for zoom {zoom}: {e}")
             break
-    
-    if suitable_zooms:
-        debug_log(f"Found {len(suitable_zooms)} suitable zoom levels between {min_tiles}-{max_tiles} tiles: {suitable_zooms}")
-    else:
-        # No suitable zoom levels found - use max_zoom as fallback (capped at 17 for consistency)
-        # This ensures we always return at least one zoom level, even if it exceeds max_tiles
-        debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints, using max_zoom {min(max_zoom, 17)} as fallback")
-        suitable_zooms = [min(max_zoom, 17)]
+
+    if highest_zoom_under_max is None:
+        # Even zoom 1 exceeds max_tiles — use zoom 1 as a last resort
+        highest_zoom_under_max = 1
+        debug_log(f"No zoom level found within {max_tiles} tile limit; using zoom 1 as fallback")
     
     # esri512 and mapbox tiles are 512px (twice as large as 256px); use one zoom level smaller for equivalent coverage
     if map_style.startswith('esri512_') or map_style.startswith('mapbox_'):
-        suitable_zooms = [max(1, z - 1) for z in suitable_zooms]
-        debug_log(f"512px style: using zoom levels one step smaller: {suitable_zooms}")
-    
-    # Cap at zoom 17 so all callers (tile cache and map image render) use a consistent max zoom
-    suitable_zooms = sorted(set(min(z, 17) for z in suitable_zooms))
-        
-    return suitable_zooms
+        highest_zoom_under_max = max(1, highest_zoom_under_max - 1)
+        debug_log(f"512px style: using zoom one step smaller: {highest_zoom_under_max}")
+
+    # Optional hard cap (e.g. 17 for video); if None, image mode can use the style's natural max
+    if max_zoom_cap is not None:
+        highest_zoom_under_max = min(int(highest_zoom_under_max), max_zoom_cap)
+        debug_log(f"Applied max_zoom_cap={max_zoom_cap} -> {highest_zoom_under_max}")
+
+    return int(highest_zoom_under_max)

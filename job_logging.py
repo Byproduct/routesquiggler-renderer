@@ -95,7 +95,7 @@ def log_completed_job_to_db(
             """,
             (
                 starting_time_str,
-                float(elapsed_time),
+                int(round(elapsed_time)),
                 int(user_id),
                 int(job_id),
                 str(job_type),

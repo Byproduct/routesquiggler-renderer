@@ -157,14 +157,11 @@ def create_map_image_worker(args):
             map_tiles = create_map_tiles(map_style, log_cache_miss=True)
 
         # Detect appropriate zoom level for this bounding box
-        zoom_levels = detect_zoom_level((lon_min, lon_max, lat_min, lat_max), max_tiles=max_map_tiles, map_style=map_style)
-        
-        if zoom_levels:
-            # Use the highest zoom level (most detailed) that fits within max_tiles
-            zoom_level = max(zoom_levels)
-        else:
-            # If no suitable zoom found, use a conservative zoom level
-            zoom_level = 10  # Default fallback
+        zoom_level = detect_zoom_level(
+            (lon_min, lon_max, lat_min, lat_max),
+            max_tiles=max_map_tiles,
+            map_style=map_style
+        )
         
         # Create the figure
         fig = plt.figure(figsize=figsize)
