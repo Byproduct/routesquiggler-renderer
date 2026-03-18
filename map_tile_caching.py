@@ -322,7 +322,7 @@ def cache_required_tiles(
     log_callback=None,
     debug_callback=None,
     progress_callback=None,
-) -> bool:
+) -> dict:
     """Cache all tiles required for a job using the three-tier system.
 
     Args:
@@ -335,7 +335,8 @@ def cache_required_tiles(
         progress_callback: ``(bar_name, percentage, text)`` progress function.
 
     Returns:
-        ``True`` if caching succeeded (all or most tiles available).
+        Dict with caching success and tile counts:
+        ``success``, ``count_local``, ``count_remote``, ``count_provider``, ``count_uploaded``.
     """
     _log = log_callback or write_log
     _debug = debug_callback or write_debug_log
@@ -347,7 +348,14 @@ def cache_required_tiles(
     if total_required == 0:
         _log("0 map tiles required, 0 in local cache, 0 in remote cache, "
              "0 downloaded from map providers, 0 uploaded to remote cache")
-        return True
+        return {
+            'success': True,
+            'total_required': 0,
+            'count_local': 0,
+            'count_remote': 0,
+            'count_provider': 0,
+            'count_uploaded': 0,
+        }
 
     # Ensure cache directory and CartoPy are configured
     set_cache_directory(map_style)
@@ -372,7 +380,14 @@ def cache_required_tiles(
         _log(f"{total_required} map tiles required, {count_local} in local cache, "
              "0 in remote cache, 0 downloaded from map providers, "
              "0 uploaded to remote cache")
-        return True
+        return {
+            'success': True,
+            'total_required': total_required,
+            'count_local': count_local,
+            'count_remote': 0,
+            'count_provider': 0,
+            'count_uploaded': 0,
+        }
 
     # ------------------------------------------------------------------
     # Step 2: Download from remote cache (storage box)
@@ -554,4 +569,11 @@ def cache_required_tiles(
          f"{count_remote} in remote cache, {count_provider} downloaded from "
          f"map providers, {count_uploaded} uploaded to remote cache")
 
-    return True
+    return {
+        'success': True,
+        'total_required': total_required,
+        'count_local': count_local,
+        'count_remote': count_remote,
+        'count_provider': count_provider,
+        'count_uploaded': count_uploaded,
+    }

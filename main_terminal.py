@@ -632,7 +632,7 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
         app: QCoreApplication instance for processing Qt events
     
     Returns:
-        bool: True if successful, False otherwise
+        tuple[bool, object | None]: (job_completed_ok, worker)
     """
     global shutdown_requested
     
@@ -640,7 +640,7 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
         # Check if shutdown was requested before starting
         if shutdown_requested:
             write_log("Shutdown requested before job processing started. Skipping job.")
-            return False
+            return False, None
         
         job_type = json_data.get('job_type', 'image')
         job_id = json_data.get('job_id', '?')
@@ -725,8 +725,12 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
         # Process any remaining events
         app.processEvents()
         
-        write_log(f"Job #{job_id} completed successfully")
-        return True
+        job_ok = bool(getattr(worker, "job_completed_ok", False))
+        if job_ok:
+            write_log(f"Job #{job_id} completed successfully")
+        else:
+            write_log(f"Job #{job_id} completed, but server status was not ok")
+        return job_ok, worker
         
     except Exception as e:
         write_log(f"Error processing job: {str(e)}")
@@ -751,7 +755,7 @@ def process_job_terminal(json_data, gpx_files_info, bootup_manager, app):
         except Exception as status_error:
             write_log(f"Warning: Failed to report error to server: {str(status_error)}")
         
-        return False
+        return False, None
 
 
 def run_job_processing_loop_terminal(bootup_manager, app):
@@ -845,6 +849,23 @@ def run_job_processing_loop_terminal(bootup_manager, app):
             if json_data and gpx_files_info:
                 # Process the job
                 write_debug_log("Job data received, starting processing")
+
+                # Timer starts when the job has been successfully received from job_request.
+                job_starting_time = time.time()
+                job_type = json_data.get('job_type', 'image')
+                job_id_raw = json_data.get('job_id', '?')
+                user_id_raw = json_data.get('user_id', '?')
+
+                # Best-effort int conversion (job_logging is skipped if missing/invalid).
+                try:
+                    job_id_int = int(job_id_raw)
+                except Exception:
+                    job_id_int = None
+
+                try:
+                    user_id_int = int(user_id_raw)
+                except Exception:
+                    user_id_int = None
                 
                 # CRITICAL: Validate that required attributes are set before processing
                 # This prevents race conditions where job is requested before bootup completes
@@ -862,15 +883,34 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                 
                 # Process the job first - status will be updated inside process_job_terminal
                 # after verifying the worker can actually start
-                success = process_job_terminal(json_data, gpx_files_info, bootup_manager, app)
+                job_ok, worker = process_job_terminal(json_data, gpx_files_info, bootup_manager, app)
                 
                 # Update status to "working" only after processing starts successfully
                 # (process_job_terminal handles status updates internally)
-                if success:
+                if job_ok:
                     current_status = f"working ({job_id})"
-                write_debug_log(f"Job processing completed with success={success}")
+                write_debug_log(f"Job processing completed with job_ok={job_ok}")
                 
-                if success:
+                if job_ok:
+                    # Stop timer and persist job log only when server status is "ok".
+                    try:
+                        from job_logging import log_completed_job_to_db
+
+                        elapsed_time = time.time() - job_starting_time
+                        if user_id_int is not None and job_id_int is not None:
+                            log_completed_job_to_db(
+                                starting_time=job_starting_time,
+                                elapsed_time=elapsed_time,
+                                user_id=user_id_int,
+                                job_id=job_id_int,
+                                job_type=job_type,
+                                tiles_local=int(getattr(worker, "tiles_local", 0)),
+                                tiles_remote=int(getattr(worker, "tiles_remote", 0)),
+                                tiles_service=int(getattr(worker, "tiles_service", 0)),
+                            )
+                    except Exception as db_error:
+                        write_log(f"Warning: failed to write jobs.db row: {db_error}")
+
                     # Skip the 1-minute minimum interval after a successful job —
                     # that guard is only meant to prevent hammering on errors/empty responses.
                     last_request_start_time = None

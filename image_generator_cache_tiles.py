@@ -23,7 +23,7 @@ def pre_cache_map_tiles_for_images(
     log_callback=None,
     debug_callback=None,
     progress_callback=None
-) -> bool:
+) -> dict | None:
     """
     Identify and cache map tiles for all zoom levels required for image generation.
 
@@ -39,7 +39,7 @@ def pre_cache_map_tiles_for_images(
         progress_callback: Optional callback for progress updates
 
     Returns:
-        bool: True if successful, False otherwise
+        dict: Tile caching result including counts and success flag
     """
     try:
         if debug_callback:
@@ -102,4 +102,4 @@ def pre_cache_map_tiles_for_images(
         import traceback
         if debug_callback:
             debug_callback(f"Traceback: {traceback.format_exc()}")
-        return False
+        return None

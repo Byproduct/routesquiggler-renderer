@@ -193,7 +193,7 @@ def pre_cache_map_tiles_for_video(
             debug_callback(f"Found {total_required} unique tiles required across all bounding boxes")
 
         # Hand off to the unified caching system
-        success = cache_required_tiles(
+        tile_cache_info = cache_required_tiles(
             required_tiles=all_required_tiles,
             map_style=map_style,
             storage_box_credentials=storage_box_credentials,
@@ -201,14 +201,16 @@ def pre_cache_map_tiles_for_video(
             debug_callback=debug_callback,
             progress_callback=progress_callback,
         )
-
         return {
             'total_tiles_cached': total_required,
             'total_tiles_skipped': 0,
             'total_tiles_to_cache': total_required,
             'total_bboxes': total_bboxes,
             'error_types': {},
-            'success': success,
+            'success': bool(tile_cache_info.get('success')) if tile_cache_info else False,
+            'tiles_local': int(tile_cache_info.get('count_local', 0)) if tile_cache_info else 0,
+            'tiles_remote': int(tile_cache_info.get('count_remote', 0)) if tile_cache_info else 0,
+            'tiles_service': int(tile_cache_info.get('count_provider', 0)) if tile_cache_info else 0,
         }
 
     except Exception as e:

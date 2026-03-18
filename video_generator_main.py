@@ -283,6 +283,11 @@ class VideoGeneratorWorker(QObject):
         self.results = None
         self.sorted_gpx_files = None  # Will store chronologically sorted GPX files
         self.combined_route_data = None  # Will store combined route data
+        # Terminal-only job logging relies on these being present
+        self.job_completed_ok = False
+        self.tiles_local = 0
+        self.tiles_remote = 0
+        self.tiles_service = 0
 
     def format_duration(self, seconds):
         """
@@ -338,6 +343,11 @@ class VideoGeneratorWorker(QObject):
         """Main processing method that runs in the worker thread."""
         try:
             self.debug_message.emit("Video generation triggered.")
+            # Reset per-job accounting fields
+            self.job_completed_ok = False
+            self.tiles_local = 0
+            self.tiles_remote = 0
+            self.tiles_service = 0
             
             # Add test job flag to json_data for use throughout the pipeline
             self.json_data['test_job'] = self.is_test
@@ -440,6 +450,12 @@ class VideoGeneratorWorker(QObject):
             
             if not cache_result:
                 raise ValueError("Map tile caching failed")
+
+            # Capture tile-count stats for job_logging (terminal-only mode)
+            cache_info = cache_result.get('cache_result', {}) if cache_result else {}
+            self.tiles_local = int(cache_info.get('tiles_local', 0))
+            self.tiles_remote = int(cache_info.get('tiles_remote', 0))
+            self.tiles_service = int(cache_info.get('tiles_service', 0))
             
             # Summary already logged in cache_map_tiles function - no need to repeat
             
@@ -661,7 +677,7 @@ class VideoGeneratorWorker(QObject):
                         
                         # Report success to main server
                         self.job_completed.emit(job_id)
-                        update_job_status(
+                        ok_success = update_job_status(
                             self.api_url, 
                             self.user, 
                             self.hardware_id, 
@@ -670,6 +686,7 @@ class VideoGeneratorWorker(QObject):
                             'ok',
                             self.log_message.emit
                         )
+                        self.job_completed_ok = bool(ok_success)
                         self.cleanup_temporary_job_folder(job_id)
                     else:
                         self.log_message.emit("❌ Video upload failed")
@@ -679,6 +696,7 @@ class VideoGeneratorWorker(QObject):
                     self.log_message.emit("Test job completed - skipping upload")
                     job_id = str(self.json_data.get('job_id', ''))
                     self.job_completed.emit(job_id)
+                    self.job_completed_ok = False
                 
                 self.finished.emit()
                 

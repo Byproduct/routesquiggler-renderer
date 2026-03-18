@@ -51,11 +51,21 @@ class ImageGeneratorWorker(QObject):
         self.app_version = app_version
         self.max_workers = max_workers
         self.results = None
+        # Terminal-only job logging relies on these attributes being present
+        self.job_completed_ok = False
+        self.tiles_local = 0
+        self.tiles_remote = 0
+        self.tiles_service = 0
 
     def image_generator_process(self):
         """Main processing method that runs in the worker thread."""
         try:
             start_time = time.time()
+            # Reset per-job accounting fields
+            self.job_completed_ok = False
+            self.tiles_local = 0
+            self.tiles_remote = 0
+            self.tiles_service = 0
             
             self.log_message.emit("Starting image generation.")
 
@@ -377,7 +387,7 @@ class ImageGeneratorWorker(QObject):
                 update_status(f"downloading maps ({job_id})", api_key=self.user)
                                
                 # Pre-cache tiles for all zoom levels
-                cache_success = pre_cache_map_tiles_for_images(
+                cache_info = pre_cache_map_tiles_for_images(
                     zoom_levels=zoom_levels,
                     map_bounds=map_bounds,
                     map_style=self.json_data.get('map_style', 'osm'),
@@ -393,8 +403,13 @@ class ImageGeneratorWorker(QObject):
                     progress_callback=None  # Could add progress callback if needed
                 )
                 
-                if not cache_success:
+                if not cache_info or not cache_info.get('success', False):
                     raise ValueError("Map tile pre-caching failed")
+
+                # Capture tile-count stats for job_logging (terminal-only mode)
+                self.tiles_local = int(cache_info.get('count_local', 0))
+                self.tiles_remote = int(cache_info.get('count_remote', 0))
+                self.tiles_service = int(cache_info.get('count_provider', 0))
                 
                 self.log_message.emit("Map tile pre-caching completed")
                 
@@ -467,7 +482,7 @@ class ImageGeneratorWorker(QObject):
             if self.results and len(self.results) == len(zoom_levels):
                 # All workers succeeded
                 self.job_completed.emit(str(self.json_data.get('job_id', '')))
-                update_job_status(
+                ok_success = update_job_status(
                     self.api_url, 
                     self.user, 
                     self.hardware_id, 
@@ -476,8 +491,10 @@ class ImageGeneratorWorker(QObject):
                     'ok',
                     self.log_message.emit
                 )
+                self.job_completed_ok = bool(ok_success)
             else:
                 # Some workers failed or missing results
+                self.job_completed_ok = False
                 update_job_status(
                     self.api_url, 
                     self.user, 
