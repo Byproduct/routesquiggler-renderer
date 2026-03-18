@@ -12,6 +12,11 @@ from pathlib import Path
 
 # Local imports
 from video_generator_create_combined_route import RoutePoint
+from video_generator_utils import (
+    binary_search_cutoff_index,
+    get_route_delay_seconds,
+    get_route_start_times,
+)
 from write_log import write_debug_log, write_log
 
 
@@ -230,43 +235,6 @@ def calculate_bounding_box_for_wrapped_coordinates(lats, lons, padding_percent=0
     )
     
     return final_bbox
-
-
-def _binary_search_cutoff_index(route_points, target_time):
-    """
-    Binary search to find the cutoff index for points up to target_time.
-    
-    Returns the index of the first point that should be EXCLUDED (i.e., where accumulated_time > target_time).
-    This allows for efficient list slicing: route_points[:cutoff_index] gives all valid points.
-    
-    Args:
-        route_points (list): List of RoutePoint objects, chronologically ordered by accumulated_time
-        target_time (float): Target accumulated_time threshold
-    
-    Returns:
-        int: Index where to cut off the points (exclusive), suitable for list slicing
-    """
-    if not route_points:
-        return 0
-    
-    left, right = 0, len(route_points) - 1
-    result = len(route_points)  # Default: include all points if none exceed target_time
-    
-    while left <= right:
-        mid = (left + right) // 2
-        
-        # Use named attribute for accumulated_time
-        accumulated_time = route_points[mid].accumulated_time
-        
-        if accumulated_time <= target_time:
-            # This point should be included, look for later cutoff point
-            left = mid + 1
-        else:
-            # This point should be excluded, it might be our cutoff point
-            result = mid
-            right = mid - 1
-    
-    return result
 
 
 def save_final_bounding_box(final_bbox, log_callback=None, debug_callback=None):
@@ -886,18 +854,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
         
         if all_routes and len(all_routes) > 1:
             # STAGGERED ROUTES FIX: Apply the same staggered timing logic as in frame generation
-            # Calculate route start delays for proper timing
-            earliest_start_time = None
-            route_start_times = {}
-            
-            for route_data in all_routes:
-                route_points = route_data.get('combined_route', [])
-                if route_points:
-                    route_start_timestamp = route_points[0].timestamp
-                    if route_start_timestamp:
-                        route_start_times[id(route_data)] = route_start_timestamp
-                        if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                            earliest_start_time = route_start_timestamp
+            route_start_times, earliest_start_time = get_route_start_times(all_routes)
             
             bounding_boxes = []
             frames_without_points = 0
@@ -915,12 +872,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
                 for route_data in all_routes:
                     route_points = route_data.get('combined_route', [])
                     
-                    # Calculate this route's delay relative to the earliest route
-                    route_delay_seconds = 0.0
-                    route_id = id(route_data)
-                    if route_id in route_start_times and earliest_start_time:
-                        route_start_timestamp = route_start_times[route_id]
-                        route_delay_seconds = (route_start_timestamp - earliest_start_time).total_seconds()
+                    route_delay_seconds = get_route_delay_seconds(route_data, route_start_times, earliest_start_time)
                     
                     # Calculate route-specific target time accounting for start delay
                     route_target_time = target_time - route_delay_seconds
@@ -928,7 +880,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
                     # Only include points if this route should have started by now
                     if route_target_time >= 0:
                         # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-                        cutoff_index = _binary_search_cutoff_index(route_points, route_target_time)
+                        cutoff_index = binary_search_cutoff_index(route_points, route_target_time)
                         route_points_for_frame = route_points[:cutoff_index]
                         if route_points_for_frame:  # Only add non-empty route points
                             points_for_frame.append(route_points_for_frame)  # Add as sub-list to match video generation
@@ -978,7 +930,7 @@ def process_frame_chunk(combined_route_data, json_data, route_time_per_frame, st
             # Collect points up to the target time for this frame
             # Route structure: (route_index, lat, lon, timestamp, accumulated_time, accumulated_distance, new_route_flag, filename, elevation, heart_rate)
             # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-            cutoff_index = _binary_search_cutoff_index(combined_route, target_time)
+            cutoff_index = binary_search_cutoff_index(combined_route, target_time)
             points_for_frame = combined_route[:cutoff_index]
             
             if points_for_frame:

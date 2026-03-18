@@ -7,25 +7,19 @@ The actual map plotting is in video_generator_create_single_frame.py.
 # Standard library imports
 import gc
 import json
-import math
 import multiprocessing
+from multiprocessing import Manager, Pool
 import os
+from pathlib import Path
 import pickle
 import re
-import sys
 import tempfile
 import time
-from contextlib import contextmanager
-from io import StringIO
-from multiprocessing import Manager, Pool
-from pathlib import Path
 
 # Third-party imports (matplotlib backend must be set before pyplot import)
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for video frame caching
 
-import imageio_ffmpeg
-import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 from moviepy import VideoClip
@@ -36,85 +30,27 @@ Image.MAX_IMAGE_PIXELS = 200_000_000
 
 # Local imports
 from config import config
-
-
-def get_ffmpeg_executable():
-    """
-    Get the correct ffmpeg executable path for the current platform.
-    Uses the same ffmpeg binary that MoviePy uses via imageio_ffmpeg for consistency.
-    
-    Returns:
-        str: Path to ffmpeg executable
-    """
-    # First, try to use the same ffmpeg that MoviePy/imageio uses
-    # This ensures consistency with video generation
-    try:
-        ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-        if ffmpeg_path and os.path.exists(ffmpeg_path):
-            return ffmpeg_path
-    except Exception:
-        # If imageio_ffmpeg fails for any reason, fall back to platform defaults
-        pass
-    
-    # Fallback: platform-specific defaults
-    if os.name == 'nt':  # Windows
-        # Check if ffmpeg.exe exists in the project root (same directory as this script)
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        local_ffmpeg = os.path.join(script_dir, 'ffmpeg.exe')
-        if os.path.exists(local_ffmpeg):
-            return local_ffmpeg
-        # Fallback to system ffmpeg.exe (should be in PATH)
-        return 'ffmpeg.exe'
-    else:  # Linux/Mac
-        # On Linux/Mac, ffmpeg should be in PATH
-        return 'ffmpeg'
 from image_generator_utils import calculate_resolution_scale
 from job_request import set_attribution_from_theme
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame
+from video_generator_cache_video_frames_util import (
+    MoviePyDebugLogger,
+    get_ffmpeg_executable,
+    suppress_moviepy_output,
+)
 from video_generator_create_combined_route import RoutePoint
 from video_generator_create_single_frame import generate_video_frame_in_memory
 from video_generator_create_single_frame_utils import hex_to_rgba
+from video_generator_utils import (
+    binary_search_cutoff_index,
+    compute_sequential_ending_lengths,
+    compute_sequential_frames_to_skip,
+    compute_simultaneous_ending_lengths,
+    get_route_delay_seconds,
+    get_route_start_times,
+    is_simultaneous_mode,
+)
 from write_log import write_debug_log, write_log
-
-
-class MoviePyDebugLogger:
-    """Custom logger for MoviePy that only outputs when debug logging is enabled."""
-    def __init__(self, debug_callback=None):
-        self.debug_callback = debug_callback
-    
-    def message(self, message):
-        """Log MoviePy messages only when debug is enabled."""
-        if config.debug_logging and self.debug_callback:
-            self.debug_callback(f"MoviePy: {message}")
-    
-    def error(self, message):
-        """Log MoviePy errors only when debug is enabled."""
-        if config.debug_logging and self.debug_callback:
-            self.debug_callback(f"MoviePy error: {message}")
-    
-    def warning(self, message):
-        """Log MoviePy warnings only when debug is enabled."""
-        if config.debug_logging and self.debug_callback:
-            self.debug_callback(f"MoviePy warning: {message}")
-
-
-@contextmanager
-def suppress_moviepy_output():
-    """Context manager to suppress MoviePy stdout/stderr output when debug is off."""
-    if not config.debug_logging:
-        # Redirect stdout and stderr to devnull when debug is off
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        try:
-            sys.stdout = StringIO()
-            sys.stderr = StringIO()
-            yield
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
-    else:
-        # When debug is on, don't suppress anything
-        yield
 
 
 def _timestamp_to_accumulated_time(poi_timestamp, combined_route):
@@ -188,43 +124,6 @@ def _timestamp_to_accumulated_time(poi_timestamp, combined_route):
     
     # Fallback: return the last point's accumulated_time
     return last_valid_point.accumulated_time if last_valid_point else None
-
-
-def _binary_search_cutoff_index(route_points, target_time):
-    """
-    Binary search to find the cutoff index for points up to target_time.
-    
-    Returns the index of the first point that should be EXCLUDED (i.e., where accumulated_time > target_time).
-    This allows for efficient list slicing: route_points[:cutoff_index] gives all valid points.
-    
-    Args:
-        route_points (list): List of RoutePoint objects, chronologically ordered by accumulated_time
-        target_time (float): Target accumulated_time threshold
-    
-    Returns:
-        int: Index where to cut off the points (exclusive), suitable for list slicing
-    """
-    if not route_points:
-        return 0
-    
-    left, right = 0, len(route_points) - 1
-    result = len(route_points)  # Default: include all points if none exceed target_time
-    
-    while left <= right:
-        mid = (left + right) // 2
-        
-        # Use named attribute for accumulated_time
-        accumulated_time = route_points[mid].accumulated_time
-        
-        if accumulated_time <= target_time:
-            # This point should be included, look for later cutoff point
-            left = mid + 1
-        else:
-            # This point should be excluded, it might be our cutoff point
-            result = mid
-            right = mid - 1
-    
-    return result
 
 
 def _save_shared_worker_data(data_dict, job_id, temp_dir=None):
@@ -303,6 +202,7 @@ def _streaming_frame_worker(args):
     gpx_time_per_video_time = shared_data['gpx_time_per_video_time']
     stamp_array = shared_data['stamp_array']
     shared_route_cache = shared_data['shared_route_cache']
+    is_simultaneous_mode = shared_data.get('is_simultaneous_mode', False)
 
     try:
         # Ensure frame_number is an integer
@@ -319,55 +219,44 @@ def _streaming_frame_worker(args):
         video_fps = float(json_data.get('video_fps', 30))
         tail_length = int(json_data.get('tail_length', 0))  # Ensure tail_length is int
         
-        # SIMULTANEOUS MODE FIX: Calculate effective video duration for staggered routes
+        # SIMULTANEOUS MODE FIX: Calculate effective video duration for staggered routes (flag from shared_data)
         effective_video_length = video_length
-        if all_routes and len(all_routes) > 1:
-            # Check if routes have different route_index values (truly different routes vs split tracks)
-            route_indices = set()
+        if is_simultaneous_mode and all_routes and len(all_routes) > 1:
+            # SIMULTANEOUS MODE FIX: Calculate effective video duration
+            # Find the earliest start time and latest start time across all routes
+            earliest_start_time = None
+            latest_start_time = None
+            max_route_duration = 0.0
+            
             for route_data in all_routes:
                 route_points = route_data.get('combined_route', [])
-                if route_points:
+                if route_points and len(route_points) > 0:
                     first_point = route_points[0]
-                    route_indices.add(first_point.route_index)
-            
-            has_different_route_indices = len(route_indices) > 1
-            
-            if has_different_route_indices:
-                # SIMULTANEOUS MODE FIX: Calculate effective video duration
-                # Find the earliest start time and latest start time across all routes
-                earliest_start_time = None
-                latest_start_time = None
-                max_route_duration = 0.0
-                
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    if route_points and len(route_points) > 0:
-                        first_point = route_points[0]
-                        last_point = route_points[-1]
-                        
-                        route_start_timestamp = first_point.timestamp
-                        route_duration = last_point.accumulated_time
-                        
-                        if route_start_timestamp:
-                            if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                                earliest_start_time = route_start_timestamp
-                            
-                            if latest_start_time is None or route_start_timestamp > latest_start_time:
-                                latest_start_time = route_start_timestamp
-                                max_route_duration = route_duration
-                
-                # Calculate the minimum video duration needed for all routes to complete
-                if earliest_start_time and latest_start_time:
-                    delay_from_earliest = (latest_start_time - earliest_start_time).total_seconds()
-                    min_video_duration_needed = delay_from_earliest + max_route_duration
+                    last_point = route_points[-1]
                     
-                    # Use the minimum video duration needed, but don't exceed the actual video duration
-                    effective_video_length = min(min_video_duration_needed, video_length)
+                    route_start_timestamp = first_point.timestamp
+                    route_duration = last_point.accumulated_time
                     
-                    # Adjust target_time_route to use effective video duration
-                    # This ensures the route timing calculation matches the bounding box calculation
-                    effective_target_time_video = min(target_time_video, effective_video_length)
-                    target_time_route = effective_target_time_video * gpx_time_per_video_time if gpx_time_per_video_time > 0 else 0
+                    if route_start_timestamp:
+                        if earliest_start_time is None or route_start_timestamp < earliest_start_time:
+                            earliest_start_time = route_start_timestamp
+                        
+                        if latest_start_time is None or route_start_timestamp > latest_start_time:
+                            latest_start_time = route_start_timestamp
+                            max_route_duration = route_duration
+            
+            # Calculate the minimum video duration needed for all routes to complete
+            if earliest_start_time and latest_start_time:
+                delay_from_earliest = (latest_start_time - earliest_start_time).total_seconds()
+                min_video_duration_needed = delay_from_earliest + max_route_duration
+                
+                # Use the minimum video duration needed, but don't exceed the actual video duration
+                effective_video_length = min(min_video_duration_needed, video_length)
+                
+                # Adjust target_time_route to use effective video duration
+                # This ensures the route timing calculation matches the bounding box calculation
+                effective_target_time_video = min(target_time_video, effective_video_length)
+                target_time_route = effective_target_time_video * gpx_time_per_video_time if gpx_time_per_video_time > 0 else 0
         
         # Calculate the frame number where the original route ends (using effective video length)
         original_route_end_frame = int(effective_video_length * video_fps)
@@ -384,115 +273,75 @@ def _streaming_frame_worker(args):
         else:
             hide_complete_routes = bool(hide_complete_routes_raw)
         
-        # SIMULTANEOUS MODE ENDING FIX: Detect if we're in simultaneous mode
-        is_simultaneous_mode = False
-        if all_routes and len(all_routes) > 1:
-            # Check if routes have different route_index values (truly different routes vs split tracks)
-            route_indices = set()
-            for route_data in all_routes:
-                route_points = route_data.get('combined_route', [])
-                if route_points:
-                    first_point = route_points[0]
-                    route_indices.add(first_point.route_index)
-            
-            is_simultaneous_mode = len(route_indices) > 1
-        
-        # SIMULTANEOUS MODE ENDING FIX: Use different logic for simultaneous mode ending
+        # SIMULTANEOUS MODE ENDING FIX: Use different logic for simultaneous mode ending (flag from shared_data)
         if is_simultaneous_mode and is_tail_only_frame:
             # For simultaneous mode, don't use the sequential tail-only phase
             # Instead, let each route handle its own completion and tail fade-out naturally
             # This preserves the individual route timing and cached route appearance
             is_tail_only_frame = False  # Treat as normal frame for simultaneous mode
         
-        if all_routes and len(all_routes) > 1:
-            # Check if routes have different route_index values (truly different routes vs split tracks)
-            route_indices = set()
+        if is_simultaneous_mode and all_routes and len(all_routes) > 1:
+            # Multiple routes mode - create a list of sub-lists for each route
+            points_for_frame = []
+            
+            # STAGGERED ROUTES FIX: Calculate route start delays
+            route_start_times, earliest_start_time = get_route_start_times(all_routes)
+            
             for route_data in all_routes:
                 route_points = route_data.get('combined_route', [])
-                if route_points:
-                    first_point = route_points[0]
-                    route_indices.add(first_point.route_index)
-            
-            has_different_route_indices = len(route_indices) > 1
-            
-            if has_different_route_indices:
-                # Multiple routes mode - create a list of sub-lists for each route
-                points_for_frame = []
                 
-                # STAGGERED ROUTES FIX: Calculate route start delays
-                # Find the earliest start time across all routes to establish the video timeline baseline
-                earliest_start_time = None
-                route_start_times = {}
+                route_delay_seconds = get_route_delay_seconds(route_data, route_start_times, earliest_start_time)
                 
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    if route_points:
-                        route_start_timestamp = route_points[0].timestamp
-                        if route_start_timestamp:
-                            route_start_times[id(route_data)] = route_start_timestamp
-                            if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                                earliest_start_time = route_start_timestamp
+                # Calculate route-specific target time accounting for start delay
+                route_target_time = target_time_route - route_delay_seconds
                 
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
+                # Check if route is complete (all points included)
+                route_end_time = route_points[-1].accumulated_time if route_points else 0
+                route_is_complete = route_points and route_target_time >= route_end_time
+                
+                # Skip complete routes if hide_complete_routes is enabled
+                if hide_complete_routes and route_is_complete:
+                    if frame_number <= 3 and config.debug_logging:
+                        write_debug_log(f"Frame {frame_number}: Skipping complete route (simultaneous mode)")
+                    continue
+                
+                if is_tail_only_frame:
+                    # SIMULTANEOUS MODE TAIL FIX: Each route should have its own individual tail fade-out
+                    # Calculate when this specific route ends (accounting for its start delay)
+                    route_end_time_with_delay = route_end_time + route_delay_seconds
                     
-                    # Calculate this route's delay relative to the earliest route
-                    route_delay_seconds = 0.0
-                    route_id = id(route_data)
-                    if route_id in route_start_times and earliest_start_time:
-                        route_start_timestamp = route_start_times[route_id]
-                        route_delay_seconds = (route_start_timestamp - earliest_start_time).total_seconds()
+                    # Calculate how much time has passed since this route ended
+                    current_route_time = target_time_route
+                    time_since_route_end = current_route_time - route_end_time_with_delay
                     
-                    # Calculate route-specific target time accounting for start delay
-                    route_target_time = target_time_route - route_delay_seconds
+                    # Only show tail if this route has ended and we're within the tail duration
+                    tail_duration_route = gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
                     
-                    # Check if route is complete (all points included)
-                    route_end_time = route_points[-1].accumulated_time if route_points else 0
-                    route_is_complete = route_points and route_target_time >= route_end_time
-                    
-                    # Skip complete routes if hide_complete_routes is enabled
-                    if hide_complete_routes and route_is_complete:
-                        if frame_number <= 3 and config.debug_logging:
-                            write_debug_log(f"Frame {frame_number}: Skipping complete route (simultaneous mode)")
-                        continue
-                    
-                    if is_tail_only_frame:
-                        # SIMULTANEOUS MODE TAIL FIX: Each route should have its own individual tail fade-out
-                        # Calculate when this specific route ends (accounting for its start delay)
-                        route_end_time_with_delay = route_end_time + route_delay_seconds
+                    if time_since_route_end >= 0 and time_since_route_end <= tail_duration_route:
+                        # Route has ended and we're within tail duration - show fading tail
+                        # Calculate the fade-out progress (0.0 = just ended, 1.0 = fully faded)
+                        fade_progress = time_since_route_end / tail_duration_route if tail_duration_route > 0 else 1.0
                         
-                        # Calculate how much time has passed since this route ended
-                        current_route_time = target_time_route
-                        time_since_route_end = current_route_time - route_end_time_with_delay
-                        
-                        # Only show tail if this route has ended and we're within the tail duration
-                        tail_duration_route = gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
-                        
-                        if time_since_route_end >= 0 and time_since_route_end <= tail_duration_route:
-                            # Route has ended and we're within tail duration - show fading tail
-                            # Calculate the fade-out progress (0.0 = just ended, 1.0 = fully faded)
-                            fade_progress = time_since_route_end / tail_duration_route if tail_duration_route > 0 else 1.0
-                            
-                            # Use the route's actual end time for tail calculation
-                            # This ensures the tail fades out from the route's actual end point
-                            cutoff_index = _binary_search_cutoff_index(route_points, route_end_time)
-                            route_points_for_frame = route_points[:cutoff_index]
-                        else:
-                            # Route hasn't ended yet or tail has fully faded - don't show this route
-                            route_points_for_frame = []
+                        # Use the route's actual end time for tail calculation
+                        # This ensures the tail fades out from the route's actual end point
+                        cutoff_index = binary_search_cutoff_index(route_points, route_end_time)
+                        route_points_for_frame = route_points[:cutoff_index]
                     else:
-                        # Normal frame - find the points up to the route-specific target time
-                        # Only include points if this route should have started by now
-                        if route_target_time >= 0:
-                            # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-                            cutoff_index = _binary_search_cutoff_index(route_points, route_target_time)
-                            route_points_for_frame = route_points[:cutoff_index]
-                        else:
-                            route_points_for_frame = []
-                    
-                    # Only add this route's points if it has any points
-                    if route_points_for_frame:
-                        points_for_frame.append(route_points_for_frame)
+                        # Route hasn't ended yet or tail has fully faded - don't show this route
+                        route_points_for_frame = []
+                else:
+                    # Normal frame - find the points up to the route-specific target time
+                    # Only include points if this route should have started by now
+                    if route_target_time >= 0:
+                        # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
+                        cutoff_index = binary_search_cutoff_index(route_points, route_target_time)
+                        route_points_for_frame = route_points[:cutoff_index]
+                    else:
+                        route_points_for_frame = []
+                
+                # Only add this route's points if it has any points
+                if route_points_for_frame:
+                    points_for_frame.append(route_points_for_frame)
             # else:
             #     # SEQUENTIAL MODE RENDERING PATH - DISABLED
             #     # Single route group with multiple tracks - process all tracks sequentially
@@ -515,14 +364,14 @@ def _streaming_frame_worker(args):
                 # Only include points if this route should have started by the final frame time
                 if final_route_target_time >= 0:
                     # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-                    cutoff_index = _binary_search_cutoff_index(combined_route, final_route_target_time)
+                    cutoff_index = binary_search_cutoff_index(combined_route, final_route_target_time)
                     points_for_frame = combined_route[:cutoff_index]
                 else:
                     points_for_frame = []
             else:
                 # Normal frame - find the points up to the target time
                 # OPTIMIZED: Use binary search + list slicing instead of linear search + appends
-                cutoff_index = _binary_search_cutoff_index(combined_route, target_time_route)
+                cutoff_index = binary_search_cutoff_index(combined_route, target_time_route)
                 points_for_frame = combined_route[:cutoff_index]
             
             # Apply hide_complete_routes filtering if enabled
@@ -596,65 +445,37 @@ def _streaming_frame_worker(args):
         virtual_leading_time = None
         route_specific_tail_info = {}  # Store route-specific tail timing information
         
-        # FIX: Calculate route-specific tail info for ALL frames, not just tail-only frames
-        # This enables proper completion detection in simultaneous mode
-        if all_routes and len(all_routes) > 1:
-            # Check if routes have different route_index values
-            route_indices = set()
+        # FIX: Calculate route-specific tail info for ALL frames, not just tail-only frames (flag from shared_data)
+        if is_simultaneous_mode and all_routes and len(all_routes) > 1:
+            route_start_times, earliest_start_time = get_route_start_times(all_routes)
+            
+            # Calculate route-specific tail timing for all routes
             for route_data in all_routes:
                 route_points = route_data.get('combined_route', [])
-                if route_points:
-                    first_point = route_points[0]
-                    route_indices.add(first_point.route_index)
-            
-            has_different_route_indices = len(route_indices) > 1
-            
-            if has_different_route_indices:
-                # Calculate route start delays
-                earliest_start_time = None
-                route_start_times = {}
+                if not route_points:
+                    continue
                 
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    if route_points:
-                        route_start_timestamp = route_points[0].timestamp
-                        if route_start_timestamp:
-                            route_start_times[id(route_data)] = route_start_timestamp
-                            if earliest_start_time is None or route_start_timestamp < earliest_start_time:
-                                earliest_start_time = route_start_timestamp
+                route_delay_seconds = get_route_delay_seconds(route_data, route_start_times, earliest_start_time)
                 
-                # Calculate route-specific tail timing for all routes
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    if not route_points:
-                        continue
+                # Calculate when this specific route ends
+                route_end_time = route_points[-1].accumulated_time if route_points else 0
+                route_end_time_with_delay = route_end_time + route_delay_seconds
+                
+                # Store route-specific tail information
+                route_index = route_points[0].route_index if route_points else 0
+                route_specific_tail_info[route_index] = {
+                    'route_end_time': route_end_time_with_delay,
+                    'route_delay_seconds': route_delay_seconds
+                }
+                
+                # For tail-only frames, also calculate virtual leading time
+                if is_tail_only_frame:
+                    # Calculate how many frames into the tail-only phase we are
+                    tail_only_frame_offset = frame_number - original_route_end_frame
                     
-                    # Calculate this route's delay relative to the earliest route
-                    route_delay_seconds = 0.0
-                    route_id = id(route_data)
-                    if route_id in route_start_times and earliest_start_time:
-                        route_start_timestamp = route_start_times[route_id]
-                        route_delay_seconds = (route_start_timestamp - earliest_start_time).total_seconds()
-                    
-                    # Calculate when this specific route ends
-                    route_end_time = route_points[-1].accumulated_time if route_points else 0
-                    route_end_time_with_delay = route_end_time + route_delay_seconds
-                    
-                    # Store route-specific tail information
-                    route_index = route_points[0].route_index if route_points else 0
-                    route_specific_tail_info[route_index] = {
-                        'route_end_time': route_end_time_with_delay,
-                        'route_delay_seconds': route_delay_seconds
-                    }
-                    
-                    # For tail-only frames, also calculate virtual leading time
-                    if is_tail_only_frame:
-                        # Calculate how many frames into the tail-only phase we are
-                        tail_only_frame_offset = frame_number - original_route_end_frame
-                        
-                        # Calculate route-specific virtual leading time
-                        route_virtual_leading_time = route_end_time_with_delay + (tail_only_frame_offset * route_time_per_frame)
-                        route_specific_tail_info[route_index]['virtual_leading_time'] = route_virtual_leading_time
+                    # Calculate route-specific virtual leading time
+                    route_virtual_leading_time = route_end_time_with_delay + (tail_only_frame_offset * route_time_per_frame)
+                    route_specific_tail_info[route_index]['virtual_leading_time'] = route_virtual_leading_time
         
         if is_tail_only_frame:
             # Calculate how many frames into the tail-only phase we are
@@ -728,10 +549,13 @@ class StreamingFrameGenerator:
     Generator class that yields frames for moviepy using multiprocessing.
     Uses an improved producer-consumer pattern with adaptive buffering and continuous frame generation.
     """
-    def __init__(self, json_data, route_time_per_frame, combined_route_data, max_workers=None, shared_map_cache=None, shared_route_cache=None, progress_callback=None, gpx_time_per_video_time=None, debug_callback=None, user=None):
+    def __init__(self, json_data, route_time_per_frame, combined_route_data, max_workers=None, shared_map_cache=None, shared_route_cache=None, progress_callback=None, gpx_time_per_video_time=None, debug_callback=None, user=None, simultaneous_mode=None):
         self.json_data = json_data
         self.route_time_per_frame = route_time_per_frame
         self.combined_route_data = combined_route_data
+        if simultaneous_mode is None:
+            simultaneous_mode = is_simultaneous_mode(combined_route_data)
+        self.is_simultaneous_mode = simultaneous_mode
         self.shared_map_cache = shared_map_cache
         self.shared_route_cache = shared_route_cache
         self.progress_callback = progress_callback
@@ -789,48 +613,23 @@ class StreamingFrameGenerator:
             except Exception as e:
                 write_log(f"Warning: Could not load stamp: {e}")
         
-        # Calculate video parameters
+        # Calculate video parameters (is_simultaneous_mode set above from simultaneous_mode param)
         video_length = float(json_data.get('video_length', 30))
         video_fps = float(json_data.get('video_fps', 30))
         
-        # SIMULTANEOUS MODE ENDING FIX: Detect if we're in simultaneous mode
-        is_simultaneous_mode = False
-        all_routes = combined_route_data.get('all_routes', None)
-        if all_routes and len(all_routes) > 1:
-            # Check if routes have different route_index values (truly different routes vs split tracks)
-            route_indices = set()
-            for route_data in all_routes:
-                route_points = route_data.get('combined_route', [])
-                if route_points:
-                    first_point = route_points[0]
-                    route_indices.add(first_point.route_index)
-            
-            is_simultaneous_mode = len(route_indices) > 1
-        
         # Calculate ending parameters based on mode
-        if is_simultaneous_mode:
+        if self.is_simultaneous_mode:
             # SIMULTANEOUS MODE: Each route handles its own completion and tail fade-out
-            # We need to extend the video to account for the tail fade-out of the last route
-            tail_length = int(json_data.get('tail_length', 0))  # Get the tail length for fade-out
-            
-            # Total video length: original video + tail fade-out of the last route + 5 seconds of cloned ending
-            extended_video_length = video_length + tail_length  # Extend by tail length for fade-out
-            ending_duration_required = 5.0  # Always 5 seconds of ending total
-            cloned_ending_duration = ending_duration_required  # All 5 seconds via cloned frames
-            final_video_length = extended_video_length + cloned_ending_duration
+            tail_length = int(json_data.get('tail_length', 0))
+            extended_video_length, final_video_length, cloned_ending_duration = compute_simultaneous_ending_lengths(video_length, tail_length)
             
             if progress_callback:
                 progress_callback("progress_bar_frames", 0, f"SIMULTANEOUS MODE: Creating video: {video_length}s route + {tail_length}s tail + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
                 progress_callback("progress_bar_frames", 0, f"Each route handles its own completion and tail fade-out with {tail_length}s fade-out for the last route")
         else:
             # SEQUENTIAL MODE: Use the original tail-only phase logic
-            tail_length = int(json_data.get('tail_length', 0))  # Ensure tail_length is int
-            ending_duration_required = 5.0  # Always 5 seconds of ending total
-            cloned_ending_duration = max(0.0, ending_duration_required - tail_length)  # Additional time needed via cloned frames
-            
-            # Total video length includes: original video + tail frames + cloned ending
-            extended_video_length = video_length + tail_length if tail_length > 0 else video_length
-            final_video_length = extended_video_length + cloned_ending_duration
+            tail_length = int(json_data.get('tail_length', 0))
+            extended_video_length, final_video_length, cloned_ending_duration = compute_sequential_ending_lengths(video_length, tail_length)
             
             if progress_callback:
                 if tail_length > 0 and cloned_ending_duration > 0:
@@ -879,14 +678,15 @@ class StreamingFrameGenerator:
             'filename_to_rgba': self.filename_to_rgba,
             'gpx_time_per_video_time': self.gpx_time_per_video_time,
             'stamp_array': self.stamp_array,
-            'shared_route_cache': self.shared_route_cache
+            'shared_route_cache': self.shared_route_cache,
+            'is_simultaneous_mode': self.is_simultaneous_mode,
         }
         self.shared_data_filepath = _save_shared_worker_data(shared_data_dict, self.job_id)
         write_debug_log(f"Pickled shared worker data to {self.shared_data_filepath}")
         
         # Prepare work items with pre-computed color mapping and stamp
         # Only generate frames up to the extended_video_length (excludes cloned frames)
-        # OPTIMIZED: Only pass frame-specific data (frame_number, target_time_video) and filepath
+        # Optimized: Only pass frame-specific data (frame_number, target_time_video) and filepath
         self.work_items = []
         frames_to_generate = int(self.extended_video_length * video_fps)  # Only frames that need rendering
         
@@ -910,37 +710,12 @@ class StreamingFrameGenerator:
         self.frames_to_generate = frames_to_generate
         
         # Pre-calculate leading frames to skip (sequential mode only).
-        # In sequential mode, early frames may not contain enough geographically
-        # distinct points to draw a meaningful line. This happens when:
-        #   a) There are fewer than 2 GPS points in the time window, or
-        #   b) Point interpolation has filled a large time gap between the first
-        #      two real GPS points with synthetic points that all share the exact
-        #      same lat/lon as the first point (no actual movement).
-        # In either case the bounding box degenerates into a "vertical slice"
-        # artifact. Skip these frames to produce a shorter, cleaner video and
-        # save CPU on rendering.
         self.frames_to_skip = 0
-        if not is_simultaneous_mode:
+        if not self.is_simultaneous_mode:
             combined_route = combined_route_data.get('combined_route', [])
-            if len(combined_route) >= 2 and self.route_time_per_frame > 0:
-                # Find the first point whose lat/lon differs from point[0].
-                # This handles interpolated points that copy coordinates verbatim.
-                first_lat = combined_route[0].lat
-                first_lon = combined_route[0].lon
-                first_diverse_time = None
-                for pt in combined_route[1:]:
-                    if abs(pt.lat - first_lat) > 1e-9 or abs(pt.lon - first_lon) > 1e-9:
-                        first_diverse_time = pt.accumulated_time
-                        break
-                
-                if first_diverse_time is not None and first_diverse_time > 0:
-                    first_drawable_frame = math.ceil(first_diverse_time / self.route_time_per_frame) + 1
-                    self.frames_to_skip = max(0, min(first_drawable_frame - 1, frames_to_generate - 1))
-                elif first_diverse_time is None:
-                    # All points at the same location - skip all but the last frame
-                    self.frames_to_skip = max(0, frames_to_generate - 1)
-            elif len(combined_route) < 2:
-                self.frames_to_skip = max(0, frames_to_generate - 1)
+            self.frames_to_skip = compute_sequential_frames_to_skip(
+                combined_route, self.route_time_per_frame, frames_to_generate
+            )
         
         self.renderable_frames = self.frames_to_generate - self.frames_to_skip
         
@@ -1490,7 +1265,7 @@ class StreamingFrameGenerator:
             pass  # Ignore errors during destruction
 
 
-def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None):
+def create_video_streaming(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None, simultaneous_mode=None):
     """
     Create video by streaming frames directly to ffmpeg without saving to disk.
     
@@ -1515,48 +1290,26 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         if debug_callback:
             debug_callback("Starting streaming video creation")
         
-        # Calculate video parameters
+        # Calculate video parameters (simultaneous_mode passed from caller)
         video_length = float(json_data.get('video_length', 30))
         video_fps = float(json_data.get('video_fps', 30))
-        
-        # SIMULTANEOUS MODE ENDING FIX: Detect if we're in simultaneous mode
-        is_simultaneous_mode = False
-        all_routes = combined_route_data.get('all_routes', None)
-        if all_routes and len(all_routes) > 1:
-            # Check if routes have different route_index values (truly different routes vs split tracks)
-            route_indices = set()
-            for route_data in all_routes:
-                route_points = route_data.get('combined_route', [])
-                if route_points:
-                    first_point = route_points[0]
-                    route_indices.add(first_point.route_index)
-            
-            is_simultaneous_mode = len(route_indices) > 1
+        if simultaneous_mode is None:
+            simultaneous_mode = is_simultaneous_mode(combined_route_data)
+        is_simultaneous_mode = simultaneous_mode
         
         # Calculate ending parameters based on mode
         if is_simultaneous_mode:
             # SIMULTANEOUS MODE: Each route handles its own completion and tail fade-out
-            # We don't need the sequential tail-only phase, just add 5 seconds of cloned ending
-            tail_length = 0  # No sequential tail phase needed
-            ending_duration_required = 5.0  # Always 5 seconds of ending total
-            cloned_ending_duration = ending_duration_required  # All 5 seconds via cloned frames
-            
-            # Total video length: original video + cloned ending
-            extended_video_length = video_length  # No tail phase
-            final_video_length = extended_video_length + cloned_ending_duration
+            extended_video_length, final_video_length, cloned_ending_duration = compute_simultaneous_ending_lengths(video_length, tail_length=0)
+            tail_length = 0
             
             if debug_callback:
                 debug_callback(f"SIMULTANEOUS MODE: Creating video: {video_length}s route + {cloned_ending_duration:.1f}s cloned = {final_video_length:.1f}s total")
                 debug_callback(f"Each route handles its own completion and tail fade-out individually")
         else:
             # SEQUENTIAL MODE: Use the original tail-only phase logic
-            tail_length = int(json_data.get('tail_length', 0))  # Ensure tail_length is int
-            ending_duration_required = 5.0  # Always 5 seconds of ending total
-            cloned_ending_duration = max(0.0, ending_duration_required - tail_length)  # Additional time needed via cloned frames
-            
-            # Total video length includes: original video + tail frames + cloned ending
-            extended_video_length = video_length + tail_length if tail_length > 0 else video_length
-            final_video_length = extended_video_length + cloned_ending_duration
+            tail_length = int(json_data.get('tail_length', 0))
+            extended_video_length, final_video_length, cloned_ending_duration = compute_sequential_ending_lengths(video_length, tail_length)
             
             if debug_callback:
                 if tail_length > 0 and cloned_ending_duration > 0:
@@ -1618,7 +1371,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                 debug_callback(f"Video filename: {output_filename}")
         
         # Create the frame generator
-        frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time, debug_callback, user)
+        frame_generator = StreamingFrameGenerator(json_data, route_time_per_frame, combined_route_data, max_workers, shared_map_cache, shared_route_cache, progress_callback, gpx_time_per_video_time, debug_callback, user, simultaneous_mode=is_simultaneous_mode)
         
         # Initial progress update
         if progress_callback:
@@ -1830,10 +1583,10 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
         return None
 
 
-def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None):
+def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, shared_route_cache=None, gpx_time_per_video_time=None, gpu_rendering=True, user=None, simultaneous_mode=None):
     """
     Cache video frames for video generation using streaming approach.
-    
+
     Args:
         json_data (dict): Job data containing video parameters
         route_time_per_frame (float): Time per frame in seconds
@@ -1847,11 +1600,15 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         gpx_time_per_video_time (float, optional): GPX time per video time ratio
         gpu_rendering (bool, optional): Whether to use GPU rendering (default: True)
         user (str, optional): API key for status updates at 10% intervals
-    
+        simultaneous_mode (bool, optional): True if multiple distinct routes; computed from combined_route_data if None
+
     Returns:
         dict: Cache results with timing information, or None if error
     """
     try:
+        if simultaneous_mode is None:
+            simultaneous_mode = is_simultaneous_mode(combined_route_data)
+        is_simultaneous_mode = simultaneous_mode
         if debug_callback:
             debug_callback("Starting video frame generation with streaming approach")
         
@@ -1862,8 +1619,9 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
         
         # Create video using streaming approach
         video_path = create_video_streaming(
-            json_data, route_time_per_frame, combined_route_data, 
-            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering, user
+            json_data, route_time_per_frame, combined_route_data,
+            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering, user,
+            simultaneous_mode=is_simultaneous_mode
         )
         
         if video_path:
@@ -1871,40 +1629,15 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
             video_length = float(json_data.get('video_length', 30))
             video_fps = float(json_data.get('video_fps', 30))
             
-            # SIMULTANEOUS MODE ENDING FIX: Detect if we're in simultaneous mode
-            is_simultaneous_mode = False
-            all_routes = combined_route_data.get('all_routes', None)
-            if all_routes and len(all_routes) > 1:
-                # Check if routes have different route_index values (truly different routes vs split tracks)
-                route_indices = set()
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    if route_points:
-                        first_point = route_points[0]
-                        route_indices.add(first_point.route_index)
-                
-                is_simultaneous_mode = len(route_indices) > 1
-            
-            # Calculate ending parameters based on mode
+            # Calculate ending parameters based on mode (is_simultaneous_mode passed from caller)
             if is_simultaneous_mode:
                 # SIMULTANEOUS MODE: Each route handles its own completion and tail fade-out
-                # We don't need the sequential tail-only phase, just add 5 seconds of cloned ending
-                tail_length = 0  # No sequential tail phase needed
-                ending_duration_required = 5.0  # Always 5 seconds of ending total
-                cloned_ending_duration = ending_duration_required  # All 5 seconds via cloned frames
-                
-                # Total video length: original video + cloned ending
-                extended_video_length = video_length  # No tail phase
-                final_video_length = extended_video_length + cloned_ending_duration
+                extended_video_length, final_video_length, cloned_ending_duration = compute_simultaneous_ending_lengths(video_length, tail_length=0)
+                tail_length = 0
             else:
                 # SEQUENTIAL MODE: Use the original tail-only phase logic
-                tail_length = int(json_data.get('tail_length', 0))  # Ensure tail_length is int
-                ending_duration_required = 5.0  # Always 5 seconds of ending total
-                cloned_ending_duration = max(0.0, ending_duration_required - tail_length)  # Additional time needed via cloned frames
-                
-                # Total video length includes: original video + tail frames + cloned ending
-                extended_video_length = video_length + tail_length if tail_length > 0 else video_length
-                final_video_length = extended_video_length + cloned_ending_duration
+                tail_length = int(json_data.get('tail_length', 0))
+                extended_video_length, final_video_length, cloned_ending_duration = compute_sequential_ending_lengths(video_length, tail_length)
             
             # Account for skipped leading frames in sequential mode (mirrors
             # the geographic-diversity scan in StreamingFrameGenerator.__init__)
@@ -1912,19 +1645,10 @@ def cache_video_frames_for_video(json_data, route_time_per_frame, combined_route
             if not is_simultaneous_mode:
                 combined_route = combined_route_data.get('combined_route', [])
                 route_time_per_frame_local = gpx_time_per_video_time / video_fps if gpx_time_per_video_time else 0
-                if len(combined_route) >= 2 and route_time_per_frame_local > 0:
-                    first_lat = combined_route[0].lat
-                    first_lon = combined_route[0].lon
-                    first_diverse_time = None
-                    for pt in combined_route[1:]:
-                        if abs(pt.lat - first_lat) > 1e-9 or abs(pt.lon - first_lon) > 1e-9:
-                            first_diverse_time = pt.accumulated_time
-                            break
-                    if first_diverse_time is not None and first_diverse_time > 0:
-                        frames_to_generate_total = int(extended_video_length * video_fps)
-                        first_drawable = math.ceil(first_diverse_time / route_time_per_frame_local) + 1
-                        frames_to_skip = max(0, min(first_drawable - 1, frames_to_generate_total - 1))
-                
+                frames_to_generate_total = int(extended_video_length * video_fps)
+                frames_to_skip = compute_sequential_frames_to_skip(
+                    combined_route, route_time_per_frame_local, frames_to_generate_total
+                )
                 if frames_to_skip > 0:
                     skipped_duration = frames_to_skip / video_fps
                     final_video_length -= skipped_duration
@@ -2025,10 +1749,14 @@ def cache_video_frames(json_data=None, combined_route_data=None, progress_callba
                 log_callback("Error: combined_route_data parameter is required")
             return None
         
+        # Detect simultaneous mode once and pass through the chain
+        simultaneous_mode = is_simultaneous_mode(combined_route_data)
+        
         # Create video using streaming approach
         cache_result = cache_video_frames_for_video(
-            json_data, route_time_per_frame, combined_route_data, 
-            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering, user
+            json_data, route_time_per_frame, combined_route_data,
+            progress_callback, log_callback, debug_callback, max_workers, shared_map_cache, shared_route_cache, gpx_time_per_video_time, gpu_rendering, user,
+            simultaneous_mode=simultaneous_mode
         )
         
         if cache_result is None:

@@ -164,9 +164,6 @@ def pre_cache_map_tiles_for_video(
                 if log_callback:
                     log_callback(f"Warning: No suitable zoom found for bbox, using zoom {zoom_level}")
 
-            if zoom_level > 17:
-                zoom_level = 17
-
             def deg2num(lat_deg, lon_deg, zoom):
                 lat_rad = math.radians(lat_deg)
                 n = 2.0 ** zoom

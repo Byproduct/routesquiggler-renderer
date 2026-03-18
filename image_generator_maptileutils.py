@@ -758,14 +758,17 @@ def detect_zoom_level(map_bounds: Tuple[float, float, float, float],
     if suitable_zooms:
         debug_log(f"Found {len(suitable_zooms)} suitable zoom levels between {min_tiles}-{max_tiles} tiles: {suitable_zooms}")
     else:
-        # No suitable zoom levels found - use max_zoom as fallback
+        # No suitable zoom levels found - use max_zoom as fallback (capped at 17 for consistency)
         # This ensures we always return at least one zoom level, even if it exceeds max_tiles
-        debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints, using max_zoom {max_zoom} as fallback")
-        suitable_zooms = [max_zoom]
+        debug_log(f"No suitable zoom levels found within {min_tiles}-{max_tiles} tile count constraints, using max_zoom {min(max_zoom, 17)} as fallback")
+        suitable_zooms = [min(max_zoom, 17)]
     
     # esri512 and mapbox tiles are 512px (twice as large as 256px); use one zoom level smaller for equivalent coverage
     if map_style.startswith('esri512_') or map_style.startswith('mapbox_'):
         suitable_zooms = [max(1, z - 1) for z in suitable_zooms]
         debug_log(f"512px style: using zoom levels one step smaller: {suitable_zooms}")
+    
+    # Cap at zoom 17 so all callers (tile cache and map image render) use a consistent max zoom
+    suitable_zooms = sorted(set(min(z, 17) for z in suitable_zooms))
         
-    return suitable_zooms 
+    return suitable_zooms
