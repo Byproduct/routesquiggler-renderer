@@ -29,6 +29,17 @@ from video_generator_create_combined_route import create_combined_route
 from video_generator_sort_files_chronologically import get_sorted_gpx_list
 
 
+def _format_bytes_human(n: int) -> str:
+    """Format byte count as human-readable string (B, KB, MB, GB)."""
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f"{n / 1024:.1f} KB"
+    if n < 1024 * 1024 * 1024:
+        return f"{n / (1024 * 1024):.1f} MB"
+    return f"{n / (1024 * 1024 * 1024):.1f} GB"
+
+
 def upload_video_to_storage_box(
     video_path: str,
     thumbnail_path: str,
@@ -80,7 +91,7 @@ def upload_video_to_storage_box(
                         percentage = int((self.uploaded_size / self.total_size) * 100)
                         # Only update progress every 10% to reduce debug log spam
                         if percentage >= self.last_reported_percentage + 10 or percentage >= 100:
-                            self.progress_callback("progress_bar_upload", percentage, f"Uploading: {self.uploaded_size}/{self.total_size} bytes")
+                            self.progress_callback("progress_bar_upload", percentage, f"Uploading: {_format_bytes_human(self.uploaded_size)}/{_format_bytes_human(self.total_size)}")
                             self.last_reported_percentage = percentage
                     if callback:
                         callback(data)
