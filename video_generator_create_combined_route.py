@@ -1,10 +1,3 @@
-"""
-Video generation combined route creation for the Route Squiggler render client.
-This module handles creating combined routes from multiple chronologically sorted GPX files.
-Supports both single route mode and multiple simultaneous routes
-based on track names from track_objects.
-"""
-
 # Standard library imports
 from datetime import datetime, timedelta
 from pathlib import Path

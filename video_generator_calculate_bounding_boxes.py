@@ -801,6 +801,25 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 if result:  # Only add non-empty results
                     all_bounding_boxes.extend(result)
             
+            # Always include the "full route" bounding box. 
+            # If getting the bug where the map image for the last 5 seconds is rarely missing, 
+            # (floating point mismatch), this could potentially help.  
+            # Commented out because the bug doesn't seem to appear anymore for now.
+            # (After unifying floating-point calculations elsewhere)
+            # all_routes = combined_route_data.get('all_routes', None)
+            # if all_routes:
+            #     all_points = []
+            #     for route_data in all_routes:
+            #         route_points = route_data.get('combined_route', [])
+            #         all_points.extend(route_points)
+            #     if all_points:
+            #         full_route_bbox = calculate_bounding_box_for_points(
+            #             all_points, padding_percent=0.1,
+            #             target_aspect_ratio=target_aspect_ratio
+            #         )
+            #         if full_route_bbox:
+            #             all_bounding_boxes.append(full_route_bbox)
+            
             # Create set of unique bounding boxes
             unique_bounding_boxes = list(set(all_bounding_boxes))
             
