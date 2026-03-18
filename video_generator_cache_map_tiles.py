@@ -12,6 +12,7 @@ from pathlib import Path
 
 # Local imports
 from image_generator_maptileutils import detect_zoom_level, set_cache_directory
+from image_generator_utils import calculate_resolution_scale, apply_tile_threshold_multiplier
 from job_request import set_attribution_from_theme
 from map_tile_caching import cache_required_tiles
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
@@ -144,7 +145,33 @@ def pre_cache_map_tiles_for_video(
             'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
             'stadia_toner': 100, 'stadia_watercolor': 150,
         }
-        max_tiles = max_tiles_config.get(map_style, 100)
+        base_max_tiles = max_tiles_config.get(map_style, 100)
+
+        # Adjust the tile-count threshold based on output resolution scale.
+        # This affects only the "max tiles we allow" part of zoom detection;
+        # all subsequent zoom modifiers still apply normally.
+        resolution_x = int(json_data.get("video_resolution_x", 1920))
+        resolution_y = int(json_data.get("video_resolution_y", 1080))
+        resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+
+        map_detail = json_data.get("map_detail")
+        max_tiles = apply_tile_threshold_multiplier(
+            base_max_tiles,
+            resolution_scale,
+            min_value=1,
+            map_detail=map_detail,
+        )
+
+        if debug_callback:
+            multiplier = (
+                float(max_tiles) / float(base_max_tiles)
+                if base_max_tiles
+                else 1.0
+            )
+            debug_callback(
+                f"Zoom threshold adjustment: resolution_scale={resolution_scale} => "
+                f"multiplier={multiplier}, max_tiles={max_tiles} (base {base_max_tiles})"
+            )
 
         # Phase 1: Gather all required tiles across all bounding boxes
         all_required_tiles = set()

@@ -21,6 +21,7 @@ import numpy as np
 
 # Local imports
 from image_generator_maptileutils import create_map_tiles, detect_zoom_level, set_cache_directory
+from image_generator_utils import calculate_resolution_scale, apply_tile_threshold_multiplier
 from job_request import set_attribution_from_theme
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
 from video_generator_coordinate_encoder import encode_coords
@@ -96,7 +97,23 @@ def create_map_image_worker(args):
         map_opacity = 100 - map_transparency  # Convert transparency to opacity
         video_resolution_x = int(json_data.get('video_resolution_x', 1920))
         video_resolution_y = int(json_data.get('video_resolution_y', 1080))
-        max_map_tiles = 100  # As specified in requirements
+
+        # Max tiles threshold (style-specific base) adjusted by resolution scale.
+        max_tiles_config = {
+            'osm': 100, 'otm': 100, 'cyclosm': 100,
+            'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
+            'stadia_toner': 100, 'stadia_watercolor': 150,
+        }
+        base_max_map_tiles = max_tiles_config.get(map_style, 100)
+
+        resolution_scale = calculate_resolution_scale(video_resolution_x, video_resolution_y)
+        map_detail = json_data.get("map_detail")
+        max_map_tiles = apply_tile_threshold_multiplier(
+            base_max_map_tiles,
+            resolution_scale,
+            min_value=1,
+            map_detail=map_detail,
+        )
         
         # Set up map image cache directory with subfolder for the current map style and opacity
         # Note: No longer creating disk directories since we're using shared memory exclusively

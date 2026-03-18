@@ -373,6 +373,44 @@ def calculate_resolution_scale(resolution_x: int, resolution_y: int) -> float:
     return scale
 
 
+def resolution_scale_to_tile_threshold_multiplier(resolution_scale: float, map_detail: Optional[str] = None) -> float:
+    """
+    Map a resolution scale to the multiplier used when selecting map tiles.
+    scale_key 0.7=720p, 1=1080p, 2=4k videos
+
+    For any other value, default to 1.0 to preserve legacy behavior.
+    """
+    scale_key = round(float(resolution_scale), 1)
+    if scale_key == 0.7:
+        multiplier = 0.5
+    elif scale_key == 1.0:
+        multiplier = 0.8
+    elif scale_key == 2.0:
+        multiplier = 1.3
+    else:
+        multiplier = 1.0
+
+    # Optional additional modifier to influence how detailed maps should be.
+    # - "low"  => fewer tiles
+    # - "normal" (or omitted) => no additional change
+    # - "high" => more tiles
+    if map_detail is not None:
+        md = str(map_detail).strip().lower()
+        if md == "low":
+            multiplier *= 0.5
+        elif md == "high":
+            multiplier *= 1.5
+
+    return multiplier
+
+
+def apply_tile_threshold_multiplier(base_max_tiles: int, resolution_scale: float, min_value: int = 1, map_detail: Optional[str] = None) -> int:
+    """Apply `resolution_scale_to_tile_threshold_multiplier()` and clamp to a minimum value."""
+    multiplier = resolution_scale_to_tile_threshold_multiplier(resolution_scale, map_detail=map_detail)
+    adjusted = int(round(float(base_max_tiles) * float(multiplier)))
+    return max(min_value, adjusted)
+
+
 def get_attribution_text(map_style):
     """
     Return attribution string based on map_style.
