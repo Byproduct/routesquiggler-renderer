@@ -22,7 +22,9 @@ def pre_cache_map_tiles_for_images(
     storage_box_credentials: dict = None,
     log_callback=None,
     debug_callback=None,
-    progress_callback=None
+    progress_callback=None,
+    provider_queue_callback=None,
+    provider_start_callback=None,
 ) -> dict | None:
     """
     Identify and cache map tiles for all zoom levels required for image generation.
@@ -94,6 +96,8 @@ def pre_cache_map_tiles_for_images(
             log_callback=log_callback,
             debug_callback=debug_callback,
             progress_callback=progress_callback,
+            provider_queue_callback=provider_queue_callback,
+            provider_start_callback=provider_start_callback,
         )
 
     except Exception as e:

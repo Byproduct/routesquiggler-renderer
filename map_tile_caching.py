@@ -26,6 +26,8 @@ from map_tile_lock import (
     UNLOCK_REQUEST_TIMEOUT,
     LOCK_RETRY_INTERVAL,
     MAX_LOCK_WAIT_TIME,
+    acquire_map_tile_lock,
+    release_map_tile_lock,
 )
 from write_log import write_debug_log, write_log
 
@@ -315,6 +317,69 @@ def _ftp_mkdirs(ftp, remote_dir):
 # Core caching pipeline
 # ---------------------------------------------------------------------------
 
+def _download_tiles_from_remote_cache(
+    tiles_to_check,
+    map_style: str,
+    storage_box_credentials: dict,
+    debug_callback=None,
+    progress_callback=None,
+) -> set:
+    """Download tiles from the remote cache (storage box) via FTP.
+
+    Acquires/releases the cache lock internally so callers don't have to.
+
+    Args:
+        tiles_to_check: Iterable of ``(x, y, zoom)`` tuples to look for.
+        map_style: Map style identifier.
+        storage_box_credentials: ``{'address', 'user', 'password'}``.
+        debug_callback: Debug-only log function.
+        progress_callback: Optional ``(bar_name, pct, text)`` function.
+
+    Returns:
+        Set of ``(x, y, zoom)`` tuples that were successfully downloaded.
+    """
+    _debug = debug_callback or write_debug_log
+    downloaded = set()
+
+    _acquire_cache_lock(_debug)
+    try:
+        t0 = time.perf_counter()
+        tasks = []
+        for tile in tiles_to_check:
+            x, y, zoom = tile
+            tasks.append((
+                x, y, zoom,
+                _tile_remote_path(map_style, x, y, zoom),
+                _tile_local_path(map_style, x, y, zoom),
+                storage_box_credentials,
+            ))
+
+        if progress_callback:
+            progress_callback("progress_bar_tiles", 0,
+                              "Checking remote tile cache")
+
+        with ThreadPoolExecutor(max_workers=MAX_FTP_WORKERS) as pool:
+            futures = {pool.submit(_ftp_download_one, t): t for t in tasks}
+            done_count = 0
+            for future in as_completed(futures):
+                x, y, zoom, err = future.result()
+                if err is None:
+                    downloaded.add((x, y, zoom))
+                done_count += 1
+                if progress_callback and done_count % 50 == 0:
+                    pct = int(done_count / len(tasks) * 30)
+                    progress_callback("progress_bar_tiles", pct,
+                                      f"Remote cache: {done_count}/{len(tasks)}")
+
+        elapsed = time.perf_counter() - t0
+        _debug(f"{len(downloaded)} tiles downloaded from remote "
+               f"cache in {elapsed:.1f} seconds")
+    finally:
+        _release_cache_lock(_debug)
+
+    return downloaded
+
+
 def cache_required_tiles(
     required_tiles,
     map_style: str,
@@ -322,8 +387,15 @@ def cache_required_tiles(
     log_callback=None,
     debug_callback=None,
     progress_callback=None,
+    provider_queue_callback=None,
+    provider_start_callback=None,
 ) -> dict:
     """Cache all tiles required for a job using the three-tier system.
+
+    The provider lock (service lock) for step 3 is managed internally.  When
+    the renderer has to wait behind the lock (another renderer is downloading),
+    the lock is released immediately and step 2 (remote cache check) is
+    repeated — the other renderer may have already uploaded the tiles we need.
 
     Args:
         required_tiles: Iterable of ``(x, y, zoom)`` tuples.
@@ -333,6 +405,10 @@ def cache_required_tiles(
         log_callback: Regular (always-visible) log function.
         debug_callback: Debug-only log function.
         progress_callback: ``(bar_name, percentage, text)`` progress function.
+        provider_queue_callback: Called (no args) when waiting in the provider
+            lock queue — callers typically set a "queued" status here.
+        provider_start_callback: Called (no args) when provider downloads are
+            about to begin — callers typically set a "downloading" status here.
 
     Returns:
         Dict with caching success and tile counts:
@@ -399,49 +475,17 @@ def cache_required_tiles(
         and storage_box_credentials.get('password')
     )
 
-    downloaded_from_remote = set()
-    remote_elapsed = 0.0
+    count_remote = 0
 
     if has_credentials and tiles_not_local:
-        _acquire_cache_lock(_debug)
-        try:
-            t0 = time.perf_counter()
-            tasks = []
-            for tile in tiles_not_local:
-                x, y, zoom = tile
-                tasks.append((
-                    x, y, zoom,
-                    _tile_remote_path(map_style, x, y, zoom),
-                    _tile_local_path(map_style, x, y, zoom),
-                    storage_box_credentials,
-                ))
-
-            if progress_callback:
-                progress_callback("progress_bar_tiles", 0,
-                                  "Checking remote tile cache")
-
-            with ThreadPoolExecutor(max_workers=MAX_FTP_WORKERS) as pool:
-                futures = {pool.submit(_ftp_download_one, t): t for t in tasks}
-                done_count = 0
-                for future in as_completed(futures):
-                    x, y, zoom, err = future.result()
-                    if err is None:
-                        downloaded_from_remote.add((x, y, zoom))
-                    done_count += 1
-                    if progress_callback and done_count % 50 == 0:
-                        pct = int(done_count / len(tasks) * 30)
-                        progress_callback("progress_bar_tiles", pct,
-                                          f"Remote cache: {done_count}/{len(tasks)}")
-
-            remote_elapsed = time.perf_counter() - t0
-            _debug(f"{len(downloaded_from_remote)} tiles downloaded from remote "
-                   f"cache in {remote_elapsed:.1f} seconds")
-        finally:
-            _release_cache_lock(_debug)
+        downloaded_from_remote = _download_tiles_from_remote_cache(
+            tiles_not_local, map_style, storage_box_credentials,
+            _debug, progress_callback,
+        )
+        count_remote = len(downloaded_from_remote)
     else:
+        downloaded_from_remote = set()
         _debug("Skipping remote cache (no storage box credentials)")
-
-    count_remote = len(downloaded_from_remote)
 
     # Remaining tiles that still need provider downloads
     tiles_need_provider = [
@@ -449,43 +493,112 @@ def cache_required_tiles(
     ]
 
     # ------------------------------------------------------------------
-    # Step 3: Download from tile providers
+    # Step 3: Download from tile providers (with service lock + retry)
     # ------------------------------------------------------------------
     count_provider = 0
     provider_elapsed = 0.0
 
     if tiles_need_provider:
-        t0 = time.perf_counter()
-        map_tiles = create_map_tiles(map_style)
-        consecutive_errors = 0
-        max_consecutive_errors = 20
+        json_data_for_lock = {'map_style': map_style}
 
-        if progress_callback:
-            progress_callback("progress_bar_tiles", 30,
-                              f"Downloading {len(tiles_need_provider)} tiles from provider")
+        while tiles_need_provider:
+            lock_acquired, lock_error, waited = acquire_map_tile_lock(
+                json_data_for_lock,
+                log_callback=_log,
+                debug_callback=_debug,
+                status_callback=provider_queue_callback,
+            )
 
-        for idx, tile in enumerate(tiles_need_provider):
-            x, y, zoom = tile
+            if not lock_acquired:
+                _log(f"Map tile lock acquisition failed: {lock_error}")
+                return {
+                    'success': False,
+                    'total_required': total_required,
+                    'count_local': count_local,
+                    'count_remote': count_remote,
+                    'count_provider': 0,
+                    'count_uploaded': 0,
+                }
+
+            if waited and has_credentials:
+                # Another renderer was active while we waited — tiles we need
+                # may now be in the remote cache.  Release the provider lock
+                # (we're not downloading yet) and re-check before committing.
+                release_map_tile_lock(json_data_for_lock, debug_callback=_debug)
+
+                _debug(f"Provider lock was queued — re-checking remote cache "
+                       f"for {len(tiles_need_provider)} remaining tiles")
+
+                newly_downloaded = _download_tiles_from_remote_cache(
+                    tiles_need_provider, map_style, storage_box_credentials,
+                    _debug,
+                )
+                count_remote += len(newly_downloaded)
+
+                if newly_downloaded:
+                    _debug(f"{len(newly_downloaded)} additional tiles found in "
+                           f"remote cache after re-check")
+
+                tiles_need_provider = [
+                    t for t in tiles_need_provider
+                    if t not in newly_downloaded
+                ]
+
+                if not tiles_need_provider:
+                    _debug("All remaining tiles found in remote cache after "
+                           "re-check — no provider downloads needed")
+                    break
+
+                _debug(f"{len(tiles_need_provider)} tiles still need provider "
+                       f"downloads — retrying provider lock")
+                continue
+
+            # Lock acquired without waiting (or no remote-cache credentials
+            # to make a re-check worthwhile) — download from providers.
             try:
-                map_tiles.get_image((x, y, zoom))
-                count_provider += 1
+                if provider_start_callback:
+                    provider_start_callback()
+
+                t0 = time.perf_counter()
+                map_tiles = create_map_tiles(map_style)
                 consecutive_errors = 0
-            except Exception as e:
-                consecutive_errors += 1
-                if consecutive_errors >= max_consecutive_errors:
-                    _debug(f"Too many consecutive provider errors ({consecutive_errors}), "
-                           "pausing 10 seconds")
-                    time.sleep(10)
-                    consecutive_errors = 0
+                max_consecutive_errors = 20
 
-            if progress_callback and (idx + 1) % 10 == 0:
-                pct = 30 + int((idx + 1) / len(tiles_need_provider) * 40)
-                progress_callback("progress_bar_tiles", pct,
-                                  f"Provider: {idx + 1}/{len(tiles_need_provider)}")
+                if progress_callback:
+                    progress_callback(
+                        "progress_bar_tiles", 30,
+                        f"Downloading {len(tiles_need_provider)} tiles from "
+                        f"provider")
 
-        provider_elapsed = time.perf_counter() - t0
-        _debug(f"{count_provider} tiles downloaded from providers "
-               f"in {provider_elapsed:.1f} seconds")
+                for idx, tile in enumerate(tiles_need_provider):
+                    x, y, zoom = tile
+                    try:
+                        map_tiles.get_image((x, y, zoom))
+                        count_provider += 1
+                        consecutive_errors = 0
+                    except Exception:
+                        consecutive_errors += 1
+                        if consecutive_errors >= max_consecutive_errors:
+                            _debug(
+                                f"Too many consecutive provider errors "
+                                f"({consecutive_errors}), pausing 10 seconds")
+                            time.sleep(10)
+                            consecutive_errors = 0
+
+                    if progress_callback and (idx + 1) % 10 == 0:
+                        pct = 30 + int(
+                            (idx + 1) / len(tiles_need_provider) * 40)
+                        progress_callback(
+                            "progress_bar_tiles", pct,
+                            f"Provider: {idx + 1}/{len(tiles_need_provider)}")
+
+                provider_elapsed = time.perf_counter() - t0
+                _debug(f"{count_provider} tiles downloaded from providers "
+                       f"in {provider_elapsed:.1f} seconds")
+            finally:
+                release_map_tile_lock(json_data_for_lock, debug_callback=_debug)
+
+            break
 
     # ------------------------------------------------------------------
     # Step 4: Verify tiles downloaded from providers

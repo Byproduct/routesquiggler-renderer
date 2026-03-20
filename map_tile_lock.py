@@ -68,9 +68,10 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None, sta
         status_callback (callable, optional): Function to call when waiting due to lock (e.g. to set renderer status "Map downloads queued")
         
     Returns:
-        tuple: (success: bool, error_message: str or None)
-            - (True, None) if lock acquired successfully or timeout (proceed)
-            - (False, error_message) if lock could not be acquired after 60 minutes
+        tuple: (success: bool, error_message: str or None, waited: bool)
+            - (True, None, False) if lock acquired on first attempt
+            - (True, None, True) if lock acquired after waiting (another renderer was active)
+            - (False, error_message, True) if lock could not be acquired after 60 minutes
     """
     map_style = json_data.get('map_style', 'osm')
     service = get_service_from_map_style(map_style)
@@ -81,6 +82,7 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None, sta
     
     start_time = time.time()
     attempt = 0
+    waited = False
     
     while True:
         attempt += 1
@@ -91,7 +93,7 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None, sta
             error_msg = f"Failed to acquire map tile lock after 60 minutes. Service: {service}"
             if log_callback:
                 log_callback(error_msg)
-            return (False, error_msg)
+            return (False, error_msg, True)
         
         try:
             if debug_callback:
@@ -110,11 +112,13 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None, sta
             if response.status_code == 200:
                 # Lock acquired successfully
                 if debug_callback:
-                    debug_callback(f"Map tile lock acquired for service: {service}")
-                return (True, None)
+                    debug_callback(f"Map tile lock acquired for service: {service}"
+                                   f"{' (after waiting)' if waited else ''}")
+                return (True, None, waited)
             
             elif response.status_code == 423:
                 # Locked - another user is downloading
+                waited = True
                 if status_callback:
                     try:
                         status_callback()
@@ -131,19 +135,19 @@ def acquire_map_tile_lock(json_data, log_callback=None, debug_callback=None, sta
                 # Unexpected response - treat as success (proceed)
                 if debug_callback:
                     debug_callback(f"Unexpected lock response code: {response.status_code}. Proceeding with map tile download.")
-                return (True, None)
+                return (True, None, waited)
                 
         except requests.Timeout:
             # No response after 30 seconds - proceed
             if debug_callback:
                 debug_callback(f"Lock request timed out after {LOCK_REQUEST_TIMEOUT} seconds. Proceeding with map tile download.")
-            return (True, None)
+            return (True, None, waited)
             
         except requests.RequestException as e:
             # Network error - proceed (don't block on API issues)
             if debug_callback:
                 debug_callback(f"Lock request failed with error: {str(e)}. Proceeding with map tile download.")
-            return (True, None)
+            return (True, None, waited)
 
 
 def release_map_tile_lock(json_data, log_callback=None, debug_callback=None):

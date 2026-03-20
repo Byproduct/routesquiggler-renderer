@@ -19,7 +19,6 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 # Local imports
 from job_request import update_job_status
-from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 from network_retry import retry_operation
 from config import config
 from video_generator_cache_map_images import cache_map_images
@@ -416,48 +415,32 @@ class VideoGeneratorWorker(QObject):
             # Step 3: Calculate unique bounding boxes and cache map tiles
             self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
             
-            # Acquire map tile lock before downloading
+            # The provider lock is managed inside cache_required_tiles so that
+            # it can release/re-check the remote cache when queued behind
+            # another renderer.
+            job_id = str(self.json_data.get('job_id', ''))
+            from update_status import update_status
+
             def on_map_downloads_queued():
-                from update_status import update_status
                 update_status("Map downloads queued", api_key=self.user)
 
-            lock_acquired, lock_error = acquire_map_tile_lock(
-                self.json_data,
-                log_callback=self.log_message.emit,
-                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
-                status_callback=on_map_downloads_queued
-            )
-            
-            if not lock_acquired:
-                # Lock acquisition failed after 60 minutes - mark job as error
-                raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
-            
-            # Wrap everything from lock acquisition in try-finally to ensure lock is always released
-            try:
-                # Update status to "downloading maps (job_id)"
-                job_id = str(self.json_data.get('job_id', ''))
-                from update_status import update_status
+            def on_provider_downloads_starting():
                 update_status(f"downloading maps ({job_id})", api_key=self.user)
-                
-                cache_result = cache_map_tiles(
-                    self.json_data,
-                    combined_route_data=self.combined_route_data,
-                    storage_box_credentials={
-                        'address': self.storage_box_address,
-                        'user': self.storage_box_user,
-                        'password': self.storage_box_password,
-                    },
-                    progress_callback=self.progress_update.emit,
-                    log_callback=self.log_message.emit,
-                    max_workers=self.max_workers,
-                )
-            finally:
-                # Always release the lock after map tile caching, even if it fails
-                release_map_tile_lock(
-                    self.json_data,
-                    log_callback=self.log_message.emit,
-                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
-                )
+
+            cache_result = cache_map_tiles(
+                self.json_data,
+                combined_route_data=self.combined_route_data,
+                storage_box_credentials={
+                    'address': self.storage_box_address,
+                    'user': self.storage_box_user,
+                    'password': self.storage_box_password,
+                },
+                progress_callback=self.progress_update.emit,
+                log_callback=self.log_message.emit,
+                max_workers=self.max_workers,
+                provider_queue_callback=on_map_downloads_queued,
+                provider_start_callback=on_provider_downloads_starting,
+            )
             
             if not cache_result:
                 raise ValueError("Map tile caching failed")

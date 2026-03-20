@@ -23,7 +23,6 @@ from image_generator_maptileutils import detect_zoom_level
 from image_generator_multiprocess import generate_images_parallel
 from image_generator_utils import convert_timestamp_to_job_timezone, normalize_timestamp
 from job_request import update_job_status
-from map_tile_lock import acquire_map_tile_lock, release_map_tile_lock
 from update_status import update_status
 from video_generator_create_combined_route import create_combined_route, get_first_track_point_time_from_gpx_content
 from video_generator_sort_files_chronologically import get_sorted_gpx_list
@@ -362,62 +361,45 @@ class ImageGeneratorWorker(QObject):
             except Exception:
                 pass
             
-            # Acquire map tile lock before downloading tiles
+            # Pre-cache all tiles for all zoom levels BEFORE multiprocessing.
+            # The provider lock is managed inside cache_required_tiles so that
+            # it can release/re-check the remote cache when queued behind
+            # another renderer.
+            job_id = str(self.json_data.get('job_id', ''))
+
             def on_map_downloads_queued():
                 update_status("Map downloads queued", api_key=self.user)
 
-            lock_acquired, lock_error = acquire_map_tile_lock(
-                self.json_data,
+            def on_provider_downloads_starting():
+                update_status(f"downloading maps ({job_id})", api_key=self.user)
+
+            cache_info = pre_cache_map_tiles_for_images(
+                zoom_levels=zoom_levels,
+                map_bounds=map_bounds,
+                map_style=self.json_data.get('map_style', 'osm'),
+                resolution_x=resolution_x_value,
+                resolution_y=resolution_y_value,
+                storage_box_credentials={
+                    'address': self.storage_box_address,
+                    'user': self.storage_box_user,
+                    'password': self.storage_box_password,
+                },
                 log_callback=self.log_message.emit,
                 debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
-                status_callback=on_map_downloads_queued
+                progress_callback=None,  # Could add progress callback if needed
+                provider_queue_callback=on_map_downloads_queued,
+                provider_start_callback=on_provider_downloads_starting,
             )
-            
-            if not lock_acquired:
-                # Lock acquisition failed after 60 minutes - mark job as error
-                raise ValueError(f"Map tile lock acquisition failed: {lock_error}")
-            
-            # Pre-cache all tiles for all zoom levels BEFORE multiprocessing
-            # This ensures tiles are downloaded with proper rate limiting and lock is released before workers start
-            try:
-                # Update status to "downloading maps (job_id)"
-                job_id = str(self.json_data.get('job_id', ''))
-                update_status(f"downloading maps ({job_id})", api_key=self.user)
-                               
-                # Pre-cache tiles for all zoom levels
-                cache_info = pre_cache_map_tiles_for_images(
-                    zoom_levels=zoom_levels,
-                    map_bounds=map_bounds,
-                    map_style=self.json_data.get('map_style', 'osm'),
-                    resolution_x=resolution_x_value,
-                    resolution_y=resolution_y_value,
-                    storage_box_credentials={
-                        'address': self.storage_box_address,
-                        'user': self.storage_box_user,
-                        'password': self.storage_box_password,
-                    },
-                    log_callback=self.log_message.emit,
-                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
-                    progress_callback=None  # Could add progress callback if needed
-                )
-                
-                if not cache_info or not cache_info.get('success', False):
-                    raise ValueError("Map tile pre-caching failed")
 
-                # Capture tile-count stats for job_logging (terminal-only mode)
-                self.tiles_local = int(cache_info.get('count_local', 0))
-                self.tiles_remote = int(cache_info.get('count_remote', 0))
-                self.tiles_service = int(cache_info.get('count_provider', 0))
-                
-                self.log_message.emit("Map tile pre-caching completed")
-                
-            finally:
-                # Always release the lock after tile pre-caching, before multiprocessing starts
-                release_map_tile_lock(
-                    self.json_data,
-                    log_callback=self.log_message.emit,
-                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None)
-                )
+            if not cache_info or not cache_info.get('success', False):
+                raise ValueError("Map tile pre-caching failed")
+
+            # Capture tile-count stats for job_logging (terminal-only mode)
+            self.tiles_local = int(cache_info.get('count_local', 0))
+            self.tiles_remote = int(cache_info.get('count_remote', 0))
+            self.tiles_service = int(cache_info.get('count_provider', 0))
+
+            self.log_message.emit("Map tile pre-caching completed")
             
             # Update status to "working (job_id)" - tiles are now cached, starting image generation
             update_status(f"working ({job_id})", api_key=self.user)
