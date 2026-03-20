@@ -1082,7 +1082,8 @@ def prune_route_by_interval(combined_route_data, interval_seconds, json_data=Non
 
 def interpolate_route_by_interval(route_points, interpolation_interval_seconds, log_callback=None, debug_callback=None):
     """Interpolate points so that gaps larger than the threshold in accumulated_time are filled.
-    New points copy all attributes of the previous point except accumulated_time, which is advanced.
+    New points linearly interpolate lat, lon, timestamp, accumulated_distance, elevation,
+    and heart_rate between the two surrounding original points.
     Interpolation is skipped if the next point has new_route_flag=True.
     """
     try:
@@ -1093,48 +1094,71 @@ def interpolate_route_by_interval(route_points, interpolation_interval_seconds, 
         new_points = []
         i = 0
         while i < len(route_points) - 1:
-            current_point = route_points[i]
+            orig_point = route_points[i]
             next_point = route_points[i + 1]
-            new_points.append(current_point)
+            new_points.append(orig_point)
             
             # Skip interpolation across new route boundaries
             if next_point.new_route_flag:
                 i += 1
                 continue
             
-            # Use named attributes for accumulated_time
-            current_time = current_point.accumulated_time
-            next_time = next_point.accumulated_time
+            origin_time = float(orig_point.accumulated_time)
+            next_time = float(next_point.accumulated_time)
             
-            # If times invalid or not increasing, move on safely
             try:
-                time_gap = float(next_time) - float(current_time)
+                total_gap = next_time - origin_time
             except Exception:
-                time_gap = 0.0
+                total_gap = 0.0
             
-            # Add interpolated points until within threshold
-            while time_gap > float(interpolation_interval_seconds):
-                # Build a new point copying everything from current_point but with advanced accumulated_time
-                new_accumulated_time = float(current_time) + float(interpolation_interval_seconds)
+            if total_gap <= 0:
+                i += 1
+                continue
+            
+            interval = float(interpolation_interval_seconds)
+            remaining = total_gap
+            step_time = origin_time
+            
+            while remaining > interval:
+                step_time += interval
+                remaining = next_time - step_time
+                fraction = (step_time - origin_time) / total_gap
                 
-                # Create interpolated point - new_route_flag should be False for interpolated points
+                # Linearly interpolate timestamp
+                new_timestamp = orig_point.timestamp
+                if orig_point.timestamp is not None and next_point.timestamp is not None:
+                    ts_delta = (next_point.timestamp - orig_point.timestamp).total_seconds() * fraction
+                    new_timestamp = orig_point.timestamp + timedelta(seconds=ts_delta)
+                    new_timestamp = new_timestamp.replace(microsecond=0)
+                
+                # Linearly interpolate position and distance
+                new_lat = orig_point.lat + (next_point.lat - orig_point.lat) * fraction
+                new_lon = orig_point.lon + (next_point.lon - orig_point.lon) * fraction
+                new_distance = orig_point.accumulated_distance + (next_point.accumulated_distance - orig_point.accumulated_distance) * fraction
+                
+                # Linearly interpolate elevation when both endpoints have values
+                new_elevation = orig_point.elevation
+                if orig_point.elevation is not None and next_point.elevation is not None:
+                    new_elevation = orig_point.elevation + (next_point.elevation - orig_point.elevation) * fraction
+                
+                # Linearly interpolate heart rate when both endpoints have values
+                new_hr = orig_point.heart_rate
+                if orig_point.heart_rate > 0 and next_point.heart_rate > 0:
+                    new_hr = round(orig_point.heart_rate + (next_point.heart_rate - orig_point.heart_rate) * fraction)
+                
                 new_point = RoutePoint(
-                    route_index=current_point.route_index,
-                    lat=current_point.lat,
-                    lon=current_point.lon,
-                    timestamp=current_point.timestamp,
-                    accumulated_time=new_accumulated_time,
-                    accumulated_distance=current_point.accumulated_distance,
+                    route_index=orig_point.route_index,
+                    lat=new_lat,
+                    lon=new_lon,
+                    timestamp=new_timestamp,
+                    accumulated_time=step_time,
+                    accumulated_distance=new_distance,
                     new_route_flag=False,
-                    filename=current_point.filename,
-                    elevation=current_point.elevation,
-                    heart_rate=current_point.heart_rate,
+                    filename=orig_point.filename,
+                    elevation=new_elevation,
+                    heart_rate=new_hr,
                 )
                 new_points.append(new_point)
-                # Advance current for next iteration relative to the same next_point
-                current_point = new_point
-                current_time = new_accumulated_time
-                time_gap = float(next_point.accumulated_time) - float(current_time)
             
             i += 1
         

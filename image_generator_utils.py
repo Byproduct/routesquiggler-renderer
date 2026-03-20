@@ -390,7 +390,7 @@ def resolution_scale_to_tile_threshold_multiplier(resolution_scale: float, map_d
     else:
         multiplier = 1.0
 
-    # Optional additional modifier to influence how detailed maps should be.
+    # Optional additional modifier in job data to influence how detailed maps should be.
     # - "low"  => fewer tiles
     # - "normal" (or omitted) => no additional change
     # - "high" => more tiles
