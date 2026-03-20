@@ -111,6 +111,7 @@ def pre_cache_map_tiles_for_video(
     debug_callback=None,
     provider_queue_callback=None,
     provider_start_callback=None,
+    provider_progress_callback=None,
 ):
     """
     Identify and cache map tiles for all unique bounding boxes required for
@@ -224,6 +225,7 @@ def pre_cache_map_tiles_for_video(
             progress_callback=progress_callback,
             provider_queue_callback=provider_queue_callback,
             provider_start_callback=provider_start_callback,
+            provider_progress_callback=provider_progress_callback,
         )
         return {
             'total_tiles_cached': total_required,
@@ -253,6 +255,7 @@ def cache_map_tiles(
     max_workers=None,
     provider_queue_callback=None,
     provider_start_callback=None,
+    provider_progress_callback=None,
 ):
     """
     Cache map tiles needed for video generation.
@@ -325,6 +328,7 @@ def cache_map_tiles(
             debug_callback=debug_callback,
             provider_queue_callback=provider_queue_callback,
             provider_start_callback=provider_start_callback,
+            provider_progress_callback=provider_progress_callback,
         )
         
         if cache_result is None:

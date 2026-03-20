@@ -420,12 +420,26 @@ class VideoGeneratorWorker(QObject):
             # another renderer.
             job_id = str(self.json_data.get('job_id', ''))
             from update_status import update_status
+            _last_provider_status_time = time.time()
+            _last_provider_milestone = 0
 
             def on_map_downloads_queued():
                 update_status("Map downloads queued", api_key=self.user)
 
             def on_provider_downloads_starting():
                 update_status(f"downloading maps ({job_id})", api_key=self.user)
+
+            def on_provider_downloads_progress(milestone):
+                nonlocal _last_provider_status_time, _last_provider_milestone
+                if milestone <= _last_provider_milestone:
+                    return
+                now = time.time()
+                if now - _last_provider_status_time < 10:
+                    return
+                update_status(f"downloading maps ({job_id}) {milestone}%",
+                              api_key=self.user)
+                _last_provider_status_time = now
+                _last_provider_milestone = milestone
 
             cache_result = cache_map_tiles(
                 self.json_data,
@@ -440,6 +454,7 @@ class VideoGeneratorWorker(QObject):
                 max_workers=self.max_workers,
                 provider_queue_callback=on_map_downloads_queued,
                 provider_start_callback=on_provider_downloads_starting,
+                provider_progress_callback=on_provider_downloads_progress,
             )
             
             if not cache_result:

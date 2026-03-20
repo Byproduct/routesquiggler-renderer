@@ -358,6 +358,7 @@ def _download_tiles_from_remote_cache(
             progress_callback("progress_bar_tiles", 0,
                               "Checking remote tile cache")
 
+        total = len(tasks)
         with ThreadPoolExecutor(max_workers=MAX_FTP_WORKERS) as pool:
             futures = {pool.submit(_ftp_download_one, t): t for t in tasks}
             done_count = 0
@@ -366,10 +367,12 @@ def _download_tiles_from_remote_cache(
                 if err is None:
                     downloaded.add((x, y, zoom))
                 done_count += 1
-                if progress_callback and done_count % 50 == 0:
-                    pct = int(done_count / len(tasks) * 30)
-                    progress_callback("progress_bar_tiles", pct,
-                                      f"Remote cache: {done_count}/{len(tasks)}")
+                if done_count % 50 == 0:
+                    _debug(f"Remote cache: checked {done_count}/{total}")
+                    if progress_callback:
+                        pct = int(done_count / total * 30)
+                        progress_callback("progress_bar_tiles", pct,
+                                          f"Remote cache: {done_count}/{total}")
 
         elapsed = time.perf_counter() - t0
         _debug(f"{len(downloaded)} tiles downloaded from remote "
@@ -389,6 +392,7 @@ def cache_required_tiles(
     progress_callback=None,
     provider_queue_callback=None,
     provider_start_callback=None,
+    provider_progress_callback=None,
 ) -> dict:
     """Cache all tiles required for a job using the three-tier system.
 
@@ -409,6 +413,8 @@ def cache_required_tiles(
             lock queue — callers typically set a "queued" status here.
         provider_start_callback: Called (no args) when provider downloads are
             about to begin — callers typically set a "downloading" status here.
+        provider_progress_callback: Called as ``callback(milestone_percent)``
+            on provider download milestones (10, 20, ... 100).
 
     Returns:
         Dict with caching success and tile counts:
@@ -570,6 +576,7 @@ def cache_required_tiles(
                         f"Downloading {len(tiles_need_provider)} tiles from "
                         f"provider")
 
+                last_provider_milestone = 0
                 for idx, tile in enumerate(tiles_need_provider):
                     x, y, zoom = tile
                     try:
@@ -591,6 +598,17 @@ def cache_required_tiles(
                         progress_callback(
                             "progress_bar_tiles", pct,
                             f"Provider: {idx + 1}/{len(tiles_need_provider)}")
+
+                    # Provider-only milestones for external status reporting.
+                    if provider_progress_callback:
+                        provider_pct = int((idx + 1) / len(tiles_need_provider) * 100)
+                        milestone = (provider_pct // 10) * 10
+                        if milestone > last_provider_milestone and 10 <= milestone <= 100:
+                            try:
+                                provider_progress_callback(milestone)
+                            except Exception:
+                                pass
+                            last_provider_milestone = milestone
 
                 provider_elapsed = time.perf_counter() - t0
                 _debug(f"{count_provider} tiles downloaded from providers "

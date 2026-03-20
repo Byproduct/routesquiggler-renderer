@@ -366,12 +366,26 @@ class ImageGeneratorWorker(QObject):
             # it can release/re-check the remote cache when queued behind
             # another renderer.
             job_id = str(self.json_data.get('job_id', ''))
+            _last_provider_status_time = time.time()
+            _last_provider_milestone = 0
 
             def on_map_downloads_queued():
                 update_status("Map downloads queued", api_key=self.user)
 
             def on_provider_downloads_starting():
                 update_status(f"downloading maps ({job_id})", api_key=self.user)
+
+            def on_provider_downloads_progress(milestone):
+                nonlocal _last_provider_status_time, _last_provider_milestone
+                if milestone <= _last_provider_milestone:
+                    return
+                now = time.time()
+                if now - _last_provider_status_time < 10:
+                    return
+                update_status(f"downloading maps ({job_id}) {milestone}%",
+                              api_key=self.user)
+                _last_provider_status_time = now
+                _last_provider_milestone = milestone
 
             cache_info = pre_cache_map_tiles_for_images(
                 zoom_levels=zoom_levels,
@@ -389,6 +403,7 @@ class ImageGeneratorWorker(QObject):
                 progress_callback=None,  # Could add progress callback if needed
                 provider_queue_callback=on_map_downloads_queued,
                 provider_start_callback=on_provider_downloads_starting,
+                provider_progress_callback=on_provider_downloads_progress,
             )
 
             if not cache_info or not cache_info.get('success', False):
