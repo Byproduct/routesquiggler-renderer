@@ -469,6 +469,21 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
                     
                     if latest_end_time is None or route_end_timestamp > latest_end_time:
                         latest_end_time = route_end_timestamp
+
+        # If requested, make all POIs visible from the beginning by aligning their
+        # timestamps to the very first route point across all routes/files.
+        if json_data and json_data.get('poi_show_always', False) is True and earliest_start_time is not None:
+            all_pois = json_data.get('_points_of_interest_data', [])
+            if all_pois:
+                json_data['_points_of_interest_data'] = [
+                    poi._replace(timestamp=earliest_start_time) if hasattr(poi, '_replace') else poi
+                    for poi in all_pois
+                ]
+                if debug_callback:
+                    debug_callback(
+                        f"poi_show_always enabled: aligned {len(all_pois)} POI timestamps "
+                        f"to earliest route start {earliest_start_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    )
         
         # Calculate total accumulated time based on mode
         if is_single_route_mode:
