@@ -10,6 +10,10 @@ import traceback
 import zipfile
 from io import BytesIO
 
+# Wall-clock time of last successful jobs.db upload to the storage box (terminal mode only).
+_JOBS_DB_LAST_UPLOAD_TIME: float | None = None
+_JOBS_DB_UPLOAD_INTERVAL_SEC = 24 * 60 * 60
+
 # Third-party imports
 import requests
 from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal
@@ -18,6 +22,29 @@ from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, QTimer, Signal
 from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
 from network_retry import retry_operation
 from write_log import write_debug_log
+
+
+def upload_jobs_db(log_callback=None):
+    """
+    Refresh jobs.db on the storage box at most once per 24 hours (in-process timer).
+    No-op when gui mode is enabled.
+    """
+    from config import config
+
+    if config.gui:
+        return
+
+    global _JOBS_DB_LAST_UPLOAD_TIME
+
+    now = time.time()
+    if _JOBS_DB_LAST_UPLOAD_TIME is not None:
+        if now - _JOBS_DB_LAST_UPLOAD_TIME < _JOBS_DB_UPLOAD_INTERVAL_SEC:
+            return
+
+    from jobs_db_upload import upload_jobs_db_to_storage
+
+    if upload_jobs_db_to_storage(log_callback=log_callback):
+        _JOBS_DB_LAST_UPLOAD_TIME = time.time()
 
 
 def set_attribution_from_theme(json_data):

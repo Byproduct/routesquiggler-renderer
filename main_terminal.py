@@ -23,7 +23,7 @@ import requests
 from config import config
 from image_generator_multiprocess import StatusUpdate
 from image_generator_utils import extract_and_store_points_of_interest, harmonize_gpx_times
-from job_request import apply_vertical_video_swap, set_attribution_from_theme
+from job_request import apply_vertical_video_swap, set_attribution_from_theme, upload_jobs_db
 from update_status import update_status
 from write_log import write_debug_log, write_log
 
@@ -836,7 +836,9 @@ def run_job_processing_loop_terminal(bootup_manager, app):
                 from update_status import update_status
                 update_status("idle", api_key=bootup_manager.config.user)
                 current_status = "idle"
-            
+
+            upload_jobs_db(log_callback=write_log)
+
             json_data, gpx_files_info = request_job_terminal(
                 bootup_manager.config.api_url,
                 bootup_manager.config.user,
