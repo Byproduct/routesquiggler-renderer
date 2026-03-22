@@ -348,9 +348,9 @@ class ImageGeneratorWorker(QObject):
                 map_transparency_value = 30
             
             try:
-                line_width_value = int(self.json_data.get('line_width', 3))
+                line_width_value = float(self.json_data.get('line_width', 3))
             except (ValueError, TypeError):
-                line_width_value = 3
+                line_width_value = 3.0
             
             resolution_x_value = _parse_dimension(self.json_data.get('image_resolution_x', 1920), 1920)
             resolution_y_value = _parse_dimension(self.json_data.get('image_resolution_y', 1080), 1080)
