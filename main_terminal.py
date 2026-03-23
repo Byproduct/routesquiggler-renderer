@@ -431,9 +431,9 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
             write_debug_log(traceback.format_exc())
             return None, None
     
-    # Get the response
+    # Get the response (use `is None`, not `not response`: requests.Response is falsy for 4xx/5xx)
     response = result_container['response']
-    if not response:
+    if response is None:
         write_log("No response received from server")
         return None, None
     
@@ -444,7 +444,10 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
         write_debug_log(f"Response Content-Length: {response.headers.get('Content-Length', 'not set')}")
         
         if response.status_code != 200:
-            write_log(f"Job request failed with status {response.status_code}: {response.text[:200]}")
+            body = response.text
+            write_log(f"Job request failed with status {response.status_code}: {body[:200]}")
+            if "App version mismatch" in body:
+                write_log("=== Update required! ===")
             return None, None
         
         # Check content type

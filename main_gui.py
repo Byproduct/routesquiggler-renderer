@@ -1373,7 +1373,9 @@ class MainWindow(QMainWindow):
                     margin: 5px;
                 }
             """)
+            self.log_widget.add_log("=====================================================")
             self.log_widget.add_log("Bootup failed - application may not function properly")
+            self.log_widget.add_log("=====================================================")
         
         # Clean up bootup thread
         if self.bootup_thread:

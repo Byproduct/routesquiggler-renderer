@@ -113,6 +113,15 @@ class BootupManager:
             self.system_tray = None
             return True  # Return True to not break the bootup chain
     
+    def _log_update_required_if_version_mismatch(self, response_text: str) -> None:
+        if "App version mismatch" not in response_text:
+            return
+        self.log_callback("")
+        self.log_callback("================")
+        self.log_callback("Update required!")
+        self.log_callback("================")
+        self.log_callback("")
+    
     def make_heartbeat_call(self):
         """Make a heartbeat API call to register with the server"""
         if not self.config.user or not self.hardware_id or not self.config.api_url:
@@ -153,9 +162,11 @@ class BootupManager:
             elif response.status_code == 401:
                 # Unauthorized - concise error message, keep log expanded
                 self.log_callback(f"Response 401: {response.text}")
+                self._log_update_required_if_version_mismatch(response.text)
             elif response.status_code == 404:
                 # Not found - concise error message, keep log expanded
                 self.log_callback(f"Response 404: {response.text}")
+                self._log_update_required_if_version_mismatch(response.text)
             else:
                 # Unexpected status code - show all debug info, keep log expanded
                 self.log_callback(f"Unexpected response status: {response.status_code}")
@@ -164,6 +175,7 @@ class BootupManager:
                 self.log_callback(f"Body: {body}")
                 self.log_callback(f"Response headers: {dict(response.headers)}")
                 self.log_callback(f"Response body: {response.text}")
+                self._log_update_required_if_version_mismatch(response.text)
             return False
                 
         except requests.exceptions.Timeout:

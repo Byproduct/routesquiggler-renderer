@@ -245,7 +245,10 @@ def main():
         if bootup_success:
             write_log("Bootup completed successfully")           
         else:
-            write_log("Bootup failed - application may not function properly")
+            write_log("=========================================================")
+            write_log("| Bootup failed – application may not function properly |")
+            write_log("| Trying to proceed anyway.                             |")
+            write_log("=========================================================")
         
         # Check if we should run a test image job
         if testimage_folder is not None:

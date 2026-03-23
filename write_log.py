@@ -40,6 +40,12 @@ _tte_thread = threading.Thread(target=_tte_worker, daemon=True)
 _tte_thread.start()
 
 
+def _format_console_timestamped(message: str) -> str:
+    """Prefix a line for console/TTE output: [YYYY-MM-DD HH:MM] message."""
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+    return f"[{ts}] {message}"
+
+
 def _print_with_tte(message: str) -> None:
     """
     Enqueue a message for the TTE Print effect (typewriter animation).
@@ -74,7 +80,7 @@ def write_log(message):
     Args:
         message (str): The message to log
     """
-    print(message)
+    print(_format_console_timestamped(message))
     _write_to_log_file(message)
 
 
@@ -88,4 +94,4 @@ def write_debug_log(message):
     if config.debug_logging:
         full_message = f"Debug: {message}"
         _write_to_log_file(full_message)
-        _print_with_tte(full_message)
+        _print_with_tte(_format_console_timestamped(full_message))
