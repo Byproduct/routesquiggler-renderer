@@ -18,8 +18,8 @@ import cartopy.crs as ccrs
 import numpy as np
 from PIL import Image
 
-# Increase PIL image size limit to 200 megapixels to handle large renders
-Image.MAX_IMAGE_PIXELS = 200_000_000
+# PIL refuses huge decodes by default (decompression bomb mitigation). Allow up to 20k×20k.
+Image.MAX_IMAGE_PIXELS = 400_000_000
 
 # Local imports
 from config import config
