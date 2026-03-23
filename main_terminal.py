@@ -445,7 +445,11 @@ def request_job_terminal(api_url, user, hardware_id, app_version):
         
         if response.status_code != 200:
             body = response.text
-            write_log(f"Job request failed with status {response.status_code}: {body[:200]}")
+            if response.status_code == 502:
+                write_log("Job request failed with status 502 - service down")
+                write_debug_log(f"502 response body (first 500 chars): {body[:500]}")
+            else:
+                write_log(f"Job request failed with status {response.status_code}: {body[:200]}")
             if "App version mismatch" in body:
                 write_log("=== Update required! ===")
             return None, None

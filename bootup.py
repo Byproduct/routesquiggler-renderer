@@ -167,6 +167,12 @@ class BootupManager:
                 # Not found - concise error message, keep log expanded
                 self.log_callback(f"Response 404: {response.text}")
                 self._log_update_required_if_version_mismatch(response.text)
+            elif response.status_code == 502:
+                self.log_callback("Heartbeat failed with status 502 - service down")
+                write_debug_log(
+                    f"502 response body (first 500 chars): {response.text[:500]}"
+                )
+                self._log_update_required_if_version_mismatch(response.text)
             else:
                 # Unexpected status code - show all debug info, keep log expanded
                 self.log_callback(f"Unexpected response status: {response.status_code}")
