@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Route Squiggler render client - main entry point
+Uses Qt architecture for signals, threading etc. because this used to have a now-deprecated GUI mode. 
+A demo renderer fork still uses it though, so intentionally not restucturing to plain python. 
 """
 
 # Standard library imports
@@ -8,7 +10,6 @@ import argparse
 import multiprocessing as mp
 import os
 import sys
-from queue import Empty
 
 # CRITICAL: Set multiprocessing start method to 'spawn' on all platforms.
 # This ensures consistent behavior between Windows and Linux:
@@ -31,14 +32,15 @@ from config import config
 HELP_TEXT = """
 Argument examples:
   python main.py                            # Use settings in config.txt
-  python main.py gui / nogui                # Override GUI or terminal-only mode
   python main.py debuglog / nodebuglog      # Override verbose logging on/off
-  python main.py threads 7                  # Override thread count (default max-2) 
-  python main.py testimage                  # Run test image on first folder (terminal only)
-  python main.py testimage 353              # Run test image on folder "353" (nogui only)
-  python main.py testvideo                  # Run test video on first folder (nogui only)
-  python main.py testvideo 351              # Run test video on folder "351" (nogui only)
-  python main.py nogui debuglog testimage   # Multiple arguments can be combined
+  python main.py threads 7                  # Override thread count (default max-2)
+  python main.py testimage                  # Run test image on first folder
+  python main.py testimage 353              # Run test image on folder "353"
+  python main.py testvideo                  # Run test video on first folder
+  python main.py testvideo 351              # Run test video on folder "351"
+  python main.py debuglog testimage         # Multiple arguments can be combined
+
+  (gui / nogui are accepted for compatibility and ignored; this client is terminal-only.)
 """  
 
 # Calculate default thread count (max-2, minimum 1)
@@ -59,14 +61,13 @@ def parse_and_handle_arguments():
     parser.add_argument(
         'args',
         nargs='*',
-        help='Command arguments: gui, nogui, threads <number>, debuglog, nodebuglog, testimage [folder], testvideo [folder], help'
+        help='Command arguments: threads <number>, debuglog, nodebuglog, testimage [folder], testvideo [folder], help (gui/nogui ignored)'
     )
     
     # Parse arguments
     args = parser.parse_args()
     
     # Initialize with defaults
-    gui_override = None
     thread_override = None
     debuglog_override = None
     testimage_folder = None
@@ -82,12 +83,9 @@ def parse_and_handle_arguments():
             print(HELP_TEXT.strip())
             sys.exit(0)
             
-        elif arg == 'gui':
-            gui_override = True
-            
-        elif arg == 'nogui':
-            gui_override = False
-        
+        elif arg in ('gui', 'nogui'):
+            pass
+
         elif arg == 'debuglog':
             debuglog_override = True
         
@@ -115,12 +113,6 @@ def parse_and_handle_arguments():
                 sys.exit(1)
         
         elif arg == 'testimage':
-            # testimage forces nogui mode
-            if gui_override is True:
-                print("Error: 'testimage' cannot be used with 'gui' mode")
-                print("The 'testimage' command is only available in terminal (nogui) mode")
-                sys.exit(1)
-            gui_override = False
             # Check if next argument is a folder name (not another command)
             if i + 1 < len(args.args) and args.args[i + 1] not in ['gui', 'nogui', 'threads', 'debuglog', 'nodebuglog', 'help', 'testimage', 'testvideo']:
                 testimage_folder = args.args[i + 1]
@@ -130,12 +122,6 @@ def parse_and_handle_arguments():
                 testimage_folder = ""
         
         elif arg == 'testvideo':
-            # testvideo forces nogui mode
-            if gui_override is True:
-                print("Error: 'testvideo' cannot be used with 'gui' mode")
-                print("The 'testvideo' command is only available in terminal (nogui) mode")
-                sys.exit(1)
-            gui_override = False
             # Check if next argument is a folder name (not another command)
             if i + 1 < len(args.args) and args.args[i + 1] not in ['gui', 'nogui', 'threads', 'debuglog', 'nodebuglog', 'help', 'testimage', 'testvideo']:
                 testvideo_folder = args.args[i + 1]
@@ -146,15 +132,12 @@ def parse_and_handle_arguments():
                 
         else:
             print(f"Error: Unknown argument '{arg}'")
-            print("Valid arguments: gui, nogui, threads <number>, debuglog, nodebuglog, testimage [folder], testvideo [folder], help")
+            print("Valid arguments: threads <number>, debuglog, nodebuglog, testimage [folder], testvideo [folder], help (gui/nogui ignored)")
             sys.exit(1)
             
         i += 1
     
     # Apply overrides
-    if gui_override is not None:
-        config.gui = gui_override
-        
     if thread_override is not None:
         config.thread_count = thread_override
         config._thread_count_from_file = False
@@ -167,10 +150,10 @@ def parse_and_handle_arguments():
     if debuglog_override is not None:
         config.debug_logging = debuglog_override
     
-    return gui_override, thread_override, debuglog_override, testimage_folder, testvideo_folder
+    return thread_override, debuglog_override, testimage_folder, testvideo_folder
 
 # Parse and handle command line arguments
-gui_override, thread_override, debuglog_override, testimage_folder, testvideo_folder = parse_and_handle_arguments()  
+thread_override, debuglog_override, testimage_folder, testvideo_folder = parse_and_handle_arguments()
 
 # Local imports
 from write_log import write_log, write_debug_log
@@ -180,30 +163,15 @@ import matplotlib
 matplotlib.use('Agg')
 
 # Local imports
-from bootup import BootupManager, BootupThread, BootupWorker
-from image_generator_main import ImageGeneratorWorker, ImageWorkerThread
-from image_generator_multiprocess import StatusUpdate
-from image_generator_test import TestImageManager
-from job_request import JobRequestManager
-from video_generator_test import TestVideoManager
+from bootup import BootupManager
 from main_terminal import run_test_image_terminal, run_test_video_terminal, run_job_processing_loop_terminal
 
-# GUI-specific imports
-if config.gui:
-    from PySide6.QtWidgets import QApplication
-    from main_gui import MainWindow
-else:
-    # Terminal mode needs QCoreApplication for Qt event loop (workers use Qt signals)
-    from PySide6.QtCore import QCoreApplication
+# QCoreApplication provides the Qt event loop (workers use Qt signals)
+from PySide6.QtCore import QCoreApplication
 
 
-           
 def main():
-    # Show which mode is being used
-    if gui_override is not None:
-        write_log(f"Starting Route Squiggler Render Client in {'GUI' if config.gui else 'terminal-only'} mode (overridden by command line)")
-    else:
-        write_log(f"Starting Route Squiggler Render Client in {'GUI' if config.gui else 'terminal-only'} mode (from config.txt)")
+    write_log("Starting Route Squiggler Render Client (terminal mode)")
     
     # Show thread count being used
     if thread_override is not None:
@@ -221,59 +189,38 @@ def main():
     else:
         write_log(f"Debug logging: {'enabled' if config.debug_logging else 'disabled'} (from config.txt)")
     
-    if config.gui:
-        # GUI mode
-        app = QApplication(sys.argv)       
-        app.setApplicationName("Route Squiggler - Render Client")
-        app.setApplicationVersion("1.0.0")
-        app.setOrganizationName("Route Squiggler")
-        app.setQuitOnLastWindowClosed(True)       
-        window = MainWindow()
-        window.show()
-        
-        sys.exit(app.exec())
+    app = QCoreApplication(sys.argv)
+
+    bootup_manager = BootupManager(None)
+    bootup_success = bootup_manager.run_bootup_terminal()
+
+    if bootup_success:
+        write_log("Bootup completed successfully")
     else:
-        # Terminal-only mode
-        # Create QCoreApplication to provide Qt event loop for worker signals
-        app = QCoreApplication(sys.argv)
-        
-        # Run bootup sequence
-        from bootup import BootupManager
-        bootup_manager = BootupManager(None)  # No main_window needed for terminal mode
-        bootup_success = bootup_manager.run_bootup_terminal()
-        
-        if bootup_success:
-            write_log("Bootup completed successfully")           
+        write_log("=========================================================")
+        write_log("| Bootup failed – application may not function properly |")
+        write_log("| Trying to proceed anyway.                             |")
+        write_log("=========================================================")
+
+    if testimage_folder is not None:
+        write_log("Test image mode requested")
+        folder_arg = testimage_folder if testimage_folder else None
+        success = run_test_image_terminal(bootup_manager, folder_arg, app)
+        if success:
+            write_log("Test image job completed. Exiting.")
         else:
-            write_log("=========================================================")
-            write_log("| Bootup failed – application may not function properly |")
-            write_log("| Trying to proceed anyway.                             |")
-            write_log("=========================================================")
-        
-        # Check if we should run a test image job
-        if testimage_folder is not None:
-            write_log("Test image mode requested")
-            # Convert empty string to None for "first folder" logic
-            folder_arg = testimage_folder if testimage_folder else None
-            success = run_test_image_terminal(bootup_manager, folder_arg, app)
-            if success:
-                write_log("Test image job completed. Exiting.")
-            else:
-                write_log("Test image job failed. Exiting.")
-        # Check if we should run a test video job
-        elif testvideo_folder is not None:
-            write_log("Test video mode requested")
-            # Convert empty string to None for "first folder" logic
-            folder_arg = testvideo_folder if testvideo_folder else None
-            success = run_test_video_terminal(bootup_manager, folder_arg, app)
-            if success:
-                write_log("Test video job completed. Exiting.")
-            else:
-                write_log("Test video job failed. Exiting.")
+            write_log("Test image job failed. Exiting.")
+    elif testvideo_folder is not None:
+        write_log("Test video mode requested")
+        folder_arg = testvideo_folder if testvideo_folder else None
+        success = run_test_video_terminal(bootup_manager, folder_arg, app)
+        if success:
+            write_log("Test video job completed. Exiting.")
         else:
-            # Start job processing loop (like pressing play button in GUI mode)
-            write_log("Starting job processing mode...")
-            run_job_processing_loop_terminal(bootup_manager, app)
+            write_log("Test video job failed. Exiting.")
+    else:
+        write_log("Starting job processing mode...")
+        run_job_processing_loop_terminal(bootup_manager, app)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# GUI framework
+# Qt (Core): event loop, threads, signals for workers (no main window)
 PySide6>=6.5.0
 
 # Windows-only hardware ID detection

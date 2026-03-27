@@ -10,7 +10,6 @@ class Config:
     
     def __init__(self):
         # Set default values
-        self.gui = False
         self.app_version = None
         self.api_url = None
         self.user = None
@@ -51,9 +50,7 @@ class Config:
                         value = value.strip()
                         
                         # Set attributes based on config
-                        if key == 'gui':
-                            self.gui = value.lower() == 'true'
-                        elif key == 'api_url':
+                        if key == 'api_url':
                             self.api_url = value
                         elif key == 'user':
                             self.user = value
