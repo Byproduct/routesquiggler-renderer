@@ -67,7 +67,8 @@ def upload_jobs_db_to_storage(log_callback=None) -> bool:
         )
         return False
     if not JOBS_DB.is_file():
-        _err(f"Error: jobs database not found: {JOBS_DB}")
+        # Fresh installs have no DB until the first completed job is logged.
+        # Skip upload silently to avoid noisy startup/job-request logs.
         return False
 
     remote_name = f"{config.user}-{date.today().isoformat()}.db"
