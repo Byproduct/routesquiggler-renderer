@@ -295,13 +295,13 @@ class ImageGeneratorWorker(QObject):
             elif total_pixels < 20_000_000:  # 4K and 5760x3240 "6K"
                 max_tiles = 250
             elif total_pixels < 34_000_000:  # up to 8K
-                max_tiles = 350
+                max_tiles = 400
             elif total_pixels < 100_000_000:  # up to 10k x 10k 100MP
-                max_tiles = 500
-            elif total_pixels < 150_000_000:  # up to 15k x 15k 300MP
                 max_tiles = 600
+            elif total_pixels < 150_000_000:  # up to 15k x 15k 300MP
+                max_tiles = 800
             else:  # 300-400MP
-                max_tiles = 700
+                max_tiles = 1000
 
             # Calculate map bounds
             map_bounds = (
