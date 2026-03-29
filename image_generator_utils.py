@@ -342,18 +342,18 @@ def calculate_resolution_scale(resolution_x: int, resolution_y: int) -> float:
     
     The scale is determined by the total number of pixels (resolution_x × resolution_y):
     
-    < 1 MP   → scale 0.7
-    < 8 MP   → scale 1
-    8–18 MP  → scale 2
-    18–33 MP → scale 3
-    ≥ 33 MP  → scale 4
-    
+    < 1 MP   → scale 0.7 
+    < 8 MP   → scale 1  (1080p, )
+    8–18 MP  → scale 2  (4k and above)
+    18–33 MP → scale 3  (5760 x 3240 and above)
+    33-72 MP  → scale 4  (8k above)
+    72-100 MP → scale 5    (10k x 10k mp and above)
+    100+ MP → scale 6    (15k x 15k mp and above)
     Args:
         resolution_x: Image width in pixels
         resolution_y: Image height in pixels
     
-    Returns:
-        Resolution scale (0.7, 1, 2, 3, or 4)
+    Small variations to fit options in creator, and intentionally scaling the elements smaller in massive files  
     """
     total_pixels = resolution_x * resolution_y
     
@@ -365,8 +365,12 @@ def calculate_resolution_scale(resolution_x: int, resolution_y: int) -> float:
         scale = 2.0
     elif total_pixels < 33_000_000:
         scale = 3.0
-    else:
+    elif total_pixels < 72_000_000:
         scale = 4.0
+    elif total_pixels < 100_000_000:
+        scale = 5.0
+    else:
+        scale = 6.0
     
     debug_log(f"calculate_resolution_scale: resolution_x={resolution_x}, resolution_y={resolution_y}, total_pixels={total_pixels:,}, scale={scale}")
     
