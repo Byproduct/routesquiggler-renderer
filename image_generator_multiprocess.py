@@ -272,7 +272,7 @@ def generate_images_parallel(
     while completed_processes < total_processes:
         try:
             # Get a result (this will block until a process completes)
-            result = result_queue.get(timeout=600)  # 10 minute timeout per process
+            result = result_queue.get(timeout=1200)  # 20-minute timeout per process
             if result[1] is not None:  # Only add successful results
                 results.append(result)
             completed_processes += 1
