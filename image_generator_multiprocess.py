@@ -896,7 +896,12 @@ def generate_image_for_zoom_level(
             update_debug_output("adding clock", textfield=False)
             image_bytes = _composite_clock_onto_image(image_bytes, first_point_time, image_scale)
         
-        # Optimize PNG
+        # Optimize PNG (oxipng) — server status once per output file
+        try:
+            if config.user:
+                update_status(f"compressing ({job_id})", api_key=config.user)
+        except Exception:
+            pass
         update_debug_output("compressing", textfield=False)
         optimized_bytes = optimize_png_bytes(image_bytes)
         
@@ -1134,13 +1139,6 @@ def upload_to_storage_box(
         ftp = None
         gallery_html = None
         try:
-            # Update server status to "uploading (job_id)"
-            try:
-                if config.user:
-                    update_status(f"uploading ({job_id})", api_key=config.user)
-            except Exception:
-                pass  # Silently ignore if status update fails
-            
             # Update local UI status (if callback provided)
             if update_debug_output:
                 update_debug_output("uploading", textfield=False)
@@ -1250,6 +1248,13 @@ def upload_to_storage_box(
                 except:
                     pass
     
+    # Server status once per file (not on each retry attempt)
+    try:
+        if config.user:
+            update_status(f"uploading ({job_id})", api_key=config.user)
+    except Exception:
+        pass
+
     # Wrap the upload operation with retry logic
     return retry_operation(
         operation=_do_upload,
