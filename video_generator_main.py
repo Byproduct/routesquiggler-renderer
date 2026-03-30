@@ -19,6 +19,7 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 # Local imports
 from job_request import update_job_status
+from map_tile_caching import MapTileCachingExhaustedError, run_map_tile_caching_with_retries
 from network_retry import retry_operation
 from config import config
 from video_generator_cache_map_images import cache_map_images
@@ -441,24 +442,45 @@ class VideoGeneratorWorker(QObject):
                 _last_provider_status_time = now
                 _last_provider_milestone = milestone
 
-            cache_result = cache_map_tiles(
-                self.json_data,
-                combined_route_data=self.combined_route_data,
-                storage_box_credentials={
-                    'address': self.storage_box_address,
-                    'user': self.storage_box_user,
-                    'password': self.storage_box_password,
-                },
-                progress_callback=self.progress_update.emit,
+            def on_map_tile_retries_exhausted():
+                if self.is_test:
+                    self.log_message.emit(
+                        "Test job: map tile caching failed after all retries — "
+                        "skipping API status update"
+                    )
+                    return
+                update_job_status(
+                    self.api_url,
+                    self.user,
+                    self.hardware_id,
+                    self.app_version,
+                    self.json_data.get('job_id', ''),
+                    'error',
+                    self.log_message.emit,
+                )
+
+            def fetch_video_map_tile_cache():
+                return cache_map_tiles(
+                    self.json_data,
+                    combined_route_data=self.combined_route_data,
+                    storage_box_credentials={
+                        'address': self.storage_box_address,
+                        'user': self.storage_box_user,
+                        'password': self.storage_box_password,
+                    },
+                    progress_callback=self.progress_update.emit,
+                    log_callback=self.log_message.emit,
+                    max_workers=self.max_workers,
+                    provider_queue_callback=on_map_downloads_queued,
+                    provider_start_callback=on_provider_downloads_starting,
+                    provider_progress_callback=on_provider_downloads_progress,
+                )
+
+            cache_result = run_map_tile_caching_with_retries(
+                fetch_video_map_tile_cache,
                 log_callback=self.log_message.emit,
-                max_workers=self.max_workers,
-                provider_queue_callback=on_map_downloads_queued,
-                provider_start_callback=on_provider_downloads_starting,
-                provider_progress_callback=on_provider_downloads_progress,
+                on_retries_exhausted=on_map_tile_retries_exhausted,
             )
-            
-            if not cache_result:
-                raise ValueError("Map tile caching failed")
 
             # Capture tile-count stats for job_logging (terminal-only mode)
             cache_info = cache_result.get('cache_result', {}) if cache_result else {}
@@ -708,7 +730,12 @@ class VideoGeneratorWorker(QObject):
                     self.job_completed_ok = False
                 
                 self.finished.emit()
-                
+
+        except MapTileCachingExhaustedError as e:
+            self.job_completed_ok = False
+            self.log_message.emit(str(e))
+            self.error.emit(str(e))
+
         except Exception as e:
             self.log_message.emit(f"Error in video generation: {str(e)}")
             

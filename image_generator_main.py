@@ -23,6 +23,7 @@ from image_generator_maptileutils import detect_zoom_level
 from image_generator_multiprocess import generate_images_parallel
 from image_generator_utils import convert_timestamp_to_job_timezone, normalize_timestamp
 from job_request import update_job_status
+from map_tile_caching import MapTileCachingExhaustedError, run_map_tile_caching_with_retries
 from update_status import update_status
 from video_generator_create_combined_route import create_combined_route, get_first_track_point_time_from_gpx_content
 from video_generator_sort_files_chronologically import get_sorted_gpx_list
@@ -393,27 +394,42 @@ class ImageGeneratorWorker(QObject):
                 _last_provider_status_time = now
                 _last_provider_milestone = milestone
 
-            cache_info = pre_cache_map_tiles_for_images(
-                zoom_levels=zoom_levels,
-                map_bounds=map_bounds,
-                map_style=self.json_data.get('map_style', 'osm'),
-                resolution_x=resolution_x_value,
-                resolution_y=resolution_y_value,
-                storage_box_credentials={
-                    'address': self.storage_box_address,
-                    'user': self.storage_box_user,
-                    'password': self.storage_box_password,
-                },
-                log_callback=self.log_message.emit,
-                debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
-                progress_callback=None,  # Could add progress callback if needed
-                provider_queue_callback=on_map_downloads_queued,
-                provider_start_callback=on_provider_downloads_starting,
-                provider_progress_callback=on_provider_downloads_progress,
-            )
+            def on_map_tile_retries_exhausted():
+                update_job_status(
+                    self.api_url,
+                    self.user,
+                    self.hardware_id,
+                    self.app_version,
+                    self.json_data.get('job_id', ''),
+                    'error',
+                    self.log_message.emit,
+                )
 
-            if not cache_info or not cache_info.get('success', False):
-                raise ValueError("Map tile pre-caching failed")
+            def fetch_image_tile_cache():
+                return pre_cache_map_tiles_for_images(
+                    zoom_levels=zoom_levels,
+                    map_bounds=map_bounds,
+                    map_style=self.json_data.get('map_style', 'osm'),
+                    resolution_x=resolution_x_value,
+                    resolution_y=resolution_y_value,
+                    storage_box_credentials={
+                        'address': self.storage_box_address,
+                        'user': self.storage_box_user,
+                        'password': self.storage_box_password,
+                    },
+                    log_callback=self.log_message.emit,
+                    debug_callback=(self.debug_message.emit if hasattr(self, 'debug_message') else None),
+                    progress_callback=None,  # Could add progress callback if needed
+                    provider_queue_callback=on_map_downloads_queued,
+                    provider_start_callback=on_provider_downloads_starting,
+                    provider_progress_callback=on_provider_downloads_progress,
+                )
+
+            cache_info = run_map_tile_caching_with_retries(
+                fetch_image_tile_cache,
+                log_callback=self.log_message.emit,
+                on_retries_exhausted=on_map_tile_retries_exhausted,
+            )
 
             # Capture tile-count stats for job_logging (terminal-only mode)
             self.tiles_local = int(cache_info.get('count_local', 0))
@@ -511,7 +527,12 @@ class ImageGeneratorWorker(QObject):
             self.log_message.emit(f"Image generation completed in {elapsed_time} seconds.")
             
             self.finished.emit()
-            
+
+        except MapTileCachingExhaustedError as e:
+            self.job_completed_ok = False
+            self.log_message.emit(str(e))
+            self.error.emit(str(e))
+
         except Exception as e:
             error_msg = f"Error in worker thread: {str(e)}\n{traceback.format_exc()}"
             self.error.emit(error_msg)

@@ -34,6 +34,53 @@ from write_log import write_debug_log, write_log
 REMOTE_BASE = "map tile cache"
 MAX_FTP_WORKERS = 8
 
+# Map tile download retry policy (used by image/video workers).
+MAP_TILE_CACHE_MAX_ATTEMPTS = 3
+MAP_TILE_CACHE_FAILURE_COOLDOWN_SEC = 60.0
+
+class MapTileCachingExhaustedError(Exception):
+    """Raised after all map-tile download retries failed.
+
+    Callers should set job status to *error* before raising (or in the
+    ``on_retries_exhausted`` callback of ``run_map_tile_caching_with_retries``).
+    """
+
+def run_map_tile_caching_with_retries(
+    fetch_cache_result,
+    *,
+    log_callback=None,
+    max_attempts=MAP_TILE_CACHE_MAX_ATTEMPTS,
+    cooldown_sec=MAP_TILE_CACHE_FAILURE_COOLDOWN_SEC,
+    on_retries_exhausted=None,
+):
+    """Run ``fetch_cache_result()`` until it returns a dict with ``success`` True.
+
+    ``fetch_cache_result`` must be a no-argument callable returning either
+    ``None`` or a dict that includes ``success`` (bool).
+
+    After each failed attempt except the last, sleeps ``cooldown_sec`` (for
+    provider rate limits). On the final failure, calls ``on_retries_exhausted``
+    if provided, then raises :class:`MapTileCachingExhaustedError`.
+    """
+    _log = log_callback or write_log
+    last_result = None
+    for attempt in range(1, max_attempts + 1):
+        last_result = fetch_cache_result()
+        if last_result is not None and last_result.get("success"):
+            return last_result
+        if attempt < max_attempts:
+            _log(
+                f"Map tile downloads did not complete successfully "
+                f"(attempt {attempt}/{max_attempts}). "
+                f"Waiting {int(cooldown_sec)}s before retrying the full tile caching step."
+            )
+            time.sleep(cooldown_sec)
+    if on_retries_exhausted:
+        on_retries_exhausted()
+    raise MapTileCachingExhaustedError(
+        f"Map tile caching failed after {max_attempts} attempts"
+    )
+
 # ---------------------------------------------------------------------------
 # Tile path helpers
 # ---------------------------------------------------------------------------
@@ -689,6 +736,42 @@ def cache_required_tiles(
                    f"in {upload_elapsed:.1f} seconds")
         finally:
             _release_cache_lock(_debug)
+
+    # ------------------------------------------------------------------
+    # Final verification: every required tile must exist locally with data.
+    # Deliberately no blank/validity check here (ocean tiles etc. may look
+    # "invalid" but are correct). Quality checks apply only before remote
+    # upload (Step 4).
+    # ------------------------------------------------------------------
+    incomplete_tiles = []
+    for tile in required_list:
+        x, y, zoom = tile
+        local_path = _tile_local_path(map_style, x, y, zoom)
+        if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
+            incomplete_tiles.append(tile)
+
+    if incomplete_tiles:
+        _log(
+            f"Map tile caching incomplete: {len(incomplete_tiles)} of "
+            f"{total_required} required tiles missing or empty after "
+            f"remote cache and provider steps"
+        )
+        if progress_callback:
+            progress_callback(
+                "progress_bar_tiles",
+                100,
+                "Tile caching failed — incomplete tiles",
+            )
+        return {
+            'success': False,
+            'failure_reason': 'incomplete_tiles',
+            'incomplete_count': len(incomplete_tiles),
+            'total_required': total_required,
+            'count_local': count_local,
+            'count_remote': count_remote,
+            'count_provider': count_provider,
+            'count_uploaded': count_uploaded,
+        }
 
     # ------------------------------------------------------------------
     # Summary

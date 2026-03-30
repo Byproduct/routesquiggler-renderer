@@ -335,15 +335,17 @@ def cache_map_tiles(
             if log_callback:
                 log_callback("Error: Could not cache map tiles")
             return None
-        
+
+        inner_ok = bool(cache_result.get('success'))
+
         if progress_callback:
             progress_callback("progress_bar_tiles", 100, "Map tile caching complete")
-        
+
         return {
             'route_time_per_frame': route_time_per_frame,
             'unique_bounding_boxes': unique_bounding_boxes,
             'cache_result': cache_result,
-            'success': True
+            'success': inner_ok,
         }
         
     except Exception as e:
