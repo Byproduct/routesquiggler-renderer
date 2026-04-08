@@ -24,6 +24,52 @@ METERS_TO_MILES = 0.000621371
 KMH_TO_MPH = 0.621371
 
 
+def _normalize_track_filename(filename: str) -> str:
+    """Basename for matching job track_objects filenames to gpx_info entries."""
+    if not filename:
+        return ''
+    return Path(filename).name
+
+
+def _track_object_is_persistent(track_obj: dict) -> bool:
+    raw = track_obj.get('persistent', False)
+    if isinstance(raw, str):
+        return raw.lower() in ('true', '1', 'yes')
+    return bool(raw)
+
+
+def _persistent_filename_to_color_map(track_objects: list) -> dict:
+    """Map normalized GPX filename -> color hex for persistent tracks."""
+    out = {}
+    for obj in track_objects or []:
+        if not _track_object_is_persistent(obj):
+            continue
+        fn = _normalize_track_filename(obj.get('filename', ''))
+        if not fn:
+            continue
+        out[fn] = obj.get('color') or '#FF0000'
+    return out
+
+
+def _extract_lat_lon_points_from_gpx_content(content: str) -> list:
+    """Lat/lon tuples only (skip 0,0), in GPX order — for persistent background tracks."""
+    points = []
+    if not content:
+        return points
+    try:
+        gpx = gpxpy.parse(content)
+        for track in gpx.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    lat, lon = point.latitude, point.longitude
+                    if lat == 0.0 or lon == 0.0:
+                        continue
+                    points.append((float(lat), float(lon)))
+    except Exception:
+        pass
+    return points
+
+
 class RoutePoint(NamedTuple):
     """
     Named tuple representing a single point in a route.
@@ -360,6 +406,37 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
     Handles both single runner (empty track_name_map) and multiple runners (populated track_name_map).
     """
     try:
+        persistent_tracks = []
+        track_objects = json_data.get('track_objects', []) if json_data else []
+        persistent_colors = _persistent_filename_to_color_map(track_objects)
+
+        if persistent_colors:
+            normal_files = []
+            for gpx_info in sorted_gpx_files:
+                fn_key = _normalize_track_filename(gpx_info.get('filename', ''))
+                if fn_key in persistent_colors:
+                    content = gpx_info.get('content', '')
+                    pts = _extract_lat_lon_points_from_gpx_content(content)
+                    persistent_tracks.append({
+                        'color': persistent_colors[fn_key],
+                        'points': pts,
+                    })
+                    if debug_callback:
+                        debug_callback(
+                            f"Persistent track '{fn_key}': extracted {len(pts)} points, excluded from animated routes"
+                        )
+                else:
+                    normal_files.append(gpx_info)
+            sorted_gpx_files = normal_files
+
+            if not sorted_gpx_files:
+                if log_callback:
+                    log_callback(
+                        "Error: All GPX files are marked persistent; at least one non-persistent file "
+                        "is required for video route animation."
+                    )
+                return None
+
         # Determine if this is single route mode (empty track_name_map means all files are unnamed)
         is_single_route_mode = len(track_name_map) == 0
         
@@ -667,15 +744,17 @@ def _create_multiple_routes(sorted_gpx_files, track_name_map, json_data=None, pr
         if progress_callback:
             progress_callback("progress_bar_combined_route", 100, "Multiple routes creation completed")
         
-        # Return the first route for backward compatibility, but include all routes info
-        first_route = all_routes[0] if all_routes else None
-        if first_route:
-            first_route['all_routes'] = all_routes
-            first_route['total_routes'] = len(all_routes)
+        # Return dict used as combined_route_data everywhere: base fields from all_routes[0]
+        # (backward-compatible combined_route, totals, …) plus pipeline keys on the same object.
+        combined_route_data = all_routes[0] if all_routes else None
+        if combined_route_data:
+            combined_route_data['all_routes'] = all_routes
+            combined_route_data['total_routes'] = len(all_routes)
             # Store earliest_start_time for POI time-based filtering
-            first_route['earliest_start_time'] = earliest_start_time
-        
-        return first_route
+            combined_route_data['earliest_start_time'] = earliest_start_time
+            combined_route_data['persistent_tracks'] = persistent_tracks
+
+        return combined_route_data
         
     except Exception as e:
         if log_callback:

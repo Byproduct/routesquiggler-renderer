@@ -1101,7 +1101,8 @@ class ImageGenerator:
 def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float, float, float], 
              background_theme: str = 'light', resolution_scale: float = 1.0,
              horizontal_offset_points: Optional[float] = None, vertical_offset_points: Optional[float] = None,
-             horizontal_offset_coords: Optional[float] = None, small_tags: bool = False, tiny_tags: bool = False):
+             horizontal_offset_coords: Optional[float] = None, small_tags: bool = False, tiny_tags: bool = False,
+             font_size_extra_scale: float = 1.0):
     """
     Draw a tag/label on a matplotlib axes at the specified coordinates.
     
@@ -1125,6 +1126,8 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
                                   If provided in video mode, takes precedence over horizontal_offset_points
         small_tags: If True, halve the tag font size (after resolution scale). Job parameter 'small_tags'.
         tiny_tags: If True, divide tag font size by 3 (after resolution scale). Job parameter 'tiny_tags'.
+        font_size_extra_scale: Multiplier for base tag font size (after resolution scale, before small_tags/tiny_tags).
+                               Used for video name_tag_size; default 1.0.
     
     Example:
         # Light theme with custom color
@@ -1149,7 +1152,7 @@ def draw_tag(ax, lon: float, lat: float, text: str, text_color_rgb: Tuple[float,
         text_color = hex_color  # Use route color for text
     
     # Calculate resolution-scaled values
-    font_size = 13 * resolution_scale
+    font_size = 13 * resolution_scale * font_size_extra_scale
     if tiny_tags:
         font_size = font_size / 3
     elif small_tags:

@@ -35,6 +35,7 @@ from video_generator_create_single_frame_utils import (
     _draw_filename_tags_for_routes,
     _draw_name_tags_for_routes,
     get_tail_color_for_route,
+    hex_to_rgba,
 )
 from video_generator_route_statistics import (
     _calculate_video_statistics,
@@ -63,6 +64,60 @@ def _gps_to_web_mercator(lon, lat):
     y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
     y = y * 20037508.34 / 180
     return x, y
+
+
+def _persistent_tracks_have_drawable_geometry(persistent_tracks):
+    """True if some persistent track has at least two distinct coordinates (for line drawing)."""
+    if not persistent_tracks:
+        return False
+    for t in persistent_tracks:
+        pts = t.get('points') or []
+        if len(pts) < 2:
+            continue
+        lat0, lon0 = pts[0][0], pts[0][1]
+        for lat, lon in pts[1:]:
+            if abs(lat - lat0) > 1e-9 or abs(lon - lon0) > 1e-9:
+                return True
+    return False
+
+
+def _bbox_points_from_persistent_tracks(persistent_tracks):
+    """Build minimal point-like objects (lat/lon) for viewport fallback when animated routes are empty."""
+    from types import SimpleNamespace
+    out = []
+    for t in persistent_tracks or []:
+        for lat, lon in t.get('points') or []:
+            out.append(SimpleNamespace(lat=lat, lon=lon))
+    return out
+
+
+def _draw_persistent_tracks(ax, persistent_tracks, effective_line_width):
+    """
+    Draw full persistent routes under animated routes (fixed color, no time filtering).
+    Uses Web Mercator to match the map axes.
+    """
+    if not persistent_tracks:
+        return
+    from matplotlib.collections import LineCollection
+
+    for t in persistent_tracks:
+        pts = t.get('points') or []
+        if len(pts) < 2:
+            continue
+        color_hex = t.get('color') or '#FF0000'
+        try:
+            rgba = hex_to_rgba(color_hex)
+        except Exception:
+            rgba = (1.0, 0.0, 0.0, 1.0)
+        mercator_coords = [_gps_to_web_mercator(lon, lat) for lat, lon in pts]
+        segment = list(zip([c[0] for c in mercator_coords], [c[1] for c in mercator_coords]))
+        lc = LineCollection(
+            [segment],
+            color=rgba,
+            linewidth=effective_line_width,
+            zorder=10,
+        )
+        ax.add_collection(lc)
 
 
 def _convert_bbox_to_web_mercator(bbox):
@@ -954,7 +1009,7 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
     )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -973,23 +1028,29 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         virtual_leading_time (float, optional): Virtual leading time for tail-only phase (in route seconds)
         route_specific_tail_info (dict, optional): Dictionary containing route-specific tail information
         points_of_interest_for_frame (list, optional): List of PointOfInterest objects to render on this frame
+        persistent_tracks (list, optional): Background tracks with 'color' and 'points' [(lat, lon), ...] drawn every frame
     
     Returns:
         numpy array representing the frame image (H, W, 3) or None if failed
     """
-    
-    if not points_for_frame:
-        return None
-    
+    persistent_tracks = persistent_tracks or []
+    persistent_ok = _persistent_tracks_have_drawable_geometry(persistent_tracks)
+
+    if points_for_frame is None:
+        points_for_frame = []
+
     # NORMALIZE INPUT: Ensure points_for_frame is always a list of lists
     # Check if we have single route (list of points) or multiple routes (list of lists)
     if points_for_frame and not isinstance(points_for_frame[0], list):
         # Single route mode - wrap the single list of points in another list
         points_for_frame = [points_for_frame]
-    
-    # Check if route has at least 2 points for frame generation
+
+    if not points_for_frame and not persistent_ok:
+        return None
+
+    # Check if route has at least 2 points for frame generation (animated); persistent can compensate
     total_points = sum(len(route_points) for route_points in points_for_frame if route_points)
-    if total_points < 2:
+    if total_points < 2 and not persistent_ok:
         # Create black frame if route has fewer than 2 points
         height = int(json_data.get('video_resolution_y', 1080))
         width = int(json_data.get('video_resolution_x', 1920))
@@ -1062,16 +1123,20 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         bbox = final_bbox
     else:
         # Dynamic zoom mode - calculate bounding box for current frame
-        # Flatten points_for_frame to get all points for this frame
+        # Flatten points_for_frame to get all points for this frame (animated routes only).
+        # Persistent tracks are excluded from bbox; if animated is empty, fall back to persistent
+        # geometry only so map tiles resolve (e.g. hide_complete_routes with background tracks).
         all_points = []
         for route_points in points_for_frame:
             if route_points:
                 all_points.extend(route_points)
-        
+        if not all_points and persistent_tracks:
+            all_points = _bbox_points_from_persistent_tracks(persistent_tracks)
+
         if not all_points:
             print(f"Error: No points available for frame {frame_number}")
             return None
-        
+
         # Use the shared bounding box calculation function for consistency
         bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1, target_aspect_ratio=target_aspect_ratio)
         
@@ -1122,6 +1187,9 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         # image_scale is already the resolution scale (0.7, 1.0, 2.0, 3.0, or 4.0)
         desired_pixels = line_thickness * resolution_scale
         effective_line_width = desired_pixels * 72 / 100  # dpi fixed to 100
+
+        # Persistent background routes: full geometry every frame, below animated routes (and below tails)
+        _draw_persistent_tracks(ax, persistent_tracks, effective_line_width)
              
         # PHASE 1: Draw completed routes from cache (bottom layer)
         # OPTIMIZATION: Use cached route images for completed tracks in final zoom mode

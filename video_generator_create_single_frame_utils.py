@@ -94,7 +94,8 @@ def _gps_to_web_mercator(lon, lat):
     return x, y
 
 
-def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, theme='light', vertical_offset_points=0, small_tags=False, tiny_tags=False):
+def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, theme='light', vertical_offset_points=0, small_tags=False, tiny_tags=False,
+                   font_size_extra_scale=1.0):
     """
     Draw a name tag to the right of a point.
     
@@ -111,6 +112,7 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, t
         vertical_offset_points (float): Vertical offset in points (positive = up)
         small_tags (bool): If True, halve tag font size (after resolution scale). Job parameter 'small_tags'.
         tiny_tags (bool): If True, divide tag font size by 3 (after resolution scale). Job parameter 'tiny_tags'.
+        font_size_extra_scale (float): Multiplier before small_tags/tiny_tags (name tags only: job name_tag_size).
     """
     # Extract coordinates using named attributes
     lat = point.lat
@@ -146,7 +148,8 @@ def _draw_name_tag(ax, point, runner_name, filename_to_rgba, resolution_scale, t
         vertical_offset_points=vertical_offset_points,
         horizontal_offset_coords=horizontal_offset_coords,
         small_tags=small_tags,
-        tiny_tags=tiny_tags
+        tiny_tags=tiny_tags,
+        font_size_extra_scale=font_size_extra_scale
     )
 
 
@@ -171,6 +174,17 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
     
     small_tags = bool(json_data.get('small_tags', False))
     tiny_tags = bool(json_data.get('tiny_tags', False))
+
+    name_tag_size = json_data.get('name_tag_size', 'large')
+    if name_tag_size in (None, 'large'):
+        name_tag_font_scale = 1.0
+    elif name_tag_size == 'medium':
+        name_tag_font_scale = 0.66
+    elif name_tag_size == 'small':
+        name_tag_font_scale = 0.33
+    else:
+        print(f"Warning: Invalid name_tag_size '{name_tag_size}', using large")
+        name_tag_font_scale = 1.0
     
     # Get track_objects for name mapping
     track_objects = json_data.get('track_objects', [])
@@ -201,7 +215,8 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
             
             if filename and filename in filename_to_name:
                 runner_name = filename_to_name[filename]
-                _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting, small_tags=small_tags, tiny_tags=tiny_tags)
+                _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting, small_tags=small_tags, tiny_tags=tiny_tags,
+                               font_size_extra_scale=name_tag_font_scale)
     else:
         # Single route mode - draw name tag for the most recent point
         if not points_for_frame:  # Skip if no points
@@ -213,7 +228,8 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
         
         if filename and filename in filename_to_name:
             runner_name = filename_to_name[filename]
-            _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting, small_tags=small_tags, tiny_tags=tiny_tags)
+            _draw_name_tag(ax, most_recent_point, runner_name, filename_to_rgba, resolution_scale, name_tags_setting, small_tags=small_tags, tiny_tags=tiny_tags,
+                           font_size_extra_scale=name_tag_font_scale)
 
 
 def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax, hide_in_fade_out=False):

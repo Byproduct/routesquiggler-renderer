@@ -67,7 +67,7 @@ VideoGeneratorWorker.video_generator_process()                    [video_generat
 |          +- create_hr_based_color_label(...)
 |          +- create_hr_based_width_label(...)
 |          |
-|          +- Returns first_route dict with all_routes attached
+|          +- Returns combined_route_data dict (all_routes[0] fields + all_routes, persistent_tracks, …)
 |
 +- Step 3 - Calculate bounding boxes + cache map tiles
 |  |

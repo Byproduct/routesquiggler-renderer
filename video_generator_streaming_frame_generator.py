@@ -25,7 +25,10 @@ import numpy as np
 # Local imports
 from config import config
 from image_generator_utils import calculate_resolution_scale
-from video_generator_create_single_frame import generate_video_frame_in_memory
+from video_generator_create_single_frame import (
+    generate_video_frame_in_memory,
+    _persistent_tracks_have_drawable_geometry,
+)
 from video_generator_create_single_frame_utils import hex_to_rgba
 from video_generator_utils import (
     binary_search_cutoff_index,
@@ -383,6 +386,9 @@ def _streaming_frame_worker(args):
                         )
 
         # Check if we have enough geographically distinct points to draw lines.
+        persistent_tracks = combined_route_data.get("persistent_tracks") or []
+        persistent_geometry_ok = _persistent_tracks_have_drawable_geometry(persistent_tracks)
+
         has_drawable_content = False
         if all_routes and len(all_routes) > 1:
             has_drawable_content = any(len(route_points) > 0 for route_points in points_for_frame)
@@ -400,6 +406,9 @@ def _streaming_frame_worker(args):
                     abs(p.lat - ref_lat) > 1e-9 or abs(p.lon - ref_lon) > 1e-9
                     for p in points_for_frame[1:]
                 )
+
+        if persistent_geometry_ok:
+            has_drawable_content = True
 
         if not has_drawable_content:
             if frame_number <= 10 and config.debug_logging:
@@ -496,6 +505,7 @@ def _streaming_frame_worker(args):
             virtual_leading_time,
             route_specific_tail_info,
             points_of_interest_for_frame,
+            persistent_tracks,
         )
 
         # MEMORY MANAGEMENT: Aggressive cleanup to prevent memory accumulation
