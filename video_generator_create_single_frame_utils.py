@@ -4,7 +4,7 @@ This module contains helper functions for color manipulation, name tags, and res
 """
 
 # Local imports
-from image_generator_utils import draw_tag
+from image_generator_utils import draw_tag, font_scale_from_name_tag_size
 from video_generator_create_combined_route import RoutePoint
 
 
@@ -175,16 +175,7 @@ def _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, re
     small_tags = bool(json_data.get('small_tags', False))
     tiny_tags = bool(json_data.get('tiny_tags', False))
 
-    name_tag_size = json_data.get('name_tag_size', 'large')
-    if name_tag_size in (None, 'large'):
-        name_tag_font_scale = 1.0
-    elif name_tag_size == 'medium':
-        name_tag_font_scale = 0.66
-    elif name_tag_size == 'small':
-        name_tag_font_scale = 0.33
-    else:
-        print(f"Warning: Invalid name_tag_size '{name_tag_size}', using large")
-        name_tag_font_scale = 1.0
+    name_tag_font_scale = font_scale_from_name_tag_size(json_data)
     
     # Get track_objects for name mapping
     track_objects = json_data.get('track_objects', [])

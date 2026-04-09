@@ -18,7 +18,7 @@
   "video_length": 20,
   "video_resolution_x": 1280,
   "video_resolution_y": 720,
-  "zoom_mode": "final",
+  "video_mode": "final",
   "track_objects": [
     {
       "filename": "2024-05-18 kehä3.gpx",

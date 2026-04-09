@@ -40,6 +40,24 @@ def get_text_theme_colors(theme: str) -> Tuple[str, str, str]:
     return TEXT_THEME_DARK if theme == 'dark' else TEXT_THEME_LIGHT
 
 
+def font_scale_from_name_tag_size(json_data: Optional[Dict]) -> float:
+    """
+    Return font/icon scale from job name_tag_size ('large' default, 'medium' 0.66, 'small' 0.33).
+    Used for name tags and matching POI label/icon sizing.
+    """
+    if not json_data:
+        return 1.0
+    name_tag_size = json_data.get('name_tag_size', 'large')
+    if name_tag_size in (None, 'large'):
+        return 1.0
+    if name_tag_size == 'medium':
+        return 0.66
+    if name_tag_size == 'small':
+        return 0.33
+    print(f"Warning: Invalid name_tag_size '{name_tag_size}', using large")
+    return 1.0
+
+
 # --- GPX time harmonization ---
 TIME_NO_MS_RE = re.compile(r'<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z</time>')
 TIME_MS_RE = re.compile(r'(<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d{3}(Z</time>)')

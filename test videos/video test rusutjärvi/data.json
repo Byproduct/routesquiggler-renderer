@@ -36,7 +36,7 @@
   "video_resolution_y": 2160,
   "video_fps": 20,
   "squiggle_speed": "relative",
-  "zoom_mode": "dynamic",
+  "video_mode": "dynamic",
   "video_length": 5,
   "route_accuracy": "maximum",
   "tail_length": 4,

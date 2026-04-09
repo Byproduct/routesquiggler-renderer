@@ -600,11 +600,11 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 log_callback("Error: combined_route_data parameter is required")
             return None
         
-        # Check zoom mode
-        zoom_mode = json_data.get('zoom_mode', 'dynamic')
-        
-        if zoom_mode == 'final':
-            # For final zoom mode, calculate only the bounding box of the complete route
+        # Check video mode
+        video_mode = json_data.get('video_mode', 'dynamic')
+
+        if video_mode == 'final':
+            # For final video mode, calculate only the bounding box of the complete route
             if debug_callback:
                 debug_callback("Using 'final' zoom mode - calculating single bounding box for entire route")
             

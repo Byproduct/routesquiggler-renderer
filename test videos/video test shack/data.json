@@ -35,7 +35,7 @@
   "video_resolution_y": 1440,
   "video_fps": "20",
   "squiggle_speed": "relative",
-  "zoom_mode": "final",
+  "video_mode": "final",
   "video_length": 20,
   "route_accuracy": "normal",
   "tail_length": "3",

@@ -67,7 +67,7 @@
   "video_resolution_y": 2160,
   "video_fps": "20",
   "squiggle_speed": "relative",
-  "zoom_mode": "final",
+  "video_mode": "final",
   "video_length": 15,
   "tail_color": "dark",
   "tail_width": 3,

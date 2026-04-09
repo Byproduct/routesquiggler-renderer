@@ -30,7 +30,7 @@
   "video_length": 30,
   "video_resolution_x": 3840,
   "video_resolution_y": 2160,
-  "zoom_mode": "final",
+  "video_mode": "final",
   "track_objects": [
     {
       "filename": "100HA_1.gpx",

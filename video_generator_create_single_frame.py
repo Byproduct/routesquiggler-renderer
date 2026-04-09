@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, get_attribution_text, get_text_theme_colors, PointOfInterest
+from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, font_scale_from_name_tag_size, get_attribution_text, get_text_theme_colors, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_coordinate_encoder import encode_coords
@@ -138,7 +138,7 @@ def _convert_bbox_to_web_mercator(bbox):
     return (x_min, x_max, y_min, y_max)
 
 
-def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale, theme='light'):
+def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale, theme='light', name_tag_font_scale=1.0):
     """
     Draw points of interest on a video frame.
     
@@ -148,6 +148,7 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
         mercator_bbox: Tuple (x_min, x_max, y_min, y_max) in Web Mercator coordinates
         image_scale: Resolution scale factor for sizing
         theme: 'light' or 'dark' for text styling
+        name_tag_font_scale: Same multiplier as job name_tag_size (icon + label); default 1.0
     """
     if not points_of_interest:
         return
@@ -159,8 +160,8 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
     if not os.path.exists(poi_file):
         return
     
-    # Base size is 35 pixels (same as image mode), multiply by image_scale
-    target_size_pixels = int(35 * image_scale)
+    # Base size is 35 pixels (same as image mode), multiply by image_scale and name_tag_font_scale
+    target_size_pixels = int(35 * image_scale * name_tag_font_scale)
     
     # Load and resize POI icon
     try:
@@ -193,7 +194,7 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
 
     # Calculate font size based on image scale (base 13 as in image mode)
     base_font_size = 13
-    font_size = base_font_size * image_scale
+    font_size = base_font_size * image_scale * name_tag_font_scale
     
     # Calculate marker size in axes coordinates
     # Since we're working with mercator coords, we need to calculate pixel-based offsets
@@ -224,7 +225,7 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
             # Add name text to the right of the icon if not empty
             if poi.name:
                 # Calculate text position (to the right of the icon)
-                gap_axes = 5 * image_scale / (ax.figure.get_figwidth() * ax.figure.dpi)
+                gap_axes = 5 * image_scale * name_tag_font_scale / (ax.figure.get_figwidth() * ax.figure.dpi)
                 text_x_axes = poi_x_axes + marker_width_axes + gap_axes
                 text_y_axes = poi_y_axes + (marker_height_axes / 2)
                 
@@ -241,9 +242,9 @@ def _draw_points_of_interest(ax, points_of_interest, mercator_bbox, image_scale,
                         facecolor=bg_color,
                         edgecolor=border_color,
                         alpha=0.9,
-                        linewidth=0.5 * image_scale
+                        linewidth=0.5 * image_scale * name_tag_font_scale
                     ),
-                    zorder=100
+                    zorder=35
                 )
                 
         except Exception as e:
@@ -1061,8 +1062,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         print(f"Error: Shared map cache is required for frame generation")
         return None
        
-    zoom_mode = json_data.get('zoom_mode', 'dynamic')
-    
+    video_mode = json_data.get('video_mode', 'dynamic')
+
     # Get video parameters from json_data
     width = int(json_data.get('video_resolution_x', 1920))
     height = int(json_data.get('video_resolution_y', 1080))
@@ -1106,15 +1107,15 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             if track:  # Only add non-empty tracks
                 tracks.append(track)
 
-    # Check zoom mode
-    zoom_mode = json_data.get('zoom_mode', 'dynamic')
-    
+    # Check video mode
+    video_mode = json_data.get('video_mode', 'dynamic')
+
     # Calculate target aspect ratio from video resolution
     video_resolution_x = float(json_data.get('video_resolution_x', 1920))
     video_resolution_y = float(json_data.get('video_resolution_y', 1080))
     target_aspect_ratio = video_resolution_x / video_resolution_y
-    
-    if zoom_mode == 'final':
+
+    if video_mode == 'final':
         # Use the pre-calculated final bounding box for all frames
         final_bbox = load_final_bounding_box()
         if final_bbox is None:
@@ -1757,6 +1758,18 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                         # Draw the tail with fade-out progress (zorder=30 - above routes but below labels)
                         _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effective_line_width, filename_to_rgba, ax, fade_out_progress, fluffy_tail=json_data.get('fluffy_tail', False))
         
+        # Points of interest before name tags so route name tags paint on top (zorder 35 vs 40)
+        poi_setting = json_data.get('points_of_interest', 'off') if json_data else 'off'
+        if poi_setting in ['light', 'dark'] and points_of_interest_for_frame:
+            _draw_points_of_interest(
+                ax=ax,
+                points_of_interest=points_of_interest_for_frame,
+                mercator_bbox=mercator_bbox,
+                image_scale=resolution_scale,
+                theme=poi_setting,
+                name_tag_font_scale=font_scale_from_name_tag_size(json_data),
+            )
+
         name_tags_setting = json_data.get('name_tags')
         if name_tags_setting in ['light', 'dark']:
             _draw_name_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax)
@@ -1891,17 +1904,6 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             map_style = json_data.get('map_style', '')
             attribution_text = get_attribution_text(map_style)
             _draw_video_attribution(ax, attribution_text, attribution_setting, resolution_scale, width, height)
-        
-        # Draw points of interest if enabled
-        poi_setting = json_data.get('points_of_interest', 'off') if json_data else 'off'
-        if poi_setting in ['light', 'dark'] and points_of_interest_for_frame:
-            _draw_points_of_interest(
-                ax=ax,
-                points_of_interest=points_of_interest_for_frame,
-                mercator_bbox=mercator_bbox,
-                image_scale=resolution_scale,
-                theme=poi_setting
-            )
         
         # Convert figure to numpy array directly (much faster than PNG buffer)
         # Draw the figure to the canvas

@@ -138,7 +138,7 @@
   "video_resolution_y": 1080,
   "video_fps": "20",
   "squiggle_speed": "constant",
-  "zoom_mode": "final",
+  "video_mode": "final",
   "video_length": 15,
   "route_accuracy": "normal",
   "tail_color": "#800040",

@@ -21,7 +21,7 @@
   "video_length": 60,
   "video_resolution_x": 1280,
   "video_resolution_y": 720,
-  "zoom_mode": "dynamic",
+  "video_mode": "dynamic",
   "track_objects": [
     {
       "filename": "antti_ast_2_2024.gpx",

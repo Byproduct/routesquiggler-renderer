@@ -39,6 +39,7 @@ from image_generator_utils import (
     ImageGenerator,
     add_filename_tags_to_image,
     calculate_resolution_scale,
+    font_scale_from_name_tag_size,
     get_attribution_text,
     get_text_theme_colors,
 )
@@ -272,7 +273,7 @@ def generate_images_parallel(
     while completed_processes < total_processes:
         try:
             # Get a result (this will block until a process completes)
-            result = result_queue.get(timeout=1200)  # 20-minute timeout per process
+            result = result_queue.get(timeout=1800)  # 30-minute timeout per process
             if result[1] is not None:  # Only add successful results
                 results.append(result)
             completed_processes += 1
@@ -834,7 +835,8 @@ def generate_image_for_zoom_level(
                     lat_min=lat_min_padded,
                     lat_max=lat_max_padded,
                     image_scale=image_scale,
-                    theme=json_data.get('points_of_interest')  # 'light' or 'dark'
+                    theme=json_data.get('points_of_interest'),  # 'light' or 'dark'
+                    name_tag_font_scale=font_scale_from_name_tag_size(json_data),
                 )
 
         # Add filename tags if enabled

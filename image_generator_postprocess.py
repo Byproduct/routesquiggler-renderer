@@ -754,7 +754,8 @@ def add_points_of_interest_to_plot(
     lat_min: float, 
     lat_max: float, 
     image_scale: int | None = None,
-    theme: str = 'light'
+    theme: str = 'light',
+    name_tag_font_scale: float = 1.0,
 ):
     """
     Add points of interest (waypoints) to the plot.
@@ -773,6 +774,7 @@ def add_points_of_interest_to_plot(
         lat_max: Maximum latitude in degrees (PlateCarree)
         image_scale: Optional image scale factor; if None, calculated from resolution
         theme: 'light' or 'dark' for text styling
+        name_tag_font_scale: Same multiplier as job name_tag_size for icon + label (default 1.0)
     """
     if not points_of_interest:
         write_debug_log("No points of interest to add")
@@ -792,8 +794,8 @@ def add_points_of_interest_to_plot(
         write_debug_log(f"POI icon not found: {poi_file}")
         return
     
-    # Base size is 35 pixels (same as start/finish markers), multiply by image_scale
-    target_size_pixels = int(35 * image_scale)
+    # Base size is 35 pixels (same as start/finish markers), multiply by image_scale and name_tag_font_scale
+    target_size_pixels = int(35 * image_scale * name_tag_font_scale)
     
     # Load and resize POI icon
     try:
@@ -829,7 +831,7 @@ def add_points_of_interest_to_plot(
 
     # Calculate font size based on image scale (base 13 as specified)
     base_font_size = 13
-    font_size = base_font_size * image_scale
+    font_size = base_font_size * image_scale * name_tag_font_scale
     
     # Calculate marker size in figure coordinates
     marker_width_fig = new_width / image_width
@@ -869,14 +871,14 @@ def add_points_of_interest_to_plot(
             if poi_name:
                 # Calculate text position (to the right of the icon)
                 # Add a small gap between icon and text
-                gap_pixels = 5 * image_scale
+                gap_pixels = 5 * image_scale * name_tag_font_scale
                 gap_fig = gap_pixels / image_width
                 text_x_fig = marker_x_fig + marker_width_fig + gap_fig
                 # Center text vertically with the icon
                 text_y_fig = marker_y_fig + (marker_height_fig / 2)
                 
                 # Add the POI name text with background (box border scales with resolution)
-                bbox_linewidth = 0.5 * image_scale
+                bbox_linewidth = 0.5 * image_scale * name_tag_font_scale
                 ax.text(
                     text_x_fig, text_y_fig, poi_name,
                     transform=ax.transAxes,
@@ -892,7 +894,7 @@ def add_points_of_interest_to_plot(
                         alpha=0.9,
                         linewidth=bbox_linewidth
                     ),
-                    zorder=100  # Very top layer - above all other elements
+                    zorder=35  # Below draw_tag overlays (zorder 40) so filename tags and similar draw on top
                 )
                 write_debug_log(f"Added POI name '{poi_name}' at ({text_x_fig:.4f}, {text_y_fig:.4f})")
                 
