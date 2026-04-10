@@ -592,12 +592,15 @@ class VideoGeneratorWorker(QObject):
                 # Log summary of map image caching
                 cache_info = map_images_result.get('cache_result', {})
                 total_images = cache_info.get('total_images_created', 0)
+                skipped_images = cache_info.get('total_images_skipped', 0)
                 failed_images = cache_info.get('total_images_failed', 0)
                 total_bboxes = cache_info.get('total_bboxes', 0)
                 self.debug_message.emit(f"Map image caching completed:")
-                self.debug_message.emit(f"  - Images created: {total_images}")
-                self.debug_message.emit(f"  - Images failed: {failed_images}")
-                self.debug_message.emit(f"  - Total bounding boxes: {total_bboxes}")
+                self.debug_message.emit(f"  - Images created: {total_images} / {total_bboxes}")
+                if skipped_images > 0:
+                    self.debug_message.emit(f"  - Skipped (RAM limit): {skipped_images}")
+                if failed_images > 0:
+                    self.debug_message.emit(f"  - Failed: {failed_images}")
                 
                 # Step 5: Generate video frames using shared map cache
                 self.log_message.emit("Step 5: Generating video frames")

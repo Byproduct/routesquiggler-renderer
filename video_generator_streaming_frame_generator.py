@@ -41,6 +41,14 @@ from video_generator_utils import (
 )
 from write_log import write_debug_log, write_log
 
+# Per-worker local image cache for on-the-fly map image rendering when the
+# shared map-image cache has a miss (e.g. because the cache memory limit was
+# reached during pre-caching).  Stores at most 1 image (the last rendered)
+# so that stationary-camera segments don't re-render the same image per frame.
+# This dict is module-level so it persists across task calls within the same
+# pool worker process.
+_worker_local_image_cache: dict = {}
+
 
 def _timestamp_to_accumulated_time(poi_timestamp, combined_route):
     """
@@ -496,6 +504,9 @@ def _streaming_frame_worker(args):
                     if poi_accumulated_time is not None and poi_accumulated_time <= target_time_route:
                         points_of_interest_for_frame.append(poi)
 
+        _hit_before = _worker_local_image_cache.get('_stat_hit', 0)
+        _fly_before = _worker_local_image_cache.get('_stat_fly', 0)
+
         frame_array = generate_video_frame_in_memory(
             frame_number,
             points_for_frame,
@@ -513,7 +524,11 @@ def _streaming_frame_worker(args):
             follow_2d_bboxes=follow_2d_bboxes,
             follow_3d_rotate_angles=follow_3d_rotate_angles,
             follow_3d_rotate_bg_bboxes=follow_3d_rotate_bg_bboxes,
+            worker_image_cache=_worker_local_image_cache,
         )
+
+        _hit_delta = _worker_local_image_cache.get('_stat_hit', 0) - _hit_before
+        _fly_delta = _worker_local_image_cache.get('_stat_fly', 0) - _fly_before
 
         # MEMORY MANAGEMENT: Aggressive cleanup to prevent memory accumulation
         if frame_number % 3 == 0:
@@ -522,7 +537,7 @@ def _streaming_frame_worker(args):
                 plt._pylab_helpers.Gcf.destroy_all()
             gc.collect(2)
 
-        return frame_number, frame_array
+        return frame_number, frame_array, _hit_delta, _fly_delta
 
     except Exception as e:
         print(f"Error generating frame {frame_number}: {e}")
@@ -531,7 +546,7 @@ def _streaming_frame_worker(args):
             gc.collect()
         except Exception:
             pass
-        return frame_number, None
+        return frame_number, None, 0, 0
 
 
 class StreamingFrameGenerator:
@@ -777,6 +792,8 @@ class StreamingFrameGenerator:
         self.next_frame_to_request = self.frames_to_skip + 1
         self.frames_requested = 0
         self.frames_generated = 0
+        self.total_cache_hits = 0
+        self.total_on_the_fly = 0
         self.last_reported_progress_percent = -1
         self.last_consumed_frame = 0
         self.frames_cleanup_threshold = 50
@@ -909,7 +926,9 @@ class StreamingFrameGenerator:
         for frame_number, async_result in list(self.pending_results.items()):
             if async_result.ready():
                 try:
-                    _, frame_array = async_result.get(timeout=0.1)
+                    _, frame_array, hit_delta, fly_delta = async_result.get(timeout=0.1)
+                    self.total_cache_hits += hit_delta
+                    self.total_on_the_fly += fly_delta
                     if frame_array is not None:
                         self.frame_buffer[frame_number] = frame_array
                     else:
@@ -1178,6 +1197,13 @@ class StreamingFrameGenerator:
 
     def cleanup(self):
         """Clean up multiprocessing resources"""
+        # Log map image cache stats if any bg-canvas frames were tracked.
+        if self.debug_callback and (self.total_cache_hits + self.total_on_the_fly) > 0:
+            self.debug_callback(
+                f"Map image usage: {self.total_cache_hits} frames from shared cache, "
+                f"{self.total_on_the_fly} frames rendered on-the-fly"
+            )
+
         if self.pool:
             self.pool.terminate()
             self.pool.join()

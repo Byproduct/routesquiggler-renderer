@@ -75,6 +75,87 @@ def _get_from_cache_safe(shared_map_cache, encoded_bbox):
     return None
 
 
+def _render_map_image(bbox, json_data, canvas_size_override=None):
+    """
+    Render a map image for *bbox* and return it as an (H, W, 3) uint8 numpy
+    array.  Does not read from or write to any cache.
+
+    Used both by :func:`create_map_image_worker` (pre-caching phase) and by
+    the per-frame on-the-fly fallback when a cache miss occurs during frame
+    generation.
+
+    Args:
+        bbox: (lon_min, lon_max, lat_min, lat_max) in GPS degrees.
+        json_data (dict): Job parameters (map_style, resolution, opacity, …).
+        canvas_size_override (tuple | None): (width_px, height_px) or None.
+            Pass the oversized square canvas size for follow_3d_rotate bg images.
+
+    Returns:
+        numpy.ndarray (H, W, 3) uint8, or None on failure.
+    """
+    try:
+        lon_min, lon_max, lat_min, lat_max = bbox
+
+        map_style = json_data.get('map_style', 'osm')
+        map_transparency = float(json_data.get('map_transparency', 0))
+        map_opacity = 100 - map_transparency
+        map_alpha = map_opacity / 100.0
+        video_resolution_x = int(json_data.get('video_resolution_x', 1920))
+        video_resolution_y = int(json_data.get('video_resolution_y', 1080))
+
+        max_tiles_config = {
+            'osm': 100, 'otm': 100, 'cyclosm': 100,
+            'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
+            'stadia_toner': 100, 'stadia_watercolor': 150,
+        }
+        base_max_map_tiles = max_tiles_config.get(map_style, 100)
+        resolution_scale = calculate_resolution_scale(video_resolution_x, video_resolution_y)
+        map_detail = json_data.get('map_detail')
+        max_map_tiles = apply_tile_threshold_multiplier(
+            base_max_map_tiles, resolution_scale, min_value=1, map_detail=map_detail,
+        )
+        if canvas_size_override is not None:
+            canvas_w, canvas_h = canvas_size_override
+            area_ratio = (canvas_w * canvas_h) / max(1, video_resolution_x * video_resolution_y)
+            max_map_tiles = max(1, int(max_map_tiles * area_ratio))
+
+        if canvas_size_override is not None:
+            width, height = canvas_size_override
+        else:
+            width, height = video_resolution_x, video_resolution_y
+        dpi = 100
+        figsize = (width / dpi, height / dpi)
+
+        set_cache_directory(map_style)
+        map_tiles = create_map_tiles(map_style, log_cache_miss=True)
+        zoom_level = detect_zoom_level(
+            (lon_min, lon_max, lat_min, lat_max),
+            max_tiles=max_map_tiles,
+            map_style=map_style,
+        )
+
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(1, 1, 1, projection=map_tiles.crs)
+        ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+        ax.set_aspect('auto')
+        ax.add_image(map_tiles, zoom_level, alpha=map_alpha)
+        plt.tight_layout(pad=0)
+        fig.set_size_inches(figsize)
+        fig.canvas.draw()
+        buf = fig.canvas.buffer_rgba()
+        # .copy() detaches the array from the figure buffer before we close the figure
+        img_array = np.asarray(buf)[:, :, :3].copy()
+        plt.close(fig)
+        plt.clf()
+        plt.close('all')
+        return img_array
+
+    except Exception as e:
+        plt.close('all')
+        print(f"_render_map_image error for bbox {bbox}: {e}")
+        return None
+
+
 def create_map_image_worker(args):
     """
     Worker function to create a map image for a single bounding box.
@@ -93,165 +174,98 @@ def create_map_image_worker(args):
     """
     bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache, canvas_size_override = args
 
+    def _bump_progress():
+        with shared_progress_dict['lock']:
+            shared_progress_dict['completed'] += 1
+            return shared_progress_dict['completed'], shared_progress_dict['total']
+
     try:
-        # Get bounding box coordinates
         lon_min, lon_max, lat_min, lat_max = bbox
-
-        # Extract parameters from json_data
-        map_style = json_data.get('map_style', 'osm')
-        map_transparency = float(json_data.get('map_transparency', 0))  # Transparency parameter
-        map_opacity = 100 - map_transparency  # Convert transparency to opacity
-        video_resolution_x = int(json_data.get('video_resolution_x', 1920))
-        video_resolution_y = int(json_data.get('video_resolution_y', 1080))
-
-        # Max tiles threshold (style-specific base) adjusted by resolution scale.
-        max_tiles_config = {
-            'osm': 100, 'otm': 100, 'cyclosm': 100,
-            'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
-            'stadia_toner': 100, 'stadia_watercolor': 150,
-        }
-        base_max_map_tiles = max_tiles_config.get(map_style, 100)
-
-        resolution_scale = calculate_resolution_scale(video_resolution_x, video_resolution_y)
-        map_detail = json_data.get("map_detail")
-        max_map_tiles = apply_tile_threshold_multiplier(
-            base_max_map_tiles,
-            resolution_scale,
-            min_value=1,
-            map_detail=map_detail,
-        )
-
-        # For oversized bg canvases the pixel count is larger; scale the tile
-        # budget proportionally so the zoom level stays consistent with the
-        # normal frames drawn at the same pixel-per-metre ratio.
-        if canvas_size_override is not None:
-            canvas_w, canvas_h = canvas_size_override
-            area_ratio = (canvas_w * canvas_h) / max(1, video_resolution_x * video_resolution_y)
-            max_map_tiles = max(1, int(max_map_tiles * area_ratio))
-
-        # Set up map image cache directory with subfolder for the current map style and opacity
-        # Note: No longer creating disk directories since we're using shared memory exclusively
-
-        # Generate a unique filename for this bounding box using the coordinate encoder
         encoded_bbox = encode_coords(lon_min, lon_max, lat_min, lat_max)
 
-        # Check if image already exists in shared cache
-        if shared_map_cache is not None and encoded_bbox in shared_map_cache:
-            # Update shared progress counter
-            with shared_progress_dict['lock']:
-                shared_progress_dict['completed'] += 1
-                current_progress = shared_progress_dict['completed']
-                total_work = shared_progress_dict['total']
-
+        # Skip immediately if the cache memory limit was already reached by a
+        # previous worker.  The frame generator will produce this image on-the-fly.
+        if shared_progress_dict.get('cache_limit_reached', False):
+            current_progress, total_work = _bump_progress()
             return {
                 'bbox_index': bbox_index,
                 'bbox': bbox,
                 'success': True,
+                'was_cached': False,
+                'was_skipped': True,
                 'current_progress': current_progress,
                 'total_work': total_work,
-                'message': f"Map image already exists in shared cache for bbox {bbox_index + 1}",
-                'was_cached': True
+                'message': f"Skipped bbox {bbox_index + 1} (cache memory limit reached)",
             }
 
-        # Canvas dimensions: use override for bg images, video resolution otherwise.
-        if canvas_size_override is not None:
-            width, height = canvas_size_override
-        else:
-            width, height = video_resolution_x, video_resolution_y
-        dpi = 100  # Hardcoded as specified
-        figsize = (width / dpi, height / dpi)
-        
-        # Set up the cartopy cache directory (tiles are already cached in step 3)
-        set_cache_directory(map_style)
+        # Fast path: image already in shared cache from an earlier worker.
+        if shared_map_cache is not None and encoded_bbox in shared_map_cache:
+            current_progress, total_work = _bump_progress()
+            return {
+                'bbox_index': bbox_index,
+                'bbox': bbox,
+                'success': True,
+                'was_cached': True,
+                'was_skipped': False,
+                'current_progress': current_progress,
+                'total_work': total_work,
+                'message': f"Map image already in cache for bbox {bbox_index + 1}",
+            }
 
-        # Map opacity from percentage to alpha value
-        map_alpha = map_opacity / 100.0
+        # Render the map image (no cache interaction).
+        img_array = _render_map_image(bbox, json_data, canvas_size_override)
 
-        # Create map tiles; the CacheOnlyTilesWrapper is a debug feature that checks if all map tiles are locally cached like they should be in this step
-        if USE_CACHE_ONLY_TILES_WRAPPER:
-            map_tiles = _CacheOnlyTilesWrapper(create_map_tiles(map_style, log_cache_miss=True), map_style)
-        else:
-            map_tiles = create_map_tiles(map_style, log_cache_miss=True)
+        if img_array is None:
+            current_progress, total_work = _bump_progress()
+            return {
+                'bbox_index': bbox_index,
+                'bbox': bbox,
+                'success': False,
+                'error': 'render returned None',
+                'was_cached': False,
+                'was_skipped': False,
+                'current_progress': current_progress,
+                'total_work': total_work,
+                'message': f"Error creating map image for bbox {bbox_index + 1}: render returned None",
+            }
 
-        # Detect appropriate zoom level for this bounding box
-        zoom_level = detect_zoom_level(
-            (lon_min, lon_max, lat_min, lat_max),
-            max_tiles=max_map_tiles,
-            map_style=map_style
-        )
-        
-        # Create the figure
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(1, 1, 1, projection=map_tiles.crs)
-        
-        # Set the map extent explicitly
-        ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
-        
-        # Force the aspect ratio
-        ax.set_aspect('auto')
-        
-        # Add map tiles to the map with calculated zoom level and apply opacity preference
-        ax.add_image(map_tiles, zoom_level, alpha=map_alpha)
-        
-        # Apply tight layout with zero padding to ensure content fits within the figure
-        plt.tight_layout(pad=0)
-        
-        # Explicitly set the figure size in inches to ensure correct dimensions
-        fig.set_size_inches(figsize)
-        
-        # Convert figure to numpy array directly (much faster than PNG)
-        fig.canvas.draw()
-        buf = fig.canvas.buffer_rgba()
-        img_array = np.asarray(buf)
-        
-        # Convert RGBA to RGB (remove alpha channel)
-        img_array = img_array[:, :, :3]
-        
-        # Store in shared memory cache (unlimited cache for dynamic zoom)
+        # Store in shared cache and track memory usage.
         if shared_map_cache is not None:
             shared_map_cache[encoded_bbox] = img_array
-        
-        plt.close(fig)
-        
-        # Extra cleanup to prevent memory bloat
-        plt.clf()
-        plt.close('all')
-        
-        # Update shared progress counter
-        with shared_progress_dict['lock']:
-            shared_progress_dict['completed'] += 1
-            current_progress = shared_progress_dict['completed']
-            total_work = shared_progress_dict['total']
-        
+
+            limit_bytes = shared_progress_dict.get('cache_limit_bytes', 0)
+            if limit_bytes > 0:
+                with shared_progress_dict['lock']:
+                    new_total = shared_progress_dict.get('cache_bytes', 0) + img_array.nbytes
+                    shared_progress_dict['cache_bytes'] = new_total
+                    if new_total >= limit_bytes and not shared_progress_dict.get('cache_limit_reached', False):
+                        shared_progress_dict['cache_limit_reached'] = True
+
+        current_progress, total_work = _bump_progress()
         return {
             'bbox_index': bbox_index,
             'bbox': bbox,
             'success': True,
+            'was_cached': False,
+            'was_skipped': False,
             'current_progress': current_progress,
             'total_work': total_work,
             'message': f"Created map image for bbox {bbox_index + 1}",
-            'was_cached': False
         }
-        
+
     except Exception as e:
-        # Clean up matplotlib in case of error
         plt.close('all')
-        
-        # Update shared progress counter even on error
-        with shared_progress_dict['lock']:
-            shared_progress_dict['completed'] += 1
-            current_progress = shared_progress_dict['completed']
-            total_work = shared_progress_dict['total']
-        
+        current_progress, total_work = _bump_progress()
         return {
             'bbox_index': bbox_index,
             'bbox': bbox,
             'success': False,
             'error': str(e),
+            'was_cached': False,
+            'was_skipped': False,
             'current_progress': current_progress,
             'total_work': total_work,
             'message': f"Error creating map image for bbox {bbox_index + 1}: {str(e)}",
-            'was_cached': False
         }
 
 
@@ -324,6 +338,12 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
             shared_progress_dict['completed'] = 0
             shared_progress_dict['total'] = total_bboxes
             shared_progress_dict['lock'] = manager.Lock()
+            # Cache-limit tracking.  cache_limit_bytes == 0 means unlimited.
+            from config import config as _config
+            _limit_gb = _config.map_image_cache_size
+            shared_progress_dict['cache_limit_bytes'] = int(_limit_gb * 1024 ** 3) if _limit_gb is not None else 0
+            shared_progress_dict['cache_bytes'] = 0
+            shared_progress_dict['cache_limit_reached'] = False
             
             # Create shared memory cache for map images (unlimited cache for dynamic zoom)
             if shared_map_cache is None:
@@ -336,34 +356,43 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
             
             # Start multiprocessing
             results = []
-            successful_images = 0
-            
+            rendered_images = 0
+            skipped_images = 0
+            failed_images = 0
+
+            def _tally(result):
+                nonlocal rendered_images, skipped_images, failed_images
+                if result.get('was_skipped', False):
+                    skipped_images += 1
+                elif result['success']:
+                    rendered_images += 1
+                else:
+                    failed_images += 1
+
             if workers_to_use == 1:
                 # Single-threaded execution for debugging or when only one worker
                 if debug_callback:
                     debug_callback("Using single-threaded execution")
-                
+
                 for work_arg in work_args:
                     result = create_map_image_worker(work_arg)
                     results.append(result)
-                    
-                    if result['success']:
-                        successful_images += 1
-                    
+                    _tally(result)
+
                     # Update progress
                     progress_percent = int((result['current_progress'] / result['total_work']) * 100)
                     progress_text = f"Creating map image {result['current_progress']}/{result['total_work']}"
-                    
+
                     if progress_callback:
                         progress_callback("progress_bar_map_images", progress_percent, progress_text)
-                    
+
                     # if log_callback:
                     #    log_callback(result['message'])
             else:
                 # Multi-threaded execution
                 if debug_callback:
                     debug_callback(f"Using multi-threaded execution with {workers_to_use} workers")
-                
+
                 with Pool(processes=workers_to_use) as pool:
                     # Submit all work
                     if progress_callback:
@@ -372,31 +401,25 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
                     # Process results as they complete (one bbox per task)
                     for result in pool.imap_unordered(create_map_image_worker, work_args):
                         results.append(result)
-                        
-                        if result['success']:
-                            successful_images += 1
-                        
+                        _tally(result)
+
                         # Update progress
                         progress_percent = int((result['current_progress'] / result['total_work']) * 100)
                         progress_text = f"Creating map image {result['current_progress']}/{result['total_work']}"
-                        
+
                         if progress_callback:
                             progress_callback("progress_bar_map_images", progress_percent, progress_text)
-                        
+
                         # if log_callback:
                         #     log_callback(result['message'])
-        
+
         # Final progress update
         if progress_callback:
             progress_callback("progress_bar_map_images", 100, "Map image caching complete")
-        
-        # Summary logging
-        failed_images = total_bboxes - successful_images
-        if debug_callback:
-            debug_callback(f"Map image caching complete: {successful_images} successful, {failed_images} failed, {total_bboxes} total")
-        
+
         return {
-            'total_images_created': successful_images,
+            'total_images_created': rendered_images,
+            'total_images_skipped': skipped_images,
             'total_images_failed': failed_images,
             'total_bboxes': total_bboxes,
             'success': True,

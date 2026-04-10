@@ -937,7 +937,7 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, worker_image_cache=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -1100,15 +1100,33 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             encoded_bg_bbox = encode_coords(*bg_bbox)
             from video_generator_cache_map_images import _get_from_cache_safe as _get_bg
             bg_img = _get_bg(shared_map_cache, encoded_bg_bbox)
+            from video_generator_follow_3d import compute_bg_canvas_size
+            _bg_canvas_size = compute_bg_canvas_size(width, height)
             if bg_img is not None:
-                from video_generator_follow_3d import compute_bg_canvas_size
-                canvas_size = compute_bg_canvas_size(width, height)
+                # Shared cache hit — record for per-job stats.
+                if worker_image_cache is not None:
+                    worker_image_cache['_stat_hit'] = worker_image_cache.get('_stat_hit', 0) + 1
+            else:
+                # Shared cache miss — try worker-local cache first, then render on-the-fly.
+                if worker_image_cache is not None and encoded_bg_bbox in worker_image_cache:
+                    bg_img = worker_image_cache[encoded_bg_bbox]
+                if bg_img is None:
+                    from video_generator_cache_map_images import _render_map_image
+                    bg_img = _render_map_image(bg_bbox, json_data, canvas_size_override=(_bg_canvas_size, _bg_canvas_size))
+                    if bg_img is not None and worker_image_cache is not None:
+                        worker_image_cache.clear()
+                        worker_image_cache[encoded_bg_bbox] = bg_img
+                # Both worker-cache hit and fresh render count as on-the-fly from the job's perspective.
+                if bg_img is not None and worker_image_cache is not None:
+                    worker_image_cache['_stat_fly'] = worker_image_cache.get('_stat_fly', 0) + 1
+            if bg_img is not None:
+                canvas_size = _bg_canvas_size
                 render_figsize = (canvas_size / dpi, canvas_size / dpi)
                 bg_mercator_bbox = _convert_bbox_to_web_mercator(bg_bbox)
                 use_bg_canvas = True
             else:
                 print(
-                    f"Warning: bg map image not found for frame {frame_number} "
+                    f"Warning: bg map image not found (and on-the-fly render failed) for frame {frame_number} "
                     f"({encoded_bg_bbox}); falling back to normal canvas"
                 )
 
