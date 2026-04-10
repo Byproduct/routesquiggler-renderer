@@ -18,19 +18,11 @@ import numpy as np
 from PIL import Image as PILImage
 
 # Local imports
-from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, font_scale_from_name_tag_size, get_attribution_text, get_text_theme_colors, PointOfInterest
+from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, font_scale_from_name_tag_size, get_text_theme_colors, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
 from video_generator_coordinate_encoder import encode_coords
 from video_generator_create_combined_route import RoutePoint
-from video_generator_create_single_frame_legend import (
-    create_legend,
-    get_day_legend_data,
-    get_filename_legend_data,
-    get_month_legend_data,
-    get_people_legend_data,
-    get_year_legend_data,
-)
 from video_generator_create_single_frame_utils import (
     _draw_filename_tags_for_routes,
     _draw_name_tags_for_routes,
@@ -42,10 +34,19 @@ from video_generator_route_statistics import (
     _draw_current_elevation_at_point,
     _draw_current_hr_at_point,
     _draw_current_speed_at_point,
-    _draw_video_attribution,
-    _draw_video_statistics,
 )
-
+from video_generator_static_overlays import (
+    composite_bottom_center_helper_labels,
+    draw_static_overlays_to_axis,
+    get_legend_theme_colors,
+)
+from video_generator_follow_3d import (
+    apply_heading_rotation_to_frame,
+    apply_tilt_to_frame,
+    follow_3d_rotate_angle_degrees,
+    follow_3d_rotate_point_stats_stack_step_mercator,
+    get_most_recent_point,
+)
 
 
 def _gps_to_web_mercator(lon, lat):
@@ -383,18 +384,6 @@ def _calculate_hr_based_width(hr_value, hr_min, hr_max):
     
     normalized_hr = (hr_value - hr_min) / hr_range
     return 1.0 + normalized_hr * 9.0
-
-
-def get_legend_theme_colors(legend_theme):
-    """Get legend colors based on theme. Uses central text theme from image_generator_utils."""
-    theme = 'dark' if legend_theme == 'dark' else 'light'
-    bg_color, border_color, text_color = get_text_theme_colors(theme)
-    return {
-        'facecolor': bg_color,
-        'edgecolor': border_color,
-        'textcolor': text_color,
-        'framealpha': 0.9 if theme == 'dark' else 0.8
-    }
 
 
 def _draw_multi_route_tail(tail_points, tail_color_setting, tail_width, effective_line_width, filename_to_rgba, ax, fade_out_progress=None, fluffy_tail=False):
@@ -948,69 +937,7 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def _draw_video_title(ax, title_text, effective_line_width, json_data, resolution_scale=None, image_height=None, theme='light'):
-    """
-    Draw video title at the top center of the frame.
-    Uses the same styling as statistics and attribution (bbox, theme colors) but at twice the font size.
-    Top padding scales by resolution scale like statistics.
-
-    Args:
-        ax (matplotlib.axes.Axes): Matplotlib axes for drawing
-        title_text (str): Title text to display
-        effective_line_width (float): Base line width for scaling (unused, kept for compatibility)
-        json_data (dict): Job data containing video parameters for resolution scaling
-        resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
-        image_height (int): Image height in pixels for padding calculation
-        theme (str): Theme for title text ('light' or 'dark')
-            - 'light': white background, dark border and text (same as statistics/attribution)
-            - 'dark': dark background, light border and text
-    """
-    if not title_text:
-        return
-    
-    if resolution_scale is None:
-        from image_generator_utils import calculate_resolution_scale
-        resolution_x = int(json_data.get('video_resolution_x', 1920))
-        resolution_y = int(json_data.get('video_resolution_y', 1080))
-        resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
-
-    bg_color, border_color, text_color = get_text_theme_colors(theme)
-
-    # Twice the font size of statistics/attribution (they use base 12)
-    base_font_size = 24
-    font_size = base_font_size * resolution_scale
-
-    # Top padding: 20px multiplied by resolution scale
-    base_padding_pixels = 20
-    padding_pixels = base_padding_pixels * resolution_scale
-    if image_height:
-        padding_y = padding_pixels / image_height
-    else:
-        padding_y = 0.01
-    text_x = 0.5
-    text_y = 1.0 - padding_y
-
-    bbox_linewidth = 0.5 * resolution_scale
-    ax.text(
-        text_x, text_y, title_text,
-        transform=ax.transAxes,
-        color=text_color,
-        fontsize=font_size,
-        fontweight='bold',
-        ha='center',
-        va='top',
-        bbox=dict(
-            boxstyle='round,pad=0.3',
-            facecolor=bg_color,
-            edgecolor=border_color,
-            alpha=0.9,
-            linewidth=bbox_linewidth
-        ),
-        zorder=110
-    )
-
-
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -1122,11 +1049,12 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             print(f"Error: Could not load final bounding box for frame {frame_number}")
             return None
         bbox = final_bbox
-    elif video_mode == 'follow_2d':
+    elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
         # Bbox was pre-computed (with EMA smoothing) for every frame.
+        # follow_3d and follow_3d_rotate reuse the same bboxes as follow_2d.
         # frame_number is 1-based; bboxes list is 0-based.
         if not follow_2d_bboxes:
-            print(f"Error: follow_2d_bboxes not provided for frame {frame_number}")
+            print(f"Error: follow_2d_bboxes not provided for frame {frame_number} ({video_mode} mode)")
             return None
         idx = frame_number - 1
         if idx < 0 or idx >= len(follow_2d_bboxes):
@@ -1156,40 +1084,80 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             print(f"Error: Could not calculate bounding box for frame {frame_number}")
             return None
     
+    # For follow_3d_rotate: prepare the oversized background canvas so that
+    # heading rotation never exposes black corners.  The bg image was pre-rendered
+    # at canvas_size × canvas_size (= ceil(sqrt(W²+H²))).  Everything is drawn
+    # onto this larger canvas; after rotation we crop the centre W×H region.
+    use_bg_canvas = False
+    bg_img = None
+    bg_mercator_bbox = None
+    render_figsize = figsize        # figsize used for the main map render
+    canvas_size = max(width, height)  # fallback – overwritten below when used
+    if video_mode == 'follow_3d_rotate' and follow_3d_rotate_bg_bboxes is not None:
+        idx_bg = frame_number - 1
+        if 0 <= idx_bg < len(follow_3d_rotate_bg_bboxes):
+            bg_bbox = follow_3d_rotate_bg_bboxes[idx_bg]
+            encoded_bg_bbox = encode_coords(*bg_bbox)
+            from video_generator_cache_map_images import _get_from_cache_safe as _get_bg
+            bg_img = _get_bg(shared_map_cache, encoded_bg_bbox)
+            if bg_img is not None:
+                from video_generator_follow_3d import compute_bg_canvas_size
+                canvas_size = compute_bg_canvas_size(width, height)
+                render_figsize = (canvas_size / dpi, canvas_size / dpi)
+                bg_mercator_bbox = _convert_bbox_to_web_mercator(bg_bbox)
+                use_bg_canvas = True
+            else:
+                print(
+                    f"Warning: bg map image not found for frame {frame_number} "
+                    f"({encoded_bg_bbox}); falling back to normal canvas"
+                )
+
     # Check if we have a precached map image for these bounds
     encoded_bbox = encode_coords(*bbox)
-    
+
     # Try to load from shared memory cache using thread-safe read (returns a copy)
     # Lazy import to avoid circular import: video_generator_cache_map_images imports this module
     from video_generator_cache_map_images import _get_from_cache_safe
     img = _get_from_cache_safe(shared_map_cache, encoded_bbox)
-    if img is None:
-        # Image not found in shared cache
+    if img is None and not use_bg_canvas:
+        # Image not found in shared cache and no bg fallback available
         print(f"ERROR: Map image not found in shared cache for frame {frame_number}: {encoded_bbox}")
         print(f"Frame {frame_number}: Bounding box: {bbox}")
         print(f"Frame {frame_number}: Encoded bbox: {encoded_bbox}")
         return None
-    
+
     try:
-        # Convert GPS bounding box to Web Mercator coordinates (same as cached map images)
+        # Convert GPS bounding box to Web Mercator coordinates (same as cached map images).
+        # This is always derived from the normal follow_2d bbox and is used for overlays
+        # that must remain screen-aligned after rotation+crop.
         mercator_bbox = _convert_bbox_to_web_mercator(bbox)
-        
+
+        # Choose which image / bbox / figsize to use for the main map render.
+        # For follow_3d_rotate with a valid bg image: use the oversized canvas.
+        # For all other modes (or bg-canvas fallback): use the normal canvas.
+        if use_bg_canvas:
+            render_img = bg_img
+            render_merc_bbox = bg_mercator_bbox
+        else:
+            render_img = img
+            render_merc_bbox = mercator_bbox
+
         # Create a figure with the appropriate dimensions and no padding
         plt.rcParams['figure.constrained_layout.use'] = False
-        fig = plt.figure(figsize=figsize, facecolor='white', frameon=False)
-        
+        fig = plt.figure(figsize=render_figsize, facecolor='white', frameon=False)
+
         # Use regular matplotlib axes in Web Mercator coordinate space
         ax = plt.Axes(fig, [0, 0, 1, 1])
         ax.set_axis_off()  # Turn off axis
         fig.add_axes(ax)
-        
+
         # Display the cached map image in Web Mercator coordinate space
         alpha = map_opacity / 100.0
-        ax.imshow(img, extent=mercator_bbox, aspect='auto', alpha=alpha, zorder=0)  # Bottom layer for base map
-        
+        ax.imshow(render_img, extent=render_merc_bbox, aspect='auto', alpha=alpha, zorder=0)  # Bottom layer for base map
+
         # Set the axis limits to Web Mercator coordinates
-        ax.set_xlim(mercator_bbox[0], mercator_bbox[1])
-        ax.set_ylim(mercator_bbox[2], mercator_bbox[3])
+        ax.set_xlim(render_merc_bbox[0], render_merc_bbox[1])
+        ax.set_ylim(render_merc_bbox[2], render_merc_bbox[3])
         
         # OPTIMIZATION: Pre-calculate resolution scale once per frame (constant for entire video)
         # Use calculate_resolution_scale for consistent scaling across all visual elements
@@ -1775,7 +1743,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             _draw_points_of_interest(
                 ax=ax,
                 points_of_interest=points_of_interest_for_frame,
-                mercator_bbox=mercator_bbox,
+                mercator_bbox=render_merc_bbox,
                 image_scale=resolution_scale,
                 theme=poi_setting,
                 name_tag_font_scale=font_scale_from_name_tag_size(json_data),
@@ -1796,67 +1764,52 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             
             _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba, resolution_scale, ax, hide_in_fade_out=hide_filename_tags_in_fade_out)
 
-        # Add legend if requested (zorder=45 - above tails but below statistics)
-        legend_type = json_data.get('legend', '')
-        if legend_type in ['file_name', 'year', 'month', 'day', 'people']:
-            # Get legend theme colors (same for all legend types)
-            legend_theme = json_data.get('legend_theme', 'light')
-            theme_colors = get_legend_theme_colors(legend_theme)
-            
-            if legend_type == 'file_name':
-                # Get legend data - flatten points_for_frame for legend generation
-                flattened_points = [point for route_points in points_for_frame for point in route_points]
-                legend_handles, legend_labels = get_filename_legend_data(flattened_points, json_data, effective_line_width)
-                
-                if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
-            
-            elif legend_type == 'year':
-                # Get legend data - flatten points_for_frame for legend generation
-                flattened_points = [point for route_points in points_for_frame for point in route_points]
-                legend_handles, legend_labels = get_year_legend_data(flattened_points, json_data, effective_line_width)
-                
-                if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
-            
-            elif legend_type == 'month':
-                # Get legend data - flatten points_for_frame for legend generation
-                flattened_points = [point for route_points in points_for_frame for point in route_points]
-                legend_handles, legend_labels = get_month_legend_data(flattened_points, json_data, effective_line_width)
-                
-                if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
-            
-            elif legend_type == 'day':
-                # Get legend data - flatten points_for_frame for legend generation
-                flattened_points = [point for route_points in points_for_frame for point in route_points]
-                legend_handles, legend_labels = get_day_legend_data(flattened_points, json_data, effective_line_width)
-                
-                if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
-            
-            elif legend_type == 'people':
-                # Get legend data - flatten points_for_frame for legend generation
-                flattened_points = [point for route_points in points_for_frame for point in route_points]
-                legend_handles, legend_labels = get_people_legend_data(flattened_points, json_data, effective_line_width)
-                
-                if legend_handles and legend_labels:
-                    create_legend(ax, legend_handles, legend_labels, theme_colors, effective_line_width, resolution_scale=resolution_scale)
-        
-        # Add title text if enabled (can be 'light' or 'dark', text is route_name)
-        if json_data is not None:
-            title_text_setting = json_data.get('title_text', 'off')
-            # Legacy boolean values for backward compatibility (is now string instead)
-            if isinstance(title_text_setting, bool):
-                title_text_setting = 'light' if title_text_setting else 'off'
-            
-            if title_text_setting in ['light', 'dark']:
-                title_text_value = (json_data.get('route_name') or '').strip()
-                if title_text_value:
-                    _draw_video_title(ax, title_text_value, effective_line_width, json_data, resolution_scale=resolution_scale, image_height=height, theme=title_text_setting)
-        
-        # Add statistics if enabled (zorder=50 - top layer, above everything else) - MOVED TO END
-        statistics_setting = json_data.get('statistics', 'off')
+        # Heading rotation (follow_3d_rotate): same value for PIL warp and counter-rotated point stats.
+        follow_3d_heading_rotation_degrees = 0.0
+        if video_mode == 'follow_3d_rotate':
+            idx_rot = frame_number - 1
+            if follow_3d_rotate_angles and 0 <= idx_rot < len(follow_3d_rotate_angles):
+                follow_3d_heading_rotation_degrees = float(follow_3d_rotate_angles[idx_rot])
+            else:
+                follow_3d_heading_rotation_degrees = follow_3d_rotate_angle_degrees(bbox, points_for_frame)
+        statistics_setting = json_data.get('statistics', 'off') if json_data else 'off'
+        # Point-attached stats (speed / elevation / HR) counter-rotation and stack step: only when
+        # statistics are on and at least one of those metrics is selected (avoids per-frame work otherwise).
+        need_follow_3d_point_stat_layout = (
+            video_mode == 'follow_3d_rotate'
+            and statistics_setting in ('light', 'dark')
+            and json_data is not None
+            and (
+                json_data.get('statistics_current_speed', False)
+                or json_data.get('statistics_current_elevation', False)
+                or json_data.get('statistics_current_hr', False)
+            )
+        )
+        point_stats_text_rotation_degrees = (
+            -follow_3d_heading_rotation_degrees if need_follow_3d_point_stat_layout else 0.0
+        )
+
+        stack_step_mercator = None
+        if need_follow_3d_point_stat_layout:
+            x_range_stack = ax.get_xlim()[1] - ax.get_xlim()[0]
+            y_range_stack = ax.get_ylim()[1] - ax.get_ylim()[0]
+            width_px_stack = int(ax.figure.get_figwidth() * ax.figure.dpi)
+            height_px_stack = int(ax.figure.get_figheight() * ax.figure.dpi)
+            stack_step_mercator = follow_3d_rotate_point_stats_stack_step_mercator(
+                x_range_stack,
+                y_range_stack,
+                width_px_stack,
+                height_px_stack,
+                30.0 * resolution_scale,
+                follow_3d_heading_rotation_degrees,
+            )
+
+        defer_static_overlays = (video_mode in ('follow_3d', 'follow_3d_rotate'))
+
+        # Add statistics if enabled (zorder=50 - top layer, above everything else)
+        statistics_data = None
+        exclude_speed = True
+        exclude_elevation = True
         if statistics_setting in ['light', 'dark']:
             statistics_data = _calculate_video_statistics(
                 points_for_frame, 
@@ -1890,31 +1843,51 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 
                 # Only show current speed if enabled, available, and not at end of route
                 if current_speed_enabled and current_speed_value and not at_end_of_route:
-                    _draw_current_speed_at_point(ax, points_for_frame, current_speed_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale, vertical_position=vertical_position)
+                    _draw_current_speed_at_point(
+                        ax, points_for_frame, current_speed_value, effective_line_width, statistics_setting, json_data,
+                        resolution_scale=resolution_scale, vertical_position=vertical_position,
+                        text_rotation_degrees=point_stats_text_rotation_degrees,
+                        stack_step_mercator=stack_step_mercator,
+                    )
                     vertical_position += 1
                 
                 # Only show current elevation if enabled, available, and not at end of route
                 if current_elevation_enabled and current_elevation_value and not at_end_of_route:
-                    _draw_current_elevation_at_point(ax, points_for_frame, current_elevation_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale, vertical_position=vertical_position)
+                    _draw_current_elevation_at_point(
+                        ax, points_for_frame, current_elevation_value, effective_line_width, statistics_setting, json_data,
+                        resolution_scale=resolution_scale, vertical_position=vertical_position,
+                        text_rotation_degrees=point_stats_text_rotation_degrees,
+                        stack_step_mercator=stack_step_mercator,
+                    )
                     vertical_position += 1
                 
                 # Only show current HR if enabled, available, and not at end of route
                 if current_hr_enabled and current_hr_value and not at_end_of_route:
-                    _draw_current_hr_at_point(ax, points_for_frame, current_hr_value, effective_line_width, statistics_setting, json_data, resolution_scale=resolution_scale, vertical_position=vertical_position)
+                    _draw_current_hr_at_point(
+                        ax, points_for_frame, current_hr_value, effective_line_width, statistics_setting, json_data,
+                        resolution_scale=resolution_scale, vertical_position=vertical_position,
+                        text_rotation_degrees=point_stats_text_rotation_degrees,
+                        stack_step_mercator=stack_step_mercator,
+                    )
                 
-                # Draw other statistics in top-right corner
-                # Exclude current speed if we're at end of route, otherwise include it normally
+                # Draw other statistics in top-right corner.
+                # Exclude current point-attached metrics from top-right duplication.
                 exclude_speed = at_end_of_route or not current_speed_enabled or not current_speed_value
-                # Also exclude current elevation from top-right display since it's shown at the point
                 exclude_elevation = current_elevation_enabled and current_elevation_value and not at_end_of_route
-                _draw_video_statistics(ax, statistics_data, json_data, effective_line_width, statistics_setting, exclude_current_speed=exclude_speed, exclude_current_elevation=exclude_elevation, resolution_scale=resolution_scale)
-        
-        # Add attribution text if enabled (bottom-left, same style as statistics)
-        attribution_setting = json_data.get('attribution', 'off')
-        if attribution_setting in ['light', 'dark']:
-            map_style = json_data.get('map_style', '')
-            attribution_text = get_attribution_text(map_style)
-            _draw_video_attribution(ax, attribution_text, attribution_setting, resolution_scale, width, height)
+
+        if not defer_static_overlays:
+            draw_static_overlays_to_axis(
+                target_ax=ax,
+                points_for_frame=points_for_frame,
+                json_data=json_data,
+                effective_line_width=effective_line_width,
+                resolution_scale=resolution_scale,
+                width=width,
+                height=height,
+                statistics_data=statistics_data,
+                exclude_speed=exclude_speed,
+                exclude_elevation=exclude_elevation,
+            )
         
         # Convert figure to numpy array directly (much faster than PNG buffer)
         # Draw the figure to the canvas
@@ -1929,8 +1902,11 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         # Convert RGBA to RGB (remove alpha channel)
         frame_array = frame_array[:, :, :3]
         
-        # Add stamp to the frame if provided
-        if stamp_array is not None:
+        # Add stamp to the frame if provided.
+        # For follow_3d_rotate with the oversized bg canvas the stamp is skipped
+        # here and composited after the rotation+crop so it sits correctly in the
+        # final screen-space frame (handled below in the defer_static_overlays block).
+        if stamp_array is not None and not use_bg_canvas:
             height = int(json_data.get('video_resolution_y', 1080))
             width = int(json_data.get('video_resolution_x', 1920))
             
@@ -1966,100 +1942,111 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             else:
                 print(f"Warning: Stamp does not fit within frame bounds for frame {frame_number}")
         
-        # Add color and/or width labels if enabled
-        # Collect all labels to display (color label is either speed or HR based, width label is HR based)
-        labels_to_draw = []  # List of (label_array, label_name) tuples
-        
-        # image_scale is already calculated earlier in the function
-        
-        if json_data:
-            # Get color label (speed-based or HR-based, mutually exclusive)
-            # Use cached label images created during route processing
-            if json_data.get('speed_based_color_label', False):
-                # Use cached label from json_data
-                color_label = json_data.get('_speed_based_color_label_image')
-                if color_label is not None:
-                    labels_to_draw.append((color_label, "Speed-based color"))
-            elif json_data.get('hr_based_color_label', False):
-                # Use cached label from json_data
-                color_label = json_data.get('_hr_based_color_label_image')
-                if color_label is not None:
-                    labels_to_draw.append((color_label, "HR-based color"))
-            
-            # Get width label (can coexist with color label)
-            # Use cached label from json_data
-            if json_data.get('hr_based_width_label', False):
-                width_label = json_data.get('_hr_based_width_label_image')
-                if width_label is not None:
-                    labels_to_draw.append((width_label, "HR-based width"))
-        
-        if labels_to_draw:
-            # height and width are already defined earlier in the function
-            # Scale padding and gap with image_scale (convert to int for slice indices)
-            base_padding_bottom = 20
-            padding_bottom = int(round(base_padding_bottom * image_scale))
-            base_gap_between_labels = 100
-            gap_between_labels = int(round(base_gap_between_labels * image_scale))
-            
-            def draw_label_at_position(label_array, label_name, x_start):
-                """Helper to draw a single label with alpha blending at given x position."""
-                label_height, label_width = label_array.shape[:2]
-                y_end = height - padding_bottom
-                y_start = y_end - label_height
-                x_end = x_start + label_width
-                
-                # Ensure label fits within frame bounds
-                if y_start >= 0 and x_start >= 0 and y_end <= height and x_end <= width:
-                    if label_array.shape[2] == 4:
-                        # RGBA label - apply alpha blending
-                        alpha = label_array[:, :, 3:4] / 255.0
-                        rgb_label = label_array[:, :, :3] / 255.0
-                        frame_region = frame_array[y_start:y_end, x_start:x_end].astype(np.float32) / 255.0
-                        blended = alpha * rgb_label + (1 - alpha) * frame_region
-                        frame_array[y_start:y_end, x_start:x_end] = (blended * 255).astype(np.uint8)
-                    else:
-                        frame_array[y_start:y_end, x_start:x_end] = label_array[:, :, :3]
-                else:
-                    print(f"Warning: {label_name} label does not fit within frame bounds for frame {frame_number}")
-            
-            if len(labels_to_draw) == 1:
-                # Single label: center it horizontally
-                label_array, label_name = labels_to_draw[0]
-                label_width = label_array.shape[1]
-                x_start = (width - label_width) // 2
-                draw_label_at_position(label_array, label_name, x_start)
-            else:
-                # Two labels: draw side by side with gap
-                label1_array, label1_name = labels_to_draw[0]
-                label2_array, label2_name = labels_to_draw[1]
-                label1_width = label1_array.shape[1]
-                label2_width = label2_array.shape[1]
-                
-                # Calculate total width and starting positions
-                total_width = label1_width + gap_between_labels + label2_width
-                start_x = (width - total_width) // 2
-                
-                # Draw first label (color)
-                draw_label_at_position(label1_array, label1_name, start_x)
-                
-                # Draw second label (width)
-                draw_label_at_position(label2_array, label2_name, start_x + label1_width + gap_between_labels)
-        
-        # Add clock overlay if enabled (same point as statistics_current_time: most recent point)
-        if json_data.get('clock', False):
-            last_point = None
-            for route_points in points_for_frame:
-                if not route_points:
-                    continue
-                route_last = route_points[-1]
-                if last_point is None or route_last.accumulated_time > last_point.accumulated_time:
-                    last_point = route_last
-            if last_point is not None and last_point.timestamp is not None:
-                composite_clock_onto_frame_array(frame_array, last_point.timestamp, image_scale)
+        # Bottom-center helper labels are static 2D HUD elements.
+        if not defer_static_overlays:
+            composite_bottom_center_helper_labels(
+                frame_array=frame_array,
+                json_data=json_data,
+                image_scale=image_scale,
+                width=width,
+                height=height,
+                frame_number=frame_number,
+            )
         
         # Clean up matplotlib figure to prevent memory leaks
         plt.close(fig)
-        
+
+        # Apply heading rotation + perspective tilt for follow_3d variants.
+        # Static HUD overlays are composited after this transform to keep them screen-aligned.
+        if defer_static_overlays:
+            if video_mode == 'follow_3d_rotate' and use_bg_canvas:
+                # ── Oversized-canvas path for follow_3d_rotate ──────────────────────
+                # 1. Rotate the full canvas_size × canvas_size frame.
+                if abs(follow_3d_heading_rotation_degrees) > 1e-6:
+                    frame_array = apply_heading_rotation_to_frame(frame_array, follow_3d_heading_rotation_degrees)
+                # 2. Crop the centre width × height region — this is the final viewport.
+                y_off = (canvas_size - height) // 2
+                x_off = (canvas_size - width) // 2
+                frame_array = frame_array[y_off:y_off + height, x_off:x_off + width]
+                # 3. Apply tilt to the already-cropped video-resolution frame.
+                tilt_degrees = float(json_data.get('video_tilt', 20.0)) if json_data else 20.0
+                if tilt_degrees > 0:
+                    frame_array = apply_tilt_to_frame(frame_array, tilt_degrees)
+                # 4. Stamp is a static HUD element — composite after crop so it lands
+                #    in the correct screen corner regardless of rotation angle.
+                if stamp_array is not None:
+                    _sh, _sw = stamp_array.shape[:2]
+                    _pad = 20
+                    _ys = height - _pad - _sh
+                    _ye = height - _pad
+                    _xs = _pad
+                    _xe = _pad + _sw
+                    if _ys >= 0 and _xs >= 0 and _ye <= height and _xe <= width:
+                        if stamp_array.shape[2] == 4:
+                            _a = stamp_array[:, :, 3:4] / 255.0
+                            _rgb = stamp_array[:, :, :3] / 255.0
+                            _reg = frame_array[_ys:_ye, _xs:_xe].astype(np.float32) / 255.0
+                            frame_array[_ys:_ye, _xs:_xe] = ((_a * _rgb + (1 - _a) * _reg) * 255).astype(np.uint8)
+                        else:
+                            frame_array[_ys:_ye, _xs:_xe] = stamp_array
+            else:
+                # ── Normal path (follow_3d without rotation, or bg-canvas fallback) ─
+                if video_mode == 'follow_3d_rotate' and abs(follow_3d_heading_rotation_degrees) > 1e-6:
+                    frame_array = apply_heading_rotation_to_frame(frame_array, follow_3d_heading_rotation_degrees)
+
+                tilt_degrees = float(json_data.get('video_tilt', 20.0)) if json_data else 20.0
+                if tilt_degrees > 0:
+                    frame_array = apply_tilt_to_frame(frame_array, tilt_degrees)
+
+            # Render static overlays onto a transparent canvas and composite in post.
+            # Always uses the video-resolution figsize and the normal (follow_2d) mercator_bbox
+            # because at this point frame_array is already at video resolution.
+            overlay_fig = plt.figure(figsize=figsize, facecolor=(0, 0, 0, 0), frameon=False)
+            overlay_ax = plt.Axes(overlay_fig, [0, 0, 1, 1])
+            overlay_ax.set_axis_off()
+            overlay_fig.add_axes(overlay_ax)
+            overlay_ax.set_xlim(mercator_bbox[0], mercator_bbox[1])
+            overlay_ax.set_ylim(mercator_bbox[2], mercator_bbox[3])
+
+            draw_static_overlays_to_axis(
+                target_ax=overlay_ax,
+                points_for_frame=points_for_frame,
+                json_data=json_data,
+                effective_line_width=effective_line_width,
+                resolution_scale=resolution_scale,
+                width=width,
+                height=height,
+                statistics_data=statistics_data,
+                exclude_speed=exclude_speed,
+                exclude_elevation=exclude_elevation,
+            )
+
+            overlay_fig.canvas.draw()
+            overlay_rgba = np.asarray(overlay_fig.canvas.buffer_rgba()).astype(np.float32) / 255.0
+            overlay_alpha = overlay_rgba[:, :, 3:4]
+            overlay_rgb = overlay_rgba[:, :, :3]
+            base_rgb = frame_array.astype(np.float32) / 255.0
+            frame_array = ((overlay_rgb * overlay_alpha + base_rgb * (1.0 - overlay_alpha)) * 255.0).astype(np.uint8)
+            plt.close(overlay_fig)
+
+            # Bottom-center helper labels are static HUD elements: composite in post.
+            composite_bottom_center_helper_labels(
+                frame_array=frame_array,
+                json_data=json_data,
+                image_scale=image_scale,
+                width=width,
+                height=height,
+                frame_number=frame_number,
+            )
+
+        # Add clock overlay if enabled (same point as statistics_current_time: most recent point).
+        # In follow_3d variants this must happen after world-space transforms to keep
+        # the clock static in screen space.
+        if json_data.get('clock', False):
+            last_point = get_most_recent_point(points_for_frame)
+            if last_point is not None and last_point.timestamp is not None:
+                composite_clock_onto_frame_array(frame_array, last_point.timestamp, image_scale)
+
         return frame_array
         
     except Exception as e:

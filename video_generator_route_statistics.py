@@ -285,7 +285,7 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
     return statistics_data
 
 
-def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0):
+def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0, text_rotation_degrees=0.0, stack_step_mercator=None):
     """
     Draw current speed near the latest point on the chart.
     
@@ -298,6 +298,10 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
         json_data (dict): Job data containing video parameters for resolution scaling
         resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
         vertical_position (int): Vertical stack position (0=top, 1=second, 2=third, etc.)
+        text_rotation_degrees (float): Matplotlib text rotation (degrees CCW). Used to counter-rotate
+            labels when the frame is rotated later (e.g. follow_3d_rotate).
+        stack_step_mercator (tuple or None): Optional (dx, dy) in Mercator data units
+            per vertical_position step so labels stack on screen after heading rotation (follow_3d_rotate).
     """
     if not current_speed or not points_for_frame:
         return
@@ -367,13 +371,16 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     x_offset = (scaled_offset_pixels / width) * x_range  # Resolution-scaled pixels in coordinate space
     
     speed_x = x + x_offset
-    
-    # Calculate vertical offset based on position in the stack
     height = int(ax.figure.get_figheight() * ax.figure.dpi)
-    base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
-    scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
-    y_offset = (scaled_vertical_offset_pixels / height) * y_range
-    speed_y = y - y_offset
+    if stack_step_mercator is not None:
+        sdx, sdy = stack_step_mercator
+        speed_x += vertical_position * sdx
+        speed_y = y + vertical_position * sdy
+    else:
+        base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
+        scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
+        y_offset = (scaled_vertical_offset_pixels / height) * y_range
+        speed_y = y - y_offset
     
     bg_color, border_color, text_color = get_text_theme_colors(theme)
 
@@ -392,6 +399,7 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
         color=text_color,
         fontsize=font_size,
         fontweight='bold',
+        rotation=text_rotation_degrees,
         ha='left',      # Left align (since we're positioning to the right)
         va='center',    # Center vertically
         bbox=dict(
@@ -405,7 +413,7 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     )
 
 
-def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0):
+def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0, text_rotation_degrees=0.0, stack_step_mercator=None):
     """
     Draw current elevation near the latest point on the chart.
     
@@ -418,6 +426,10 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
         json_data (dict): Job data containing video parameters for resolution scaling
         resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
         vertical_position (int): Vertical stack position (0=top, 1=second, 2=third, etc.)
+        text_rotation_degrees (float): Matplotlib text rotation (degrees CCW). Used to counter-rotate
+            labels when the frame is rotated later (e.g. follow_3d_rotate).
+        stack_step_mercator (tuple or None): Optional (dx, dy) in Mercator data units
+            per vertical_position step so labels stack on screen after heading rotation (follow_3d_rotate).
     """
     if not current_elevation or not points_for_frame:
         return
@@ -487,13 +499,16 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
     x_offset = (scaled_offset_pixels / width) * x_range  # Resolution-scaled pixels in coordinate space
     
     elevation_x = x + x_offset
-    
-    # Calculate vertical offset based on position in the stack
     height = int(ax.figure.get_figheight() * ax.figure.dpi)
-    base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
-    scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
-    y_offset = (scaled_vertical_offset_pixels / height) * y_range
-    elevation_y = y - y_offset
+    if stack_step_mercator is not None:
+        sdx, sdy = stack_step_mercator
+        elevation_x += vertical_position * sdx
+        elevation_y = y + vertical_position * sdy
+    else:
+        base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
+        scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
+        y_offset = (scaled_vertical_offset_pixels / height) * y_range
+        elevation_y = y - y_offset
     
     bg_color, border_color, text_color = get_text_theme_colors(theme)
 
@@ -508,6 +523,7 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
         color=text_color,
         fontsize=font_size,
         fontweight='bold',
+        rotation=text_rotation_degrees,
         ha='left',      # Left align (since we're positioning to the right)
         va='center',    # Center vertically
         bbox=dict(
@@ -521,7 +537,7 @@ def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, ef
     )
 
 
-def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0):
+def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0, text_rotation_degrees=0.0, stack_step_mercator=None):
     """
     Draw current heart rate near the latest point on the chart.
     
@@ -534,6 +550,10 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
         json_data (dict): Job data containing video parameters for resolution scaling
         resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
         vertical_position (int): Vertical stack position (0=top, 1=second, 2=third, etc.)
+        text_rotation_degrees (float): Matplotlib text rotation (degrees CCW). Used to counter-rotate
+            labels when the frame is rotated later (e.g. follow_3d_rotate).
+        stack_step_mercator (tuple or None): Optional (dx, dy) in Mercator data units
+            per vertical_position step so labels stack on screen after heading rotation (follow_3d_rotate).
     """
     if not current_hr or not points_for_frame:
         return
@@ -600,13 +620,16 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
     x_offset = (scaled_offset_pixels / width) * x_range
     
     hr_x = x + x_offset
-    
-    # Calculate vertical offset based on position in the stack
     height = int(ax.figure.get_figheight() * ax.figure.dpi)
-    base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
-    scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
-    y_offset = (scaled_vertical_offset_pixels / height) * y_range
-    hr_y = y - y_offset
+    if stack_step_mercator is not None:
+        sdx, sdy = stack_step_mercator
+        hr_x += vertical_position * sdx
+        hr_y = y + vertical_position * sdy
+    else:
+        base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
+        scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
+        y_offset = (scaled_vertical_offset_pixels / height) * y_range
+        hr_y = y - y_offset
     
     bg_color, border_color, text_color = get_text_theme_colors(theme)
 
@@ -622,6 +645,7 @@ def _draw_current_hr_at_point(ax, points_for_frame, current_hr, effective_line_w
         color=text_color,
         fontsize=font_size,
         fontweight='bold',
+        rotation=text_rotation_degrees,
         ha='left',      # Left align (since we're positioning to the right)
         va='center',    # Center vertically
         bbox=dict(

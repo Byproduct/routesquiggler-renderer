@@ -747,24 +747,41 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
             # Return list with single bounding box
             return [final_bbox]
         
-        elif video_mode == 'follow_2d':
-            # follow_2d mode: bboxes were pre-computed (with EMA smoothing) and stored in
-            # combined_route_data before this function was called.  Just extract the unique set.
+        elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
+            # follow_2d / follow_3d / follow_3d_rotate modes: bboxes were pre-computed
+            # (with EMA smoothing) and
+            # stored in combined_route_data before this function was called.
+            # follow_3d and follow_3d_rotate reuse follow_2d bboxes for camera smoothing.
             follow_2d_bboxes = combined_route_data.get('follow_2d_bboxes_per_frame') if combined_route_data else None
             if not follow_2d_bboxes:
                 if log_callback:
                     log_callback(
-                        "Error: follow_2d mode requires follow_2d_bboxes_per_frame in "
-                        "combined_route_data (run precompute_follow_2d_bboxes first)"
+                        f"Error: {video_mode} mode requires follow_2d_bboxes_per_frame in "
+                        "combined_route_data (run precompute_follow_2d/3d_bboxes first)"
                     )
                 return None
-            unique_bboxes = list(set(follow_2d_bboxes))
-            if debug_callback:
-                debug_callback(
-                    f"follow_2d mode: {len(follow_2d_bboxes)} frame bboxes → "
-                    f"{len(unique_bboxes)} unique bboxes to cache"
-                )
-            return unique_bboxes
+            if video_mode == 'follow_3d_rotate':
+                # For follow_3d_rotate only the expanded background bboxes are needed.
+                # The bg bboxes cover the same tile area as the normal follow_2d bboxes
+                # (they are a strict superset), so caching normal bboxes separately
+                # would be redundant.  Only bg images are used during frame generation.
+                bg_bboxes = (
+                    combined_route_data.get('follow_3d_rotate_bg_bboxes_per_frame') or []
+                ) if combined_route_data else []
+                unique_bboxes = set(bg_bboxes)
+                if debug_callback:
+                    debug_callback(
+                        f"follow_3d_rotate: using {len(unique_bboxes)} unique bg bboxes "
+                        f"(expanded from {len(follow_2d_bboxes)} frame bboxes)"
+                    )
+            else:
+                unique_bboxes = set(follow_2d_bboxes)
+                if debug_callback:
+                    debug_callback(
+                        f"{video_mode} mode: {len(follow_2d_bboxes)} frame bboxes → "
+                        f"{len(unique_bboxes)} unique bboxes to cache"
+                    )
+            return list(unique_bboxes)
 
         else:
             # Dynamic zoom mode - calculate bounding boxes for each frame as before

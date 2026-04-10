@@ -78,19 +78,25 @@ def _get_from_cache_safe(shared_map_cache, encoded_bbox):
 def create_map_image_worker(args):
     """
     Worker function to create a map image for a single bounding box.
-    
+
     Args:
-        args (tuple): Contains (bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache)
-    
+        args (tuple): Contains
+            (bbox_index, bbox, json_data, shared_progress_dict,
+             shared_map_cache, canvas_size_override)
+            canvas_size_override: (width_px, height_px) or None.
+            When provided the image is rendered at that canvas size instead
+            of the default video resolution.  Used for follow_3d_rotate
+            background (bg) images which need an oversized square canvas.
+
     Returns:
         dict: Result information for this bounding box
     """
-    bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache = args
-    
+    bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache, canvas_size_override = args
+
     try:
         # Get bounding box coordinates
         lon_min, lon_max, lat_min, lat_max = bbox
-        
+
         # Extract parameters from json_data
         map_style = json_data.get('map_style', 'osm')
         map_transparency = float(json_data.get('map_transparency', 0))  # Transparency parameter
@@ -114,13 +120,21 @@ def create_map_image_worker(args):
             min_value=1,
             map_detail=map_detail,
         )
-        
+
+        # For oversized bg canvases the pixel count is larger; scale the tile
+        # budget proportionally so the zoom level stays consistent with the
+        # normal frames drawn at the same pixel-per-metre ratio.
+        if canvas_size_override is not None:
+            canvas_w, canvas_h = canvas_size_override
+            area_ratio = (canvas_w * canvas_h) / max(1, video_resolution_x * video_resolution_y)
+            max_map_tiles = max(1, int(max_map_tiles * area_ratio))
+
         # Set up map image cache directory with subfolder for the current map style and opacity
         # Note: No longer creating disk directories since we're using shared memory exclusively
 
         # Generate a unique filename for this bounding box using the coordinate encoder
         encoded_bbox = encode_coords(lon_min, lon_max, lat_min, lat_max)
-        
+
         # Check if image already exists in shared cache
         if shared_map_cache is not None and encoded_bbox in shared_map_cache:
             # Update shared progress counter
@@ -128,7 +142,7 @@ def create_map_image_worker(args):
                 shared_progress_dict['completed'] += 1
                 current_progress = shared_progress_dict['completed']
                 total_work = shared_progress_dict['total']
-            
+
             return {
                 'bbox_index': bbox_index,
                 'bbox': bbox,
@@ -139,8 +153,11 @@ def create_map_image_worker(args):
                 'was_cached': True
             }
 
-        # Video resolution and DPI settings
-        width, height = video_resolution_x, video_resolution_y
+        # Canvas dimensions: use override for bg images, video resolution otherwise.
+        if canvas_size_override is not None:
+            width, height = canvas_size_override
+        else:
+            width, height = video_resolution_x, video_resolution_y
         dpi = 100  # Hardcoded as specified
         figsize = (width / dpi, height / dpi)
         
@@ -238,11 +255,11 @@ def create_map_image_worker(args):
         }
 
 
-def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None):
+def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, canvas_size_override=None):
     """
     Cache map images for all unique bounding boxes required for video generation.
     Uses shared memory cache exclusively for maximum performance.
-    
+
     Args:
         unique_bounding_boxes (set): Set of unique bounding boxes as tuples (lon_min, lon_max, lat_min, lat_max)
         json_data (dict): Job data containing video parameters
@@ -251,7 +268,9 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
         debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
         shared_map_cache (dict, optional): Shared memory cache for storing map images (required)
-    
+        canvas_size_override (tuple, optional): (width_px, height_px) canvas size to use instead
+            of the video resolution.  Pass this for follow_3d_rotate background images.
+
     Returns:
         dict: Cache results with timing information, or None if error
     """
@@ -313,7 +332,7 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
             # Prepare work arguments for each worker
             work_args = []
             for bbox_index, bbox in enumerate(bbox_list):
-                work_args.append((bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache))
+                work_args.append((bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache, canvas_size_override))
             
             # Start multiprocessing
             results = []
@@ -476,9 +495,30 @@ def cache_map_images(json_data=None, combined_route_data=None, progress_callback
             if debug_callback:
                 debug_callback(f"Reusing {len(unique_bounding_boxes)} precomputed unique bounding boxes")
         
-        # Cache map images for all unique bounding boxes
-        cache_result = cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback, log_callback, debug_callback, max_workers, shared_map_cache)
-        
+        # For follow_3d_rotate all bboxes in unique_bounding_boxes are already the
+        # expanded background bboxes (calculate_unique_bounding_boxes only returns bg
+        # bboxes for this mode).  They must be rendered on the oversized square canvas
+        # so that heading rotation never exposes black corners.
+        video_mode = json_data.get('video_mode', 'dynamic')
+        if video_mode == 'follow_3d_rotate':
+            from video_generator_follow_3d import compute_bg_canvas_size
+            video_w = int(json_data.get('video_resolution_x', 1920))
+            video_h = int(json_data.get('video_resolution_y', 1080))
+            canvas_size = compute_bg_canvas_size(video_w, video_h)
+            if debug_callback:
+                debug_callback(
+                    f"follow_3d_rotate map images: {len(unique_bounding_boxes)} bg bboxes "
+                    f"at {canvas_size}×{canvas_size}px"
+                )
+            canvas_override = (canvas_size, canvas_size)
+        else:
+            canvas_override = None
+
+        cache_result = cache_map_images_for_video(
+            unique_bounding_boxes, json_data, progress_callback, log_callback,
+            debug_callback, max_workers, shared_map_cache,
+            canvas_size_override=canvas_override,
+        )
         if cache_result is None:
             if log_callback:
                 log_callback("Error: Could not cache map images")

@@ -422,6 +422,8 @@ def resolution_scale_to_tile_threshold_multiplier(resolution_scale: float, map_d
             multiplier *= 0.5
         elif md == "high":
             multiplier *= 1.5
+        elif md == "extrahigh":   # Not enabled in UI
+            multiplier *= 2.0
 
     return multiplier
 

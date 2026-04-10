@@ -13,6 +13,11 @@ gpu_rendering: false
 # The cache is checked hourly. If omitted, assumes unlimited.
 map_tile_cache_size: 100
 
+# Map image cache size in gigabytes
+# This is the cache for reusable background map images while making videos (frame workers request images from this cache)
+# This number should depend on available ram, but be conservative because it's not exact and not the only thing memory is used for
+map_image_cache_size: 5
+
 # Low spec hardware - will only be given light, 0-cost jobs and only if no other renderers are available
 # Map tile cache will only be stored for OSM, OTM and CyclOSM (others cost credits)
 low_spec: false

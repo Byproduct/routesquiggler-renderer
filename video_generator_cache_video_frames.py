@@ -222,7 +222,7 @@ def create_video_streaming(json_data, route_time_per_frame, combined_route_data,
                         ffmpeg_params=[
                             '-pix_fmt', 'yuv420p',
                             '-preset', 'medium',        # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
-#                        '-tune', 'animation',       # Options: film, animation, grain, stillimage, fastdecode, zerolatency
+                            '-tune', 'animation',       # Options: film, animation, grain, stillimage, fastdecode, zerolatency
                             '-crf', '25',               # Constant Rate Factor (0-51, lower = better quality, larger file)
                             '-profile:v', 'high',       # Profile: baseline, main, high, high10, high422, high444
                             '-level', '4.1'             # H.264 level for compatibility

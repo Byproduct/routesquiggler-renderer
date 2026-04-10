@@ -413,24 +413,56 @@ class VideoGeneratorWorker(QObject):
             self.debug_message.emit(f"  - Total distance: {distance_value:.2f} {distance_unit}")
             self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
 
-            # Step 2.5: Pre-compute follow_2d camera bboxes (must happen before step 3 so
-            # calculate_unique_bounding_boxes can use them in both the tile-caching and
-            # map-image-caching phases).
-            if self.json_data.get('video_mode') == 'follow_2d':
-                self.log_message.emit("Step 2.5: Precomputing follow_2d camera positions")
-                from video_generator_follow_2d import precompute_follow_2d_bboxes
-                follow_2d_bboxes = precompute_follow_2d_bboxes(
+            # Step 2.5: Pre-compute follow_2d / follow_3d / follow_3d_rotate camera bboxes (must happen before
+            # step 3 so calculate_unique_bounding_boxes can use them in both the tile-caching
+            # and map-image-caching phases).
+            video_mode = self.json_data.get('video_mode')
+            if video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
+                mode_label = video_mode
+                self.log_message.emit(f"Step 2.5: Precomputing {mode_label} camera positions")
+                if video_mode == 'follow_2d':
+                    from video_generator_follow_2d import precompute_follow_2d_bboxes as _precompute
+                else:
+                    from video_generator_follow_3d import precompute_follow_3d_bboxes as _precompute
+                follow_2d_bboxes = _precompute(
                     self.json_data,
                     self.combined_route_data,
                     log_callback=self.log_message.emit,
                     debug_callback=self.debug_message.emit,
                 )
                 if not follow_2d_bboxes:
-                    raise ValueError("Failed to precompute follow_2d bounding boxes")
+                    raise ValueError(f"Failed to precompute {mode_label} bounding boxes")
                 self.combined_route_data['follow_2d_bboxes_per_frame'] = follow_2d_bboxes
                 self.debug_message.emit(
-                    f"follow_2d: {len(follow_2d_bboxes)} frame bboxes precomputed"
+                    f"{mode_label}: {len(follow_2d_bboxes)} frame bboxes precomputed"
                 )
+                if video_mode == 'follow_3d_rotate':
+                    from video_generator_follow_3d import precompute_follow_3d_rotate_angles
+                    follow_3d_rotate_angles = precompute_follow_3d_rotate_angles(
+                        self.json_data,
+                        self.combined_route_data,
+                        log_callback=self.log_message.emit,
+                        debug_callback=self.debug_message.emit,
+                    )
+                    if not follow_3d_rotate_angles:
+                        raise ValueError("Failed to precompute follow_3d_rotate camera angles")
+                    self.combined_route_data['follow_3d_rotate_angles_per_frame'] = follow_3d_rotate_angles
+                    self.debug_message.emit(
+                        f"follow_3d_rotate: {len(follow_3d_rotate_angles)} frame angles precomputed"
+                    )
+                    from video_generator_follow_3d import precompute_follow_3d_rotate_bg_bboxes
+                    follow_3d_rotate_bg_bboxes = precompute_follow_3d_rotate_bg_bboxes(
+                        self.json_data,
+                        self.combined_route_data,
+                        log_callback=self.log_message.emit,
+                        debug_callback=self.debug_message.emit,
+                    )
+                    if not follow_3d_rotate_bg_bboxes:
+                        raise ValueError("Failed to precompute follow_3d_rotate background bboxes")
+                    self.combined_route_data['follow_3d_rotate_bg_bboxes_per_frame'] = follow_3d_rotate_bg_bboxes
+                    self.debug_message.emit(
+                        f"follow_3d_rotate: {len(follow_3d_rotate_bg_bboxes)} bg bboxes precomputed"
+                    )
 
             # Step 3: Calculate unique bounding boxes and cache map tiles
             self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
