@@ -192,6 +192,8 @@ def _streaming_frame_worker(args):
     stamp_array = shared_data["stamp_array"]
     shared_route_cache = shared_data["shared_route_cache"]
     is_simultaneous_mode_flag = shared_data.get("is_simultaneous_mode", False)
+    # Pre-computed per-frame bboxes for follow_2d mode (None for all other modes).
+    follow_2d_bboxes = combined_route_data.get("follow_2d_bboxes_per_frame") if combined_route_data else None
 
     try:
         # Ensure frame_number is an integer
@@ -506,6 +508,7 @@ def _streaming_frame_worker(args):
             route_specific_tail_info,
             points_of_interest_for_frame,
             persistent_tracks,
+            follow_2d_bboxes=follow_2d_bboxes,
         )
 
         # MEMORY MANAGEMENT: Aggressive cleanup to prevent memory accumulation

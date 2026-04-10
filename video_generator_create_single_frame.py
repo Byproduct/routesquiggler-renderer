@@ -1010,7 +1010,7 @@ def _draw_video_title(ax, title_text, effective_line_width, json_data, resolutio
     )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -1122,6 +1122,17 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             print(f"Error: Could not load final bounding box for frame {frame_number}")
             return None
         bbox = final_bbox
+    elif video_mode == 'follow_2d':
+        # Bbox was pre-computed (with EMA smoothing) for every frame.
+        # frame_number is 1-based; bboxes list is 0-based.
+        if not follow_2d_bboxes:
+            print(f"Error: follow_2d_bboxes not provided for frame {frame_number}")
+            return None
+        idx = frame_number - 1
+        if idx < 0 or idx >= len(follow_2d_bboxes):
+            print(f"Error: frame {frame_number} out of range for follow_2d_bboxes (len={len(follow_2d_bboxes)})")
+            return None
+        bbox = follow_2d_bboxes[idx]
     else:
         # Dynamic zoom mode - calculate bounding box for current frame
         # Flatten points_for_frame to get all points for this frame (animated routes only).

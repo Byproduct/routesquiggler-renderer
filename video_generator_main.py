@@ -412,7 +412,26 @@ class VideoGeneratorWorker(QObject):
             self.debug_message.emit(f"  - Total points: {total_points:,}")
             self.debug_message.emit(f"  - Total distance: {distance_value:.2f} {distance_unit}")
             self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
-            
+
+            # Step 2.5: Pre-compute follow_2d camera bboxes (must happen before step 3 so
+            # calculate_unique_bounding_boxes can use them in both the tile-caching and
+            # map-image-caching phases).
+            if self.json_data.get('video_mode') == 'follow_2d':
+                self.log_message.emit("Step 2.5: Precomputing follow_2d camera positions")
+                from video_generator_follow_2d import precompute_follow_2d_bboxes
+                follow_2d_bboxes = precompute_follow_2d_bboxes(
+                    self.json_data,
+                    self.combined_route_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=self.debug_message.emit,
+                )
+                if not follow_2d_bboxes:
+                    raise ValueError("Failed to precompute follow_2d bounding boxes")
+                self.combined_route_data['follow_2d_bboxes_per_frame'] = follow_2d_bboxes
+                self.debug_message.emit(
+                    f"follow_2d: {len(follow_2d_bboxes)} frame bboxes precomputed"
+                )
+
             # Step 3: Calculate unique bounding boxes and cache map tiles
             self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
             
