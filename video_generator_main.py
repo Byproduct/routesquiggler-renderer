@@ -555,11 +555,11 @@ class VideoGeneratorWorker(QObject):
                 # Step 4: Cache map images for unique bounding boxes
                 self.log_message.emit("Step 4: Caching map images for unique bounding boxes")           
                 
-                # Send initial "Rendering maps" status and create a rate-limited
+                # Send initial "rendering maps" status and create a rate-limited
                 # progress wrapper that sends 10% milestone updates to the server.
                 # The wrapper intercepts progress_bar_map_images callbacks from the
                 # main process (not worker threads), ensuring non-spammy updates.
-                update_status(f"Rendering maps ({job_id})", api_key=self.user)
+                update_status(f"rendering maps ({job_id})", api_key=self.user)
                 _last_map_status_time = time.time()
                 _last_map_milestone = 0
 
@@ -572,7 +572,7 @@ class VideoGeneratorWorker(QObject):
                     if milestone > _last_map_milestone and 10 <= milestone <= 90:
                         now = time.time()
                         if now - _last_map_status_time >= 5:
-                            update_status(f"Rendering maps ({job_id}) {milestone}%", api_key=self.user)
+                            update_status(f"rendering maps ({job_id}) {milestone}%", api_key=self.user)
                             _last_map_status_time = now
                             _last_map_milestone = milestone
 
@@ -604,7 +604,7 @@ class VideoGeneratorWorker(QObject):
                 
                 # Step 5: Generate video frames using shared map cache
                 self.log_message.emit("Step 5: Generating video frames")
-                update_status(f"Rendering frames ({job_id})", api_key=self.user)
+                update_status(f"rendering frames ({job_id})", api_key=self.user)
                 
                 video_frames_result = cache_video_frames(
                     self.json_data,

@@ -913,7 +913,7 @@ class StreamingFrameGenerator:
                     from update_status import update_status
 
                     update_status(
-                        f"Rendering frames ({self.job_id}) {current_milestone}%",
+                        f"rendering frames ({self.job_id}) {current_milestone}%",
                         api_key=self.user,
                     )
                     self.last_status_update_time = now

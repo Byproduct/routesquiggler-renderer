@@ -1137,12 +1137,24 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
     # Lazy import to avoid circular import: video_generator_cache_map_images imports this module
     from video_generator_cache_map_images import _get_from_cache_safe
     img = _get_from_cache_safe(shared_map_cache, encoded_bbox)
-    if img is None and not use_bg_canvas:
-        # Image not found in shared cache and no bg fallback available
-        print(f"ERROR: Map image not found in shared cache for frame {frame_number}: {encoded_bbox}")
-        print(f"Frame {frame_number}: Bounding box: {bbox}")
-        print(f"Frame {frame_number}: Encoded bbox: {encoded_bbox}")
-        return None
+    if img is not None:
+        if worker_image_cache is not None:
+            worker_image_cache['_stat_hit'] = worker_image_cache.get('_stat_hit', 0) + 1
+    elif not use_bg_canvas:
+        # Shared cache miss — try worker-local cache first, then render on-the-fly.
+        if worker_image_cache is not None and encoded_bbox in worker_image_cache:
+            img = worker_image_cache[encoded_bbox]
+        if img is None:
+            from video_generator_cache_map_images import _render_map_image
+            img = _render_map_image(bbox, json_data, canvas_size_override=None)
+            if img is not None and worker_image_cache is not None:
+                worker_image_cache.clear()
+                worker_image_cache[encoded_bbox] = img
+        if img is None:
+            print(f"ERROR: Map image not found in cache and on-the-fly render failed for frame {frame_number}: {encoded_bbox}")
+            return None
+        if worker_image_cache is not None:
+            worker_image_cache['_stat_fly'] = worker_image_cache.get('_stat_fly', 0) + 1
 
     try:
         # Convert GPS bounding box to Web Mercator coordinates (same as cached map images).
