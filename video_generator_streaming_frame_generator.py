@@ -24,11 +24,11 @@ import numpy as np
 
 # Local imports
 from config import config
-from image_generator_utils import calculate_resolution_scale
 from video_generator_create_single_frame import (
     generate_video_frame_in_memory,
     _persistent_tracks_have_drawable_geometry,
 )
+from video_generator_static_overlays import prerender_attribution_array
 from video_generator_create_single_frame_utils import hex_to_rgba
 from video_generator_utils import (
     binary_search_cutoff_index,
@@ -39,7 +39,7 @@ from video_generator_utils import (
     get_route_start_times,
     is_simultaneous_mode,
 )
-from write_log import write_debug_log, write_log
+from write_log import write_debug_log
 
 # Per-worker local image cache for on-the-fly map image rendering when the
 # shared map-image cache has a miss (e.g. because the cache memory limit was
@@ -197,7 +197,7 @@ def _streaming_frame_worker(args):
     shared_map_cache = shared_data["shared_map_cache"]
     filename_to_rgba = shared_data["filename_to_rgba"]
     gpx_time_per_video_time = shared_data["gpx_time_per_video_time"]
-    stamp_array = shared_data["stamp_array"]
+    attribution_array = shared_data.get("attribution_array")
     shared_route_cache = shared_data["shared_route_cache"]
     is_simultaneous_mode_flag = shared_data.get("is_simultaneous_mode", False)
     # Pre-computed per-frame camera data for follow_* modes.
@@ -514,7 +514,6 @@ def _streaming_frame_worker(args):
             shared_map_cache,
             filename_to_rgba,
             gpx_time_per_video_time,
-            stamp_array,
             target_time_video,
             shared_route_cache,
             virtual_leading_time,
@@ -525,6 +524,7 @@ def _streaming_frame_worker(args):
             follow_3d_rotate_angles=follow_3d_rotate_angles,
             follow_3d_rotate_bg_bboxes=follow_3d_rotate_bg_bboxes,
             worker_image_cache=_worker_local_image_cache,
+            attribution_array=attribution_array,
         )
 
         _hit_delta = _worker_local_image_cache.get('_stat_hit', 0) - _hit_before
@@ -599,32 +599,10 @@ class StreamingFrameGenerator:
 
                 self.filename_to_rgba[filename] = rgba_color
 
-        # Pre-load stamp array once for all frames (only when stamp is enabled via json_data)
-        self.stamp_array = None
-        if json_data.get("stamp", False):
-            try:
-                width = int(json_data.get("video_resolution_x", 1920))
-                height = int(json_data.get("video_resolution_y", 1080))
-
-                image_scale = calculate_resolution_scale(width, height)
-
-                if image_scale < 1:
-                    stamp_file = "img/stamp_small.npy"
-                elif image_scale == 1:
-                    stamp_file = "img/stamp_1x.npy"
-                elif image_scale == 2:
-                    stamp_file = "img/stamp_2x.npy"
-                elif image_scale == 3:
-                    stamp_file = "img/stamp_3x.npy"
-                elif image_scale >= 4:
-                    stamp_file = "img/stamp_4x.npy"
-                else:
-                    stamp_file = "img/stamp_1x.npy"
-
-                self.stamp_array = np.load(stamp_file)
-                write_debug_log(f"Loaded stamp: {stamp_file} (scale: {image_scale})")
-            except Exception as e:
-                write_log(f"Warning: Could not load stamp: {e}")
+        # Pre-render attribution once so workers can composite it without calling matplotlib.
+        self.attribution_array = prerender_attribution_array(json_data)
+        if self.attribution_array is not None:
+            write_debug_log("Pre-rendered attribution overlay array")
 
         # Calculate video parameters
         video_length = float(json_data.get("video_length", 30))
@@ -720,7 +698,7 @@ class StreamingFrameGenerator:
             "shared_map_cache": self.shared_map_cache,
             "filename_to_rgba": self.filename_to_rgba,
             "gpx_time_per_video_time": self.gpx_time_per_video_time,
-            "stamp_array": self.stamp_array,
+            "attribution_array": self.attribution_array,
             "shared_route_cache": self.shared_route_cache,
             "is_simultaneous_mode": self.is_simultaneous_mode,
         }
@@ -1134,7 +1112,7 @@ class StreamingFrameGenerator:
         else:
             self.consecutive_on_demand_requests = 0
 
-        max_wait_time = 60
+        max_wait_time = 900
         wait_start = time.time()
 
         while frame_number not in self.frame_buffer:

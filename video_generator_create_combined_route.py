@@ -910,12 +910,23 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
             prune_route = route_accuracy != 'maximum'  # Prune unless route_accuracy is 'maximum'
             total_points = len(combined_route)
             
+            # Compute video timing parameters needed for both pruning and interpolation
+            video_length = float(json_data.get('video_length', 0))
+            video_fps = float(json_data.get('video_fps', 30))
+            total_frames = max(1.0, video_length * video_fps)
+            # Use (total_frames - 1) as divisor to ensure complete route coverage
+            # (see explanation in _create_multiple_routes)
+            if total_frames > 1:
+                raw_interval_seconds = accumulated_time / (total_frames - 1)
+            else:
+                raw_interval_seconds = accumulated_time
+            interpolation_interval_seconds = raw_interval_seconds * 2.0
+
+            stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
             if not prune_route:
                 # Pruning disabled by job parameters (route_accuracy = 'maximum')
                 if debug_callback:
                     debug_callback(f"  Route pruning skipped for track '{track_name}' as per job parameters (route_accuracy = 'maximum').")
-                # Convert total_distance to miles if imperial_units is True
-                stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
                 final_route_data = {
                     'combined_route': combined_route,
                     'total_distance': stored_total_distance,
@@ -925,27 +936,9 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                     'route_index': route_index
                 }
             else:
-                # Read video parameters and ensure numeric types
-                video_length = float(json_data.get('video_length', 0))
-                video_fps = float(json_data.get('video_fps', 30))
-                total_frames = video_length * video_fps
-                # Avoid division by zero
-                if total_frames <= 1:
-                    total_frames = max(1.0, total_frames)
-                # Compute route_time_per_frame for this track
-                # Use (total_frames - 1) as divisor to ensure complete route coverage
-                # (see explanation in _create_multiple_routes)
-                if total_frames > 1:
-                    route_time_per_frame = accumulated_time / (total_frames - 1)
-                else:
-                    route_time_per_frame = accumulated_time
-                gpx_time_per_video_time = route_time_per_frame * video_fps
-                raw_interval_seconds = gpx_time_per_video_time / video_fps
-                
                 reduced_interval_seconds = raw_interval_seconds * 0.8
                 pruning_interval = max(1, int(round(reduced_interval_seconds)))
-                interpolation_interval_seconds = raw_interval_seconds * 2.0
-                
+
                 if debug_callback:
                     debug_callback(
                         f"  Calculated dynamic pruning interval for track '{track_name}': ~1 point/frame → "
@@ -955,13 +948,8 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                     debug_callback(
                         f"  Starting route pruning for track '{track_name}': {total_points:,} points, interval: {pruning_interval} seconds"
                     )
-                    debug_callback(
-                        f"  Interpolation interval for track '{track_name}' (for later use): {interpolation_interval_seconds:.2f}s"
-                    )
-                
-                # Create temporary route data for pruning
+
                 # Note: combined_route already has distances in miles if imperial_units is True
-                stored_total_distance = accumulated_distance * METERS_TO_MILES if imperial_units else accumulated_distance
                 temp_route_data = {
                     'combined_route': combined_route,
                     'total_distance': stored_total_distance,
@@ -970,33 +958,35 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                     'track_name': track_name,
                     'route_index': route_index
                 }
-                
-                # Apply pruning (pass imperial_units flag)
+
                 final_route_data = prune_route_by_interval(temp_route_data, pruning_interval, json_data, log_callback, debug_callback)
-                
+
                 if not final_route_data:
                     if log_callback:
                         log_callback(f"  Error: Pruning failed for track '{track_name}', using original route")
                     final_route_data = temp_route_data
                 else:
-                    # Update track_name and route_index in the pruned data
                     final_route_data['track_name'] = track_name
                     final_route_data['route_index'] = route_index
-                # Store interpolation interval for later use
-                final_route_data['interpolation_interval_seconds'] = interpolation_interval_seconds
-                # Interpolate additional points to cover large gaps immediately after pruning (per track)
-                try:
-                    interpolated = interpolate_route_by_interval(
-                        final_route_data.get('combined_route', []),
-                        interpolation_interval_seconds,
-                        log_callback,
-                        debug_callback,
-                    )
-                    final_route_data['combined_route'] = interpolated
-                    final_route_data['total_points'] = len(interpolated)
-                except Exception as e:
-                    if log_callback:
-                        log_callback(f"  Warning: Interpolation step failed for track '{track_name}': {str(e)}")
+
+            # Interpolate to fill gaps — runs regardless of whether pruning was applied
+            final_route_data['interpolation_interval_seconds'] = interpolation_interval_seconds
+            if debug_callback:
+                debug_callback(
+                    f"  Interpolation interval for track '{track_name}': {interpolation_interval_seconds:.2f}s"
+                )
+            try:
+                interpolated = interpolate_route_by_interval(
+                    final_route_data.get('combined_route', []),
+                    interpolation_interval_seconds,
+                    log_callback,
+                    debug_callback,
+                )
+                final_route_data['combined_route'] = interpolated
+                final_route_data['total_points'] = len(interpolated)
+            except Exception as e:
+                if log_callback:
+                    log_callback(f"  Warning: Interpolation step failed for track '{track_name}': {str(e)}")
 
         else:
             # No json_data provided, create route data without pruning

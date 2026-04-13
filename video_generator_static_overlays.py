@@ -5,9 +5,13 @@ These overlays are screen-space HUD elements (legend/title/statistics/attributio
 that can be composited after world-space transforms (for example follow_3d tilt).
 """
 
+import io
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 from image_generator_utils import get_attribution_text, get_text_theme_colors
+from image_generator_utils import calculate_resolution_scale
 from video_generator_create_single_frame_legend import (
     create_legend,
     get_day_legend_data,
@@ -76,6 +80,42 @@ def draw_video_title(ax, title_text, effective_line_width, json_data, resolution
     )
 
 
+def prerender_attribution_array(json_data):
+    """
+    Pre-render the attribution text as a full-frame RGBA numpy array.
+
+    Returns a (height, width, 4) uint8 array, or None if attribution is disabled.
+    The array can be alpha-blended onto any frame without re-running matplotlib.
+    """
+    attribution_setting = json_data.get('attribution', 'off')
+    if attribution_setting not in ['light', 'dark']:
+        return None
+    map_style = json_data.get('map_style', '')
+    attribution_text = get_attribution_text(map_style)
+    if not attribution_text:
+        return None
+
+    width = int(json_data.get('video_resolution_x', 1920))
+    height = int(json_data.get('video_resolution_y', 1080))
+    resolution_scale = calculate_resolution_scale(width, height)
+    dpi = 100
+    fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi, facecolor=(0, 0, 0, 0), frameon=False)
+    ax = plt.Axes(fig, [0, 0, 1, 1])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+
+    _draw_video_attribution(ax, attribution_text, attribution_setting, resolution_scale, width, height)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=dpi, transparent=True, bbox_inches=None, pad_inches=0)
+    plt.close(fig)
+    buf.seek(0)
+
+    from PIL import Image
+    img = Image.open(buf).convert('RGBA')
+    return np.array(img)
+
+
 def draw_static_overlays_to_axis(
     target_ax,
     points_for_frame,
@@ -87,6 +127,7 @@ def draw_static_overlays_to_axis(
     statistics_data,
     exclude_speed,
     exclude_elevation,
+    skip_attribution=False,
 ):
     """
     Draw screen-space static overlays to target axis.
@@ -140,11 +181,12 @@ def draw_static_overlays_to_axis(
             resolution_scale=resolution_scale,
         )
 
-    attribution_setting = json_data.get('attribution', 'off')
-    if attribution_setting in ['light', 'dark']:
-        map_style = json_data.get('map_style', '')
-        attribution_text = get_attribution_text(map_style)
-        _draw_video_attribution(target_ax, attribution_text, attribution_setting, resolution_scale, width, height)
+    if not skip_attribution:
+        attribution_setting = json_data.get('attribution', 'off')
+        if attribution_setting in ['light', 'dark']:
+            map_style = json_data.get('map_style', '')
+            attribution_text = get_attribution_text(map_style)
+            _draw_video_attribution(target_ax, attribution_text, attribution_setting, resolution_scale, width, height)
 
 
 def composite_bottom_center_helper_labels(frame_array, json_data, image_scale, width, height, frame_number=None):

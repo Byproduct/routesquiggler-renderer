@@ -9,6 +9,7 @@ import sys
 from io import StringIO
 
 import imageio_ffmpeg
+import proglog
 
 from config import config
 
@@ -45,26 +46,21 @@ def get_ffmpeg_executable():
         return 'ffmpeg'
 
 
-class MoviePyDebugLogger:
+class MoviePyDebugLogger(proglog.ProgressBarLogger):
     """Custom logger for MoviePy that only outputs when debug logging is enabled."""
 
     def __init__(self, debug_callback=None):
+        super().__init__()
         self.debug_callback = debug_callback
+
+    def callback(self, **changes):
+        """Called by proglog on each progress update — suppress all bar output."""
+        pass
 
     def message(self, message):
         """Log MoviePy messages only when debug is enabled."""
         if config.debug_logging and self.debug_callback:
             self.debug_callback(f"MoviePy: {message}")
-
-    def error(self, message):
-        """Log MoviePy errors only when debug is enabled."""
-        if config.debug_logging and self.debug_callback:
-            self.debug_callback(f"MoviePy error: {message}")
-
-    def warning(self, message):
-        """Log MoviePy warnings only when debug is enabled."""
-        if config.debug_logging and self.debug_callback:
-            self.debug_callback(f"MoviePy warning: {message}")
 
 
 @contextmanager

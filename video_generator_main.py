@@ -611,6 +611,7 @@ class VideoGeneratorWorker(QObject):
                     combined_route_data=self.combined_route_data,
                     progress_callback=self.progress_update.emit,
                     log_callback=self.log_message.emit,
+                    debug_callback=self.debug_message.emit,
                     max_workers=self.max_workers,
                     shared_map_cache=shared_map_cache,
                     shared_route_cache=shared_route_cache,

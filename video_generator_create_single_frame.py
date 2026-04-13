@@ -39,6 +39,7 @@ from video_generator_static_overlays import (
     composite_bottom_center_helper_labels,
     draw_static_overlays_to_axis,
     get_legend_theme_colors,
+    prerender_attribution_array,
 )
 from video_generator_follow_3d import (
     apply_heading_rotation_to_frame,
@@ -937,12 +938,12 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, stamp_array=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, worker_image_cache=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, worker_image_cache=None, attribution_array=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
     Supports both single route and multiple routes modes.
-       
+
     Args:
         frame_number (int): Frame number being generated
         points_for_frame (list): List of route points for this frame (single route) or list of sub-lists (multiple routes)
@@ -950,8 +951,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         shared_map_cache (dict, optional): Shared memory cache for map images (required)
         filename_to_rgba (dict, optional): Pre-computed filename to RGBA color mapping
         gpx_time_per_video_time (float, optional): GPX time per video time ratio
-        stamp_array (numpy.ndarray, optional): Pre-loaded stamp image array
         target_time (float, optional): Target elapsed time for this frame (used for timestamp calculation)
+        attribution_array (numpy.ndarray, optional): Pre-rendered attribution RGBA array (full frame size)
         shared_route_cache (dict, optional): Shared memory cache for route images
         virtual_leading_time (float, optional): Virtual leading time for tail-only phase (in route seconds)
         route_specific_tail_info (dict, optional): Dictionary containing route-specific tail information
@@ -1917,6 +1918,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 statistics_data=statistics_data,
                 exclude_speed=exclude_speed,
                 exclude_elevation=exclude_elevation,
+                skip_attribution=attribution_array is not None,
             )
         
         # Convert figure to numpy array directly (much faster than PNG buffer)
@@ -1931,46 +1933,6 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         
         # Convert RGBA to RGB (remove alpha channel)
         frame_array = frame_array[:, :, :3]
-        
-        # Add stamp to the frame if provided.
-        # For follow_3d_rotate with the oversized bg canvas the stamp is skipped
-        # here and composited after the rotation+crop so it sits correctly in the
-        # final screen-space frame (handled below in the defer_static_overlays block).
-        if stamp_array is not None and not use_bg_canvas:
-            height = int(json_data.get('video_resolution_y', 1080))
-            width = int(json_data.get('video_resolution_x', 1920))
-            
-            # Get stamp dimensions
-            stamp_height, stamp_width = stamp_array.shape[:2]
-            
-            # Calculate position (bottom left with 20 pixels padding)
-            padding = 20
-            y_start = height - padding - stamp_height
-            y_end = height - padding
-            x_start = padding
-            x_end = padding + stamp_width
-            
-            # Ensure stamp fits within frame bounds
-            if y_start >= 0 and x_start >= 0 and y_end <= height and x_end <= width:
-                # Check if stamp has alpha channel (RGBA)
-                if stamp_array.shape[2] == 4:
-                    # RGBA stamp - apply alpha blending
-                    alpha = stamp_array[:, :, 3:4] / 255.0  # Normalize alpha to 0-1
-                    rgb_stamp = stamp_array[:, :, :3] / 255.0  # Normalize RGB to 0-1
-                    
-                    # Extract the region where stamp will be placed
-                    frame_region = frame_array[y_start:y_end, x_start:x_end].astype(np.float32) / 255.0
-                    
-                    # Alpha blend: result = alpha * stamp + (1 - alpha) * background
-                    blended = alpha * rgb_stamp + (1 - alpha) * frame_region
-                    
-                    # Convert back to uint8 and place in frame
-                    frame_array[y_start:y_end, x_start:x_end] = (blended * 255).astype(np.uint8)
-                else:
-                    # RGB stamp - direct replacement (no transparency)
-                    frame_array[y_start:y_end, x_start:x_end] = stamp_array
-            else:
-                print(f"Warning: Stamp does not fit within frame bounds for frame {frame_number}")
         
         # Bottom-center helper labels are static 2D HUD elements.
         if not defer_static_overlays:
@@ -2002,23 +1964,6 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 tilt_degrees = float(json_data.get('video_tilt', 20.0)) if json_data else 20.0
                 if tilt_degrees > 0:
                     frame_array = apply_tilt_to_frame(frame_array, tilt_degrees)
-                # 4. Stamp is a static HUD element — composite after crop so it lands
-                #    in the correct screen corner regardless of rotation angle.
-                if stamp_array is not None:
-                    _sh, _sw = stamp_array.shape[:2]
-                    _pad = 20
-                    _ys = height - _pad - _sh
-                    _ye = height - _pad
-                    _xs = _pad
-                    _xe = _pad + _sw
-                    if _ys >= 0 and _xs >= 0 and _ye <= height and _xe <= width:
-                        if stamp_array.shape[2] == 4:
-                            _a = stamp_array[:, :, 3:4] / 255.0
-                            _rgb = stamp_array[:, :, :3] / 255.0
-                            _reg = frame_array[_ys:_ye, _xs:_xe].astype(np.float32) / 255.0
-                            frame_array[_ys:_ye, _xs:_xe] = ((_a * _rgb + (1 - _a) * _reg) * 255).astype(np.uint8)
-                        else:
-                            frame_array[_ys:_ye, _xs:_xe] = stamp_array
             else:
                 # ── Normal path (follow_3d without rotation, or bg-canvas fallback) ─
                 if video_mode == 'follow_3d_rotate' and abs(follow_3d_heading_rotation_degrees) > 1e-6:
@@ -2049,6 +1994,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 statistics_data=statistics_data,
                 exclude_speed=exclude_speed,
                 exclude_elevation=exclude_elevation,
+                skip_attribution=attribution_array is not None,
             )
 
             overlay_fig.canvas.draw()
@@ -2068,6 +2014,13 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 height=height,
                 frame_number=frame_number,
             )
+
+        # Composite pre-rendered attribution array (generated once, reused every frame).
+        if attribution_array is not None:
+            _a = attribution_array[:, :, 3:4].astype(np.float32) / 255.0
+            _rgb = attribution_array[:, :, :3].astype(np.float32) / 255.0
+            _base = frame_array.astype(np.float32) / 255.0
+            frame_array = ((_a * _rgb + (1.0 - _a) * _base) * 255.0).astype(np.uint8)
 
         # Add clock overlay if enabled (same point as statistics_current_time: most recent point).
         # In follow_3d variants this must happen after world-space transforms to keep
