@@ -51,8 +51,8 @@ def is_tile_cached(cache_dir, x, y, zoom, map_style):
         else:
             style_subdir_mapping = {
                 'osm': 'OSM',
-                'otm': 'OpenTopoMap',
-                'cyclosm': 'CyclOSM',
+                'otm': 'OpenTopoMapTiles',
+                'cyclosm': 'CyclOSMTiles',
                 'geoapify_carto': 'GeoapifyCarto',
                 'geoapify_bright': 'GeoapifyBright',
                 'geoapify_bright_grey': 'GeoapifyBrightGrey',

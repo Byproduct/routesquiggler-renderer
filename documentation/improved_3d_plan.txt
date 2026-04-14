@@ -1,0 +1,74 @@
+Improved 3D tilt sharpness: render-time oversampling
+=====================================================
+
+Background
+----------
+The current approach (apply_tilt_to_frame in video_generator_follow_3d.py) applies
+the perspective warp as a post-process to a frame that is already at final output
+resolution. The near (bottom) area of the output is magnified from a contracted
+horizontal strip of the source:
+
+    bottom contracts to W * (1 - 2*kx*sin(tilt))
+
+At tilt=20 degrees that strip is ~66% of source width, stretched to fill 100% of
+output width (1.52x magnification). PIL has to synthesize pixels that aren't there,
+causing blur. At tilt=50 degrees the magnification is ~4.3x and the blur is severe.
+
+The current mitigation (tilt >= 16 degrees) is to LANCZOS-upscale the rendered frame
+before warping and use BICUBIC sampling during the warp. This helps, but is working
+around the fundamental problem rather than fixing it.
+
+
+The proper fix: render at oversampled resolution, warp, downscale
+-----------------------------------------------------------------
+Instead of rendering the map frame at final output resolution and then magnifying it,
+render at a higher resolution so that after the perspective warp the near area still
+has sufficient pixel density.
+
+Steps:
+1. Compute the oversample factor from the tilt angle:
+       oversample = 1 / (1 - 2*kx*sin(tilt))
+   Where kx=0.50 (the empirical horizontal contraction factor in apply_tilt_to_frame).
+   Examples:
+       tilt=10 deg -> oversample ~1.18x
+       tilt=20 deg -> oversample ~1.52x
+       tilt=30 deg -> oversample ~2.00x
+       tilt=50 deg -> oversample ~4.27x  (consider capping at e.g. 3x or 4x)
+
+2. Pass the oversample factor into the frame render pipeline so that the matplotlib
+   figure (figsize) and the map image cache lookup both use the larger canvas:
+       render_width  = round(output_width  * oversample)
+       render_height = round(output_height * oversample)
+
+3. Apply the perspective warp (apply_tilt_to_frame) to the oversampled frame,
+   outputting at the original output resolution. The perspective coefficients mapping
+   output (W x H) to source (oW x oH) need to have their numerator terms (a-f)
+   multiplied by the oversample factor, exactly as is already done in the current
+   LANCZOS pre-upscale path (see the s > 1.0 branch in apply_tilt_to_frame).
+
+4. No post-warp downscale is needed because the transform output size is already
+   specified as the final W x H.
+
+5. Once this is in place, the LANCZOS pre-upscale workaround can be removed from
+   apply_tilt_to_frame since the source pixels are now genuinely high-density.
+
+
+What needs to change
+--------------------
+- video_generator_create_single_frame.py: compute oversample from video_tilt and
+  pass a scaled figsize/canvas size to the map render for follow_3d modes.
+
+- video_generator_cache_map_images.py / video_generator_cache_map_tiles.py: the map
+  image cache uses canvas dimensions to decide bbox and zoom level, so the oversample
+  must be threaded through there too (or the canvas_size_override mechanism extended).
+
+- apply_tilt_to_frame: can be simplified once the source frame is already oversampled
+  (the LANCZOS pre-upscale branch becomes redundant).
+
+
+Trade-offs
+----------
+Pro: genuinely sharp near area — the warp samples from real pixels, not interpolated ones.
+Con: render time scales with oversample^2 (a 2x oversample = 4x the render pixels).
+     At high tilt angles the cost becomes significant; a cap of ~3x is probably sensible.
+     The map image cache also needs to store and retrieve larger images for tilted renders.

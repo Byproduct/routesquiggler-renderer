@@ -170,8 +170,8 @@ def _cartopy_class_subdir(map_style: str) -> str:
         return 'MapboxTiles'
     fallback = {
         'osm': 'OSM',
-        'otm': 'OpenTopoMap',
-        'cyclosm': 'CyclOSM',
+        'otm': 'OpenTopoMapTiles',
+        'cyclosm': 'CyclOSMTiles',
     }
     return fallback.get(map_style, map_style.upper())
 
