@@ -158,11 +158,13 @@ def pre_cache_map_tiles_for_video(
         resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
 
         map_detail = json_data.get("map_detail")
+        video_tilt = json_data.get("video_tilt")
         max_tiles = apply_tile_threshold_multiplier(
             base_max_tiles,
             resolution_scale,
             min_value=1,
             map_detail=map_detail,
+            video_tilt=video_tilt,
         )
 
         if debug_callback:

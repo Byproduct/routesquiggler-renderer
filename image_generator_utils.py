@@ -395,7 +395,7 @@ def calculate_resolution_scale(resolution_x: int, resolution_y: int) -> float:
     return scale
 
 
-def resolution_scale_to_tile_threshold_multiplier(resolution_scale: float, map_detail: Optional[str] = None) -> float:
+def resolution_scale_to_tile_threshold_multiplier(resolution_scale: float, map_detail: Optional[str] = None, video_tilt: Optional[float] = None) -> float:
     """
     Map a resolution scale to the multiplier used when selecting map tiles.
     scale_key 0.7=720p, 1=1080p, 2=4k videos
@@ -425,12 +425,19 @@ def resolution_scale_to_tile_threshold_multiplier(resolution_scale: float, map_d
         elif md == "extrahigh":   # Not enabled in UI
             multiplier *= 2.0
 
+    # Higher tilt angles require more map detail to fill the wider visible area.
+    # Formula: 1 + (video_tilt / 25), e.g. tilt=0 => 1.0, tilt=10 => 1.4, tilt=50 => 3.0
+    # Currently not needed, but could be needed later if video tilting method improves
+
+    # if video_tilt is not None:
+    #   multiplier *= 1.0 + float(video_tilt) / 25
+
     return multiplier
 
 
-def apply_tile_threshold_multiplier(base_max_tiles: int, resolution_scale: float, min_value: int = 1, map_detail: Optional[str] = None) -> int:
+def apply_tile_threshold_multiplier(base_max_tiles: int, resolution_scale: float, min_value: int = 1, map_detail: Optional[str] = None, video_tilt: Optional[float] = None) -> int:
     """Apply `resolution_scale_to_tile_threshold_multiplier()` and clamp to a minimum value."""
-    multiplier = resolution_scale_to_tile_threshold_multiplier(resolution_scale, map_detail=map_detail)
+    multiplier = resolution_scale_to_tile_threshold_multiplier(resolution_scale, map_detail=map_detail, video_tilt=video_tilt)
     adjusted = int(round(float(base_max_tiles) * float(multiplier)))
     return max(min_value, adjusted)
 

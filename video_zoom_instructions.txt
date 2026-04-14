@@ -1,0 +1,87 @@
+VIDEO_ZOOM INSTRUCTIONS FOR A SINGLE STILL IMAGE (PYTHON)
+=========================================================
+
+Use this when you are generating ONE final still image (not a video), and want
+the camera zoom behavior to match Route Squiggler follow mode as closely as possible.
+
+Important
+---------
+- In Route Squiggler, `video_zoom` is used in follow camera modes.
+- For a still image, you do NOT need frame-by-frame interpolation, EMA smoothing,
+  or per-frame cutoff logic.
+- Just compute one bbox centered at the final route point.
+
+
+Expected Input
+--------------
+- route_points: ordered list of points with .lat and .lon
+- video_zoom_km: float, default 5.0
+- video_resolution_x: int, default 1920
+- video_resolution_y: int, default 1080
+
+
+Algorithm (single still)
+------------------------
+1) Validate route points
+   - If route is empty: raise error.
+
+2) Pick center point
+   - Use the final route point:
+     - center_lat = route_points[-1].lat
+     - center_lon = route_points[-1].lon
+
+3) Convert `video_zoom_km` into lat/lon radii
+   - Match constants and clamping exactly:
+     - KM_PER_DEG_LAT = 111.0
+     - aspect_ratio = video_resolution_x / video_resolution_y
+     - half_height_km = video_zoom_km / 2.0
+     - lat_radius_deg = half_height_km / KM_PER_DEG_LAT
+     - cos_lat = max(0.001, abs(cos(radians(center_lat))))
+     - lon_radius_deg = (half_height_km * aspect_ratio) / (KM_PER_DEG_LAT * cos_lat)
+
+4) Build bbox with the same bounds and precision
+   - lon_min = round(max(-180.0, center_lon - lon_radius_deg), 6)
+   - lon_max = round(min(180.0, center_lon + lon_radius_deg), 6)
+   - lat_min = round(max(-90.0,  center_lat - lat_radius_deg), 6)
+   - lat_max = round(min(90.0,   center_lat + lat_radius_deg), 6)
+   - bbox = (lon_min, lon_max, lat_min, lat_max)
+
+5) Render map using this bbox
+   - Draw the complete route on top of this map image.
+   - This matches follow-camera zoom math, but with no temporal smoothing.
+
+
+Reference Python Function
+-------------------------
+from math import cos, radians
+
+def bbox_from_final_point(route_points, video_zoom_km=5.0, video_resolution_x=1920, video_resolution_y=1080):
+    if not route_points:
+        raise ValueError("route_points is empty")
+
+    center_lat = float(route_points[-1].lat)
+    center_lon = float(route_points[-1].lon)
+
+    KM_PER_DEG_LAT = 111.0
+    aspect_ratio = float(video_resolution_x) / float(video_resolution_y)
+    half_height_km = float(video_zoom_km) / 2.0
+
+    lat_radius_deg = half_height_km / KM_PER_DEG_LAT
+    cos_lat = max(0.001, abs(cos(radians(center_lat))))
+    lon_radius_deg = (half_height_km * aspect_ratio) / (KM_PER_DEG_LAT * cos_lat)
+
+    lon_min = round(max(-180.0, center_lon - lon_radius_deg), 6)
+    lon_max = round(min(180.0,  center_lon + lon_radius_deg), 6)
+    lat_min = round(max(-90.0,  center_lat - lat_radius_deg), 6)
+    lat_max = round(min(90.0,   center_lat + lat_radius_deg), 6)
+
+    return (lon_min, lon_max, lat_min, lat_max)
+
+
+Notes
+-----
+- If your goal is to fit the WHOLE route on screen automatically, this is not the
+  same as `video_zoom` follow behavior. In that case, use a route-extent bbox
+  algorithm ("final zoom mode" style) instead.
+- If you need perfect parity with this repo, keep the same rounding (6 decimals),
+  coordinate limits, and KM_PER_DEG_LAT constant.

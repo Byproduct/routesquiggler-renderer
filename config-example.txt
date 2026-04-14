@@ -5,7 +5,8 @@ user: juhgu_renderer
 threads: auto
 
 # If this machine has a NVidia card with CUDA cores, enable this to encode videos using GPU (nvenc) instead of CPU.
-# This affects video encoding only (frames are still made using CPU), so the effect isn't dramatic, but it is recommended if supported. 
+# Do not use this except for some special projects. CPU rendering generally gives better results.
+# This affects video encoding only (frames are still made using CPU), so speed gain isn't dramatic. 
 gpu_rendering: false
 
 # Cache size in gigabytes. If the local map tile cache exceeds this size, oldest files will be deleted until within this limit again.

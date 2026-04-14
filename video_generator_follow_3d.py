@@ -361,13 +361,36 @@ def apply_tilt_to_frame(frame_array, tilt_degrees):
     g = 0.0
     h = 2.0 * cx / denom
 
+    # Oversample the source before warping to reduce magnification blur in the
+    # near (bottom) area.  The near edge is magnified by 1/(1 - 2*kx*t), so we
+    # upscale the source by that factor so the warp samples from denser pixels.
+    # Clamped to [1, 4] to avoid absurd cost at extreme tilt angles.
+    #
+    # The perspective coefficients map output (W×H) coords to source coords.
+    # When the source is upscaled by `s`, source coords must also scale by `s`,
+    # so we multiply the numerator coefficients (a–f) by s while leaving the
+    # denominator coefficients (g, h) unchanged.  The output size stays W×H so
+    # no post-warp downscale is needed.
+    oversample = min(4.0, max(1.0, 1.0 / (1.0 - 2.0 * kx * t))) if tilt_degrees >= 16 else 1.0
+    s = oversample
+
     img = Image.fromarray(frame_array)
-    img_warped = img.transform(
-        (W, H),
-        Image.Transform.PERSPECTIVE,
-        (a, b, c, d, e, f, g, h),
-        Image.Resampling.BILINEAR,
-    )
+    if s > 1.0:
+        oW, oH = round(W * s), round(H * s)
+        img = img.resize((oW, oH), Image.Resampling.LANCZOS)
+        img_warped = img.transform(
+            (W, H),
+            Image.Transform.PERSPECTIVE,
+            (a * s, b * s, c * s, d * s, e * s, f * s, g, h),
+            Image.Resampling.BICUBIC,
+        )
+    else:
+        img_warped = img.transform(
+            (W, H),
+            Image.Transform.PERSPECTIVE,
+            (a, b, c, d, e, f, g, h),
+            Image.Resampling.BILINEAR,
+        )
     return np.asarray(img_warped)
 
 

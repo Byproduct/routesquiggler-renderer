@@ -111,8 +111,9 @@ def _render_map_image(bbox, json_data, canvas_size_override=None):
         base_max_map_tiles = max_tiles_config.get(map_style, 100)
         resolution_scale = calculate_resolution_scale(video_resolution_x, video_resolution_y)
         map_detail = json_data.get('map_detail')
+        video_tilt = json_data.get('video_tilt')
         max_map_tiles = apply_tile_threshold_multiplier(
-            base_max_map_tiles, resolution_scale, min_value=1, map_detail=map_detail,
+            base_max_map_tiles, resolution_scale, min_value=1, map_detail=map_detail, video_tilt=video_tilt,
         )
         if canvas_size_override is not None:
             canvas_w, canvas_h = canvas_size_override
