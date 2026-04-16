@@ -14,8 +14,12 @@ from pathlib import Path
 from video_generator_create_combined_route import RoutePoint
 from video_generator_utils import (
     binary_search_cutoff_index,
+    compute_frame_points_context,
+    compute_sequential_ending_lengths,
+    compute_simultaneous_ending_lengths,
     get_route_delay_seconds,
     get_route_start_times,
+    is_simultaneous_mode,
 )
 from write_log import write_debug_log, write_log
 
@@ -547,6 +551,147 @@ def calculate_bounding_box_for_points(points, padding_percent=0.1, target_aspect
     return calculate_bounding_box_for_wrapped_coordinates(all_lats, all_lons, padding_percent, target_aspect_ratio)
 
 
+def _flatten_animated_points(points_for_frame):
+    """
+    Collapse a points_for_frame value (either a flat list of RoutePoint or a
+    list of sub-lists) into one flat list of RoutePoint suitable for bbox
+    calculation.
+
+    Matches the flattening ``generate_video_frame_in_memory`` does internally
+    for the dynamic-mode bbox call.
+    """
+    if not points_for_frame:
+        return []
+    if isinstance(points_for_frame[0], list):
+        flat = []
+        for sub in points_for_frame:
+            if sub:
+                flat.extend(sub)
+        return flat
+    return list(points_for_frame)
+
+
+def precompute_dynamic_bboxes(json_data, combined_route_data, log_callback=None, debug_callback=None):
+    """
+    Pre-compute per-frame bounding boxes for dynamic zoom mode.
+
+    Walks every frame 1..total_frames (matching the range the streaming frame
+    generator will request) and computes the bbox that ``generate_video_frame_in_memory``
+    would compute on the fly, using exactly the same ``points_for_frame`` logic
+    as the streaming worker (via ``compute_frame_points_context``).
+
+    Pre-computing once, sequentially, means:
+      * Step 3 (tile caching) and Step 4 (map image caching) can key tiles /
+        images off the same per-frame bboxes that Step 5 will look up at
+        render time -- no bbox recomputation in the parallel frame workers.
+      * Frames whose bbox would have drifted due to floating-point or
+        input-timing differences between Step 3 and Step 5 are eliminated as
+        a cache-miss source.
+      * Later passes can mutate this list (e.g. to stabilise zoom across
+        frames) and the mutation automatically propagates to tile caching,
+        map-image caching, and frame rendering.
+
+    Only animated route points contribute to the bbox.  Persistent tracks are
+    treated as part of the map backdrop: always visible, but allowed to spill
+    outside the viewport.  The UI guarantees at least one non-persistent route
+    is always present.
+
+    The returned list is indexed by ``frame_number - 1``.  Entries may be
+    ``None`` for frames whose animated points are empty (e.g. very early
+    frames before the route begins, or hide_complete_routes leaving nothing
+    visible).  Such frames never reach bbox lookup during rendering because
+    the streaming worker's has_drawable_content check returns early.
+
+    Args:
+        json_data (dict): Job data.
+        combined_route_data (dict): Combined route data (must contain a route
+            either via 'combined_route' or 'all_routes'; also consulted for
+            'gpx_time_per_video_time').
+        log_callback (callable, optional): For error / warning messages.
+        debug_callback (callable, optional): For verbose debug messages.
+
+    Returns:
+        list[tuple | None]: Per-frame bbox list, or None on error.
+    """
+    try:
+        video_length = float(json_data.get('video_length', 30))
+        video_fps = float(json_data.get('video_fps', 30))
+        tail_length = int(json_data.get('tail_length', 0))
+
+        video_resolution_x = float(json_data.get('video_resolution_x', 1920))
+        video_resolution_y = float(json_data.get('video_resolution_y', 1080))
+        target_aspect_ratio = video_resolution_x / video_resolution_y
+
+        gpx_time_per_video_time = combined_route_data.get('gpx_time_per_video_time') if combined_route_data else None
+        if not gpx_time_per_video_time:
+            if log_callback:
+                log_callback("Error: precompute_dynamic_bboxes requires gpx_time_per_video_time in combined_route_data")
+            return None
+        gpx_time_per_video_time = float(gpx_time_per_video_time)
+
+        is_simultaneous_flag = is_simultaneous_mode(combined_route_data)
+
+        # The streaming generator builds frames up to extended_video_length.
+        # Match that exact range so every frame the worker will request has a
+        # corresponding precomputed bbox.
+        if is_simultaneous_flag:
+            extended_video_length, _, _ = compute_simultaneous_ending_lengths(video_length, tail_length)
+        else:
+            extended_video_length, _, _ = compute_sequential_ending_lengths(video_length, tail_length)
+        total_frames = int(extended_video_length * video_fps)
+
+        if debug_callback:
+            debug_callback(
+                f"Precomputing dynamic bboxes: {total_frames} frames "
+                f"(simultaneous={is_simultaneous_flag}, "
+                f"aspect_ratio={target_aspect_ratio:.4f})"
+            )
+
+        bboxes = []
+        empty_frames = 0
+        for frame_number in range(1, total_frames + 1):
+            ctx = compute_frame_points_context(
+                frame_number=frame_number,
+                combined_route_data=combined_route_data,
+                json_data=json_data,
+                is_simultaneous_mode_flag=is_simultaneous_flag,
+                gpx_time_per_video_time=gpx_time_per_video_time,
+                debug_log_callback=None,  # silent precompute
+            )
+
+            all_points = _flatten_animated_points(ctx.points_for_frame)
+
+            if not all_points:
+                # Persistent tracks are part of the map backdrop and must not
+                # influence the bbox, so an empty animated set yields no bbox
+                # for this frame.  The streaming worker's has_drawable_content
+                # gate prevents such frames from actually looking it up.
+                bboxes.append(None)
+                empty_frames += 1
+                continue
+
+            bbox = calculate_bounding_box_for_points(
+                all_points,
+                padding_percent=0.1,
+                target_aspect_ratio=target_aspect_ratio,
+            )
+            bboxes.append(bbox)
+
+        if debug_callback:
+            unique_count = len(set(b for b in bboxes if b is not None))
+            debug_callback(
+                f"dynamic: precomputed {total_frames} frames → "
+                f"{unique_count} unique bboxes ({empty_frames} empty frames skipped)"
+            )
+
+        return bboxes
+
+    except Exception as e:
+        if log_callback:
+            log_callback(f"Error in precompute_dynamic_bboxes: {str(e)}")
+        return None
+
+
 def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback=None, max_workers=None, combined_route_data=None, debug_callback=None):
     """
     Calculate unique bounding boxes for all frames in the video.
@@ -784,84 +929,27 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
             return list(unique_bboxes)
 
         else:
-            # Dynamic zoom mode - calculate bounding boxes for each frame as before
+            # Dynamic zoom mode: bboxes were pre-computed for every frame in
+            # step 2.5 via precompute_dynamic_bboxes() and stored in
+            # combined_route_data.  Same pattern as the follow_* modes above.
+            # Deduping here yields the set of unique bboxes to cache in step 3.
+            dynamic_bboxes = combined_route_data.get('dynamic_bboxes_per_frame') if combined_route_data else None
+            if not dynamic_bboxes:
+                if log_callback:
+                    log_callback(
+                        "Error: dynamic mode requires dynamic_bboxes_per_frame in "
+                        "combined_route_data (run precompute_dynamic_bboxes first)"
+                    )
+                return None
+
+            unique_bounding_boxes = list({b for b in dynamic_bboxes if b is not None})
+
             if debug_callback:
-                debug_callback("Using 'dynamic' zoom mode - calculating bounding boxes for each frame")
-            
-            # Divide frames into chunks of 500
-            chunk_size = 500
-            frame_chunks = []
-            
-            for start_frame in range(0, total_frames, chunk_size):
-                end_frame = min(start_frame + chunk_size, total_frames)
-                frame_chunks.append((start_frame, end_frame))
-            
-            if debug_callback:
-                debug_callback(f"Created {len(frame_chunks)} chunks of up to {chunk_size} frames each")
-            
-            # Determine number of worker processes
-            constraints = [multiprocessing.cpu_count(), len(frame_chunks)]
-            if max_workers is not None:
-                constraints.append(max_workers)
-            num_workers = min(constraints)
-            
-            if debug_callback:
-                constraint_names = [f"CPU cores: {multiprocessing.cpu_count()}", f"chunks: {len(frame_chunks)}"]
-                if max_workers is not None:
-                    constraint_names.append(f"user setting: {max_workers}")
-                debug_callback(f"Using {num_workers} worker processes (limited by {', '.join(constraint_names)})")
-            
-            # Create multiprocessing pool and process chunks
-            with multiprocessing.Pool(processes=num_workers) as pool:
-                # Prepare arguments for each worker
-                worker_args = []
-                for start_frame, end_frame in frame_chunks:
-                    worker_args.append((
-                        combined_route_data,
-                        json_data,
-                        route_time_per_frame,
-                        start_frame,
-                        end_frame,
-                        target_aspect_ratio
-                    ))
-                
-                # Execute workers in parallel
-                if debug_callback:
-                    debug_callback("Starting parallel processing of frame chunks")
-                
-                results = pool.starmap(process_frame_chunk, worker_args)
-            
-            # Collect all bounding boxes from workers
-            all_bounding_boxes = []
-            for result in results:
-                if result:  # Only add non-empty results
-                    all_bounding_boxes.extend(result)
-            
-            # Always include the "full route" bounding box. 
-            # If getting the bug where the map image for the last 5 seconds is rarely missing, 
-            # (floating point mismatch), this could potentially help.  
-            # Commented out because the bug doesn't seem to appear anymore for now.
-            # (After unifying floating-point calculations elsewhere)
-            # all_routes = combined_route_data.get('all_routes', None)
-            # if all_routes:
-            #     all_points = []
-            #     for route_data in all_routes:
-            #         route_points = route_data.get('combined_route', [])
-            #         all_points.extend(route_points)
-            #     if all_points:
-            #         full_route_bbox = calculate_bounding_box_for_points(
-            #             all_points, padding_percent=0.1,
-            #             target_aspect_ratio=target_aspect_ratio
-            #         )
-            #         if full_route_bbox:
-            #             all_bounding_boxes.append(full_route_bbox)
-            
-            # Create set of unique bounding boxes
-            unique_bounding_boxes = list(set(all_bounding_boxes))
-            
-            if debug_callback:
-                debug_callback(f"Collected {len(all_bounding_boxes)} total bounding boxes")
-            
+                debug_callback(
+                    f"dynamic mode: {len(dynamic_bboxes)} frame bboxes → "
+                    f"{len(unique_bounding_boxes)} unique bboxes to cache"
+                )
+
             return unique_bounding_boxes
         
     except Exception as e:

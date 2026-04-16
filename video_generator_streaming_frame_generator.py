@@ -31,7 +31,7 @@ from video_generator_create_single_frame import (
 from video_generator_static_overlays import prerender_attribution_array
 from video_generator_create_single_frame_utils import hex_to_rgba
 from video_generator_utils import (
-    binary_search_cutoff_index,
+    compute_frame_points_context,
     compute_sequential_ending_lengths,
     compute_sequential_frames_to_skip,
     compute_simultaneous_ending_lengths,
@@ -200,202 +200,34 @@ def _streaming_frame_worker(args):
     attribution_array = shared_data.get("attribution_array")
     shared_route_cache = shared_data["shared_route_cache"]
     is_simultaneous_mode_flag = shared_data.get("is_simultaneous_mode", False)
-    # Pre-computed per-frame camera data for follow_* modes.
+    # Pre-computed per-frame camera data for follow_* modes and dynamic mode.
     follow_2d_bboxes = combined_route_data.get("follow_2d_bboxes_per_frame") if combined_route_data else None
     follow_3d_rotate_angles = combined_route_data.get("follow_3d_rotate_angles_per_frame") if combined_route_data else None
     follow_3d_rotate_bg_bboxes = combined_route_data.get("follow_3d_rotate_bg_bboxes_per_frame") if combined_route_data else None
+    dynamic_bboxes = combined_route_data.get("dynamic_bboxes_per_frame") if combined_route_data else None
 
     try:
         # Ensure frame_number is an integer
         frame_number = int(frame_number)
 
-        # The caching logic needs video seconds, but point collection needs route seconds
-        target_time_route = (
-            target_time_video * gpx_time_per_video_time if gpx_time_per_video_time > 0 else 0
-        )
-
-        # Check if we have multiple routes
         all_routes = combined_route_data.get("all_routes", None)
 
-        # Calculate the frame number where the original route ends
-        video_length = float(json_data.get("video_length", 30))
-        video_fps = float(json_data.get("video_fps", 30))
-        tail_length = int(json_data.get("tail_length", 0))  # Ensure tail_length is int
-
-        # SIMULTANEOUS MODE FIX: Calculate effective video duration for staggered routes (flag from shared_data)
-        effective_video_length = video_length
-        if is_simultaneous_mode_flag and all_routes and len(all_routes) > 1:
-            # Find the earliest start time and latest start time across all routes
-            earliest_start_time = None
-            latest_start_time = None
-            max_route_duration = 0.0
-
-            for route_data in all_routes:
-                route_points = route_data.get("combined_route", [])
-                if route_points and len(route_points) > 0:
-                    first_point = route_points[0]
-                    last_point = route_points[-1]
-
-                    route_start_timestamp = first_point.timestamp
-                    route_duration = last_point.accumulated_time
-
-                    if route_start_timestamp:
-                        if (
-                            earliest_start_time is None
-                            or route_start_timestamp < earliest_start_time
-                        ):
-                            earliest_start_time = route_start_timestamp
-
-                        if latest_start_time is None or route_start_timestamp > latest_start_time:
-                            latest_start_time = route_start_timestamp
-                            max_route_duration = route_duration
-
-            # Calculate the minimum video duration needed for all routes to complete
-            if earliest_start_time and latest_start_time:
-                delay_from_earliest = (latest_start_time - earliest_start_time).total_seconds()
-                min_video_duration_needed = delay_from_earliest + max_route_duration
-
-                # Use the minimum video duration needed, but don't exceed the actual video duration
-                effective_video_length = min(min_video_duration_needed, video_length)
-
-                # Adjust target_time_route to use effective video duration
-                effective_target_time_video = min(target_time_video, effective_video_length)
-                target_time_route = (
-                    effective_target_time_video * gpx_time_per_video_time
-                    if gpx_time_per_video_time > 0
-                    else 0
-                )
-
-        # Calculate the frame number where the original route ends (using effective video length)
-        original_route_end_frame = int(effective_video_length * video_fps)
-
-        # Check if we're in the tail-only phase (extra frames after original route ends)
-        is_tail_only_frame = frame_number > original_route_end_frame
-
-        # Get hide_complete_routes parameter (defaults to False if not specified)
-        hide_complete_routes_raw = json_data.get("hide_complete_routes", False)
-        if isinstance(hide_complete_routes_raw, str):
-            hide_complete_routes = hide_complete_routes_raw.lower() in ("true", "1", "yes")
-        else:
-            hide_complete_routes = bool(hide_complete_routes_raw)
-
-        # SIMULTANEOUS MODE ENDING FIX: Use different logic for simultaneous mode ending
-        if is_simultaneous_mode_flag and is_tail_only_frame:
-            is_tail_only_frame = False  # Treat as normal frame for simultaneous mode
-
-        if is_simultaneous_mode_flag and all_routes and len(all_routes) > 1:
-            # Multiple routes mode - create a list of sub-lists for each route
-            points_for_frame = []
-
-            # STAGGERED ROUTES FIX: Calculate route start delays
-            route_start_times, earliest_start_time = get_route_start_times(all_routes)
-
-            for route_data in all_routes:
-                route_points = route_data.get("combined_route", [])
-
-                route_delay_seconds = get_route_delay_seconds(
-                    route_data, route_start_times, earliest_start_time
-                )
-
-                # Calculate route-specific target time accounting for start delay
-                route_target_time = target_time_route - route_delay_seconds
-
-                # Check if route is complete (all points included)
-                route_end_time = route_points[-1].accumulated_time if route_points else 0
-                route_is_complete = route_points and route_target_time >= route_end_time
-
-                # Skip complete routes if hide_complete_routes is enabled
-                if hide_complete_routes and route_is_complete:
-                    if frame_number <= 3 and config.debug_logging:
-                        write_debug_log(
-                            f"Frame {frame_number}: Skipping complete route (simultaneous mode)"
-                        )
-                    continue
-
-                if is_tail_only_frame:
-                    # SIMULTANEOUS MODE TAIL FIX: Each route should have its own individual tail fade-out
-                    route_end_time_with_delay = route_end_time + route_delay_seconds
-
-                    current_route_time = target_time_route
-                    time_since_route_end = current_route_time - route_end_time_with_delay
-
-                    tail_duration_route = (
-                        gpx_time_per_video_time * tail_length if gpx_time_per_video_time else 0
-                    )
-
-                    if time_since_route_end >= 0 and time_since_route_end <= tail_duration_route:
-                        # Route has ended and we're within tail duration - show fading tail
-                        cutoff_index = binary_search_cutoff_index(route_points, route_end_time)
-                        route_points_for_frame = route_points[:cutoff_index]
-                    else:
-                        route_points_for_frame = []
-                else:
-                    # Normal frame - include points only if this route should have started
-                    if route_target_time >= 0:
-                        cutoff_index = binary_search_cutoff_index(route_points, route_target_time)
-                        route_points_for_frame = route_points[:cutoff_index]
-                    else:
-                        route_points_for_frame = []
-
-                if route_points_for_frame:
-                    points_for_frame.append(route_points_for_frame)
-        else:
-            # Single route mode (backward compatibility)
-            combined_route = combined_route_data.get("combined_route", [])
-
-        # Handle tail-only frames and normal frames for single route mode
-        if not all_routes or len(all_routes) <= 1:
-            if is_tail_only_frame:
-                final_route_target_time = ((original_route_end_frame - 1) / video_fps) * gpx_time_per_video_time
-
-                if final_route_target_time >= 0:
-                    cutoff_index = binary_search_cutoff_index(combined_route, final_route_target_time)
-                    points_for_frame = combined_route[:cutoff_index]
-                else:
-                    points_for_frame = []
-            else:
-                cutoff_index = binary_search_cutoff_index(combined_route, target_time_route)
-                points_for_frame = combined_route[:cutoff_index]
-
-            # Apply hide_complete_routes filtering if enabled
-            if hide_complete_routes and points_for_frame:
-                filename_to_last_time = {}
-
-                for point in combined_route:
-                    if hasattr(point, "filename") and point.filename:
-                        filename = point.filename
-                        if (
-                            filename not in filename_to_last_time
-                            or point.accumulated_time > filename_to_last_time[filename]
-                        ):
-                            filename_to_last_time[filename] = point.accumulated_time
-
-                completed_filenames = set()
-                for filename, last_time in filename_to_last_time.items():
-                    if last_time <= target_time_route:
-                        completed_filenames.add(filename)
-                        if frame_number <= 3 and config.debug_logging:
-                            write_debug_log(
-                                f"Frame {frame_number}: File '{filename}' is complete (last point time: {last_time:.2f}, target: {target_time_route:.2f})"
-                            )
-
-                if completed_filenames:
-                    original_count = len(points_for_frame)
-                    points_for_frame = [
-                        p
-                        for p in points_for_frame
-                        if not (
-                            hasattr(p, "filename")
-                            and p.filename
-                            and p.filename in completed_filenames
-                        )
-                    ]
-                    filtered_count = len(points_for_frame)
-
-                    if frame_number <= 3 and config.debug_logging:
-                        write_debug_log(
-                            f"Frame {frame_number}: Filtered out {original_count - filtered_count} points from {len(completed_filenames)} completed file(s). Remaining: {filtered_count} points"
-                        )
+        # Single source of truth: compute points_for_frame and timing context
+        # the same way both here (Step 5) and in the dynamic-bbox precompute
+        # (Step 2.5) do.  Keeps per-frame bboxes bit-identical across the pipeline.
+        _frame_ctx = compute_frame_points_context(
+            frame_number=frame_number,
+            combined_route_data=combined_route_data,
+            json_data=json_data,
+            is_simultaneous_mode_flag=is_simultaneous_mode_flag,
+            gpx_time_per_video_time=gpx_time_per_video_time,
+            debug_log_callback=(write_debug_log if config.debug_logging else None),
+        )
+        points_for_frame = _frame_ctx.points_for_frame
+        target_time_route = _frame_ctx.target_time_route
+        is_tail_only_frame = _frame_ctx.is_tail_only_frame
+        original_route_end_frame = _frame_ctx.original_route_end_frame
+        hide_complete_routes = _frame_ctx.hide_complete_routes
 
         # Check if we have enough geographically distinct points to draw lines.
         persistent_tracks = combined_route_data.get("persistent_tracks") or []
@@ -525,6 +357,7 @@ def _streaming_frame_worker(args):
             follow_3d_rotate_bg_bboxes=follow_3d_rotate_bg_bboxes,
             worker_image_cache=_worker_local_image_cache,
             attribution_array=attribution_array,
+            dynamic_bboxes=dynamic_bboxes,
         )
 
         _hit_delta = _worker_local_image_cache.get('_stat_hit', 0) - _hit_before

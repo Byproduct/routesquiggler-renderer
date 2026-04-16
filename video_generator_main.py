@@ -413,11 +413,27 @@ class VideoGeneratorWorker(QObject):
             self.debug_message.emit(f"  - Total distance: {distance_value:.2f} {distance_unit}")
             self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
 
-            # Step 2.5: Pre-compute follow_2d / follow_3d / follow_3d_rotate camera bboxes (must happen before
-            # step 3 so calculate_unique_bounding_boxes can use them in both the tile-caching
-            # and map-image-caching phases).
+            # Step 2.5: Pre-compute per-frame camera bboxes for every non-'final'
+            # video mode (must happen before step 3 so calculate_unique_bounding_boxes
+            # and the step-4 map image renderer can all key off the same per-frame
+            # bboxes that step 5 will look up at render time).
             video_mode = self.json_data.get('video_mode')
-            if video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
+            if video_mode == 'dynamic':
+                self.log_message.emit("Step 2.5: Precomputing dynamic-mode per-frame bounding boxes")
+                from video_generator_calculate_bounding_boxes import precompute_dynamic_bboxes
+                dynamic_bboxes = precompute_dynamic_bboxes(
+                    self.json_data,
+                    self.combined_route_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=self.debug_message.emit,
+                )
+                if dynamic_bboxes is None:
+                    raise ValueError("Failed to precompute dynamic-mode bounding boxes")
+                self.combined_route_data['dynamic_bboxes_per_frame'] = dynamic_bboxes
+                self.debug_message.emit(
+                    f"dynamic: {len(dynamic_bboxes)} frame bboxes precomputed"
+                )
+            elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
                 mode_label = video_mode
                 self.log_message.emit(f"Step 2.5: Precomputing {mode_label} camera positions")
                 if video_mode == 'follow_2d':

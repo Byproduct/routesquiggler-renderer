@@ -1,0 +1,36 @@
+{
+  "created_at": "2026-04-16T20:32:25.467695+00:00",
+  "folder": "WgrkQg5EIetA4",
+  "job_id": 1000426,
+  "job_type": "video",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4.0,
+  "map_detail": "normal",
+  "map_style": "osm",
+  "map_transparency": 0,
+  "name_tag_size": "large",
+  "name_tags": "off",
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "Refreshing spree 2024-05-18",
+  "squiggle_speed": "relative",
+  "statistics": "off",
+  "tail_color": "light",
+  "tail_length": 1,
+  "tail_width": 3,
+  "user_id": 1,
+  "video_fps": 60,
+  "video_length": 30,
+  "video_mode": "dynamic",
+  "video_resolution_x": 1280,
+  "video_resolution_y": 720,
+  "track_objects": [
+    {
+      "filename": "2024-05-18 kehä3.gpx",
+      "date": "2024-05-18",
+      "color": "#FF00D2",
+      "name": ""
+    }
+  ]
+}

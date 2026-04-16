@@ -938,7 +938,7 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, worker_image_cache=None, attribution_array=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, worker_image_cache=None, attribution_array=None, dynamic_bboxes=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -1063,27 +1063,49 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             return None
         bbox = follow_2d_bboxes[idx]
     else:
-        # Dynamic zoom mode - calculate bounding box for current frame
-        # Flatten points_for_frame to get all points for this frame (animated routes only).
-        # Persistent tracks are excluded from bbox; if animated is empty, fall back to persistent
-        # geometry only so map tiles resolve (e.g. hide_complete_routes with background tracks).
-        all_points = []
-        for route_points in points_for_frame:
-            if route_points:
-                all_points.extend(route_points)
-        if not all_points and persistent_tracks:
-            all_points = _bbox_points_from_persistent_tracks(persistent_tracks)
+        # Dynamic zoom mode: bbox was pre-computed for every frame in step 2.5
+        # (precompute_dynamic_bboxes) and passed in via the dynamic_bboxes
+        # argument.  Looking it up by index here -- same pattern as the follow_*
+        # modes above -- guarantees that the bbox used for cache lookup is
+        # bit-for-bit identical to the one step 3 used to decide which tiles
+        # to download and step 4 used to render and cache the map image.
+        if dynamic_bboxes is not None:
+            idx = frame_number - 1
+            if idx < 0 or idx >= len(dynamic_bboxes):
+                print(f"Error: frame {frame_number} out of range for dynamic_bboxes (len={len(dynamic_bboxes)})")
+                return None
+            bbox = dynamic_bboxes[idx]
+            if bbox is None:
+                # Precompute saw no drawable points for this frame.  Should only
+                # happen for frames that the streaming worker also treats as
+                # empty (and therefore never calls us for), but guard anyway.
+                print(f"Error: no precomputed bbox for frame {frame_number} (empty frame?)")
+                return None
+        else:
+            # Defensive fallback: no precomputed list available (e.g. direct
+            # call from legacy code path).  Recompute the same way the
+            # precompute does so the on-the-fly bbox still matches the cache
+            # keys.  Only animated points count -- persistent tracks are part
+            # of the map backdrop and must never influence the viewport.
+            # Logs a warning so this path shows up if it ever fires.
+            print(
+                f"Warning: dynamic_bboxes not provided for frame {frame_number}; "
+                f"falling back to per-frame recomputation (cache misses likely)"
+            )
+            all_points = []
+            for route_points in points_for_frame:
+                if route_points:
+                    all_points.extend(route_points)
 
-        if not all_points:
-            print(f"Error: No points available for frame {frame_number}")
-            return None
+            if not all_points:
+                print(f"Error: No animated points available for frame {frame_number}")
+                return None
 
-        # Use the shared bounding box calculation function for consistency
-        bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1, target_aspect_ratio=target_aspect_ratio)
-        
-        if bbox is None:
-            print(f"Error: Could not calculate bounding box for frame {frame_number}")
-            return None
+            bbox = calculate_bounding_box_for_points(all_points, padding_percent=0.1, target_aspect_ratio=target_aspect_ratio)
+
+            if bbox is None:
+                print(f"Error: Could not calculate bounding box for frame {frame_number}")
+                return None
     
     # For follow_3d_rotate: prepare the oversized background canvas so that
     # heading rotation never exposes black corners.  The bg image was pre-rendered
