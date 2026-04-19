@@ -112,6 +112,7 @@ def pre_cache_map_tiles_for_video(
     provider_queue_callback=None,
     provider_start_callback=None,
     provider_progress_callback=None,
+    canvas_size_override=None,
 ):
     """
     Identify and cache map tiles for all unique bounding boxes required for
@@ -125,6 +126,12 @@ def pre_cache_map_tiles_for_video(
         progress_callback: ``(bar_name, pct, text)`` progress function.
         log_callback: Regular log function.
         debug_callback: Debug log function.
+        canvas_size_override: (width_px, height_px) or None.  Pass the
+            oversized square canvas size for follow_3d_rotate so the
+            max-tiles budget matches the one ``_render_map_image`` uses at
+            render time.  Without this the two phases would pick different
+            zoom levels and step 4 would silently download additional tiles
+            from the provider.
 
     Returns:
         dict: Cache results, or ``None`` on error.
@@ -166,6 +173,20 @@ def pre_cache_map_tiles_for_video(
             map_detail=map_detail,
             video_tilt=video_tilt,
         )
+
+        # Mirror the canvas-area scaling used in `_render_map_image` so that
+        # `detect_zoom_level` picks the same zoom level here as it will at
+        # render time.  Only follow_3d_rotate sets this override (oversized
+        # square bg canvas).
+        if canvas_size_override is not None:
+            canvas_w, canvas_h = canvas_size_override
+            area_ratio = (canvas_w * canvas_h) / max(1, resolution_x * resolution_y)
+            max_tiles = max(1, int(max_tiles * area_ratio))
+            if debug_callback:
+                debug_callback(
+                    f"Canvas override {canvas_w}x{canvas_h}: area_ratio={area_ratio:.3f}, "
+                    f"max_tiles scaled to {max_tiles}"
+                )
 
         if debug_callback:
             multiplier = (
@@ -320,7 +341,27 @@ def cache_map_tiles(
         
         if debug_callback:
             debug_callback(f"Found {len(unique_bounding_boxes)} unique bounding boxes")
-        
+
+        # For follow_3d_rotate the bboxes passed in are the oversized bg
+        # bboxes (expanded to cover a square canvas of diag(W,H) px).  Step 4
+        # renders them on that canvas with an area-ratio-inflated max-tiles
+        # budget, so we must use the same budget here or the two steps will
+        # pick different zoom levels and step 4 will download missing tiles.
+        video_mode = json_data.get('video_mode', 'dynamic')
+        if video_mode == 'follow_3d_rotate':
+            from video_generator_follow_3d import compute_bg_canvas_size
+            video_w = int(json_data.get('video_resolution_x', 1920))
+            video_h = int(json_data.get('video_resolution_y', 1080))
+            canvas_size = compute_bg_canvas_size(video_w, video_h)
+            canvas_override = (canvas_size, canvas_size)
+            if debug_callback:
+                debug_callback(
+                    f"follow_3d_rotate tile caching: canvas {canvas_size}x{canvas_size}px "
+                    f"for {video_w}x{video_h} output"
+                )
+        else:
+            canvas_override = None
+
         # Pre-cache map tiles for all unique bounding boxes
         cache_result = pre_cache_map_tiles_for_video(
             unique_bounding_boxes, json_data,
@@ -331,6 +372,7 @@ def cache_map_tiles(
             provider_queue_callback=provider_queue_callback,
             provider_start_callback=provider_start_callback,
             provider_progress_callback=provider_progress_callback,
+            canvas_size_override=canvas_override,
         )
         
         if cache_result is None:
