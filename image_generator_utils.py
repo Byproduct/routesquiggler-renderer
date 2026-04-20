@@ -442,6 +442,61 @@ def apply_tile_threshold_multiplier(base_max_tiles: int, resolution_scale: float
     return max(min_value, adjusted)
 
 
+# Per-style base max-tiles budget for video rendering. Must stay centralized so
+# the step 2.5 zoom-stabilization precompute, step 3 tile caching, step 4 map
+# image caching, and step 5 on-the-fly fallback all agree on the exact same
+# max_tiles budget and therefore pick the exact same zoom level for any given
+# bbox.
+_VIDEO_BASE_MAX_TILES = {
+    'osm': 100, 'otm': 100, 'cyclosm': 100,
+    'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
+    'stadia_toner': 100, 'stadia_watercolor': 150,
+}
+
+
+def compute_video_max_tiles(json_data: Dict, map_style: str, canvas_size_override: Optional[Tuple[int, int]] = None) -> int:
+    """
+    Compute the max-tiles budget for video map-tile / map-image rendering.
+
+    Factored out so every call site that needs to make zoom-level decisions
+    uses the same formula. If this value ever diverges between step 3/4 and
+    step 5 the pipeline will suffer map-image cache misses (bbox key matches
+    but the zoom the renderer picks differs).
+
+    Args:
+        json_data: Job data (read for video_resolution_x/y, map_detail, video_tilt).
+        map_style: Map style name, e.g. 'osm'.
+        canvas_size_override: Optional (width, height) in px. When provided the
+            budget is scaled by the canvas area ratio relative to the video
+            output resolution. Used by follow_3d_rotate, which renders the
+            background map onto an oversized square canvas.
+
+    Returns:
+        int: max_tiles (>= 1).
+    """
+    base_max_tiles = _VIDEO_BASE_MAX_TILES.get(map_style, 100)
+    resolution_x = int(json_data.get('video_resolution_x', 1920))
+    resolution_y = int(json_data.get('video_resolution_y', 1080))
+    resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+
+    map_detail = json_data.get('map_detail')
+    video_tilt = json_data.get('video_tilt')
+    max_tiles = apply_tile_threshold_multiplier(
+        base_max_tiles,
+        resolution_scale,
+        min_value=1,
+        map_detail=map_detail,
+        video_tilt=video_tilt,
+    )
+
+    if canvas_size_override is not None:
+        canvas_w, canvas_h = canvas_size_override
+        area_ratio = (canvas_w * canvas_h) / max(1, resolution_x * resolution_y)
+        max_tiles = max(1, int(max_tiles * area_ratio))
+
+    return max_tiles
+
+
 def get_attribution_text(map_style):
     """
     Return attribution string based on map_style.

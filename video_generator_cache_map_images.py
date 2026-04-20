@@ -21,10 +21,10 @@ import numpy as np
 
 # Local imports
 from image_generator_maptileutils import create_map_tiles, detect_zoom_level, set_cache_directory
-from image_generator_utils import calculate_resolution_scale, apply_tile_threshold_multiplier
+from image_generator_utils import compute_video_max_tiles
 from job_request import set_attribution_from_theme
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
-from video_generator_coordinate_encoder import encode_coords
+from video_generator_coordinate_encoder import make_map_cache_key
 from video_generator_cache_map_tiles import is_tile_cached
 from video_generator_create_single_frame import _convert_bbox_to_web_mercator, _gps_to_web_mercator
 
@@ -57,25 +57,26 @@ class _CacheOnlyTilesWrapper:
     def __getattr__(self, name):
         return getattr(self._tiles, name)
 
-def _get_from_cache_safe(shared_map_cache, encoded_bbox):
+def _get_from_cache_safe(shared_map_cache, cache_key):
     """
     Get an image from the cache. Returns a copy of the numpy array.
-    
+
     Args:
         shared_map_cache: The shared map cache dict
-        encoded_bbox: The encoded bounding box key
-        
+        cache_key: The composite cache key (bbox-encoded + zoom level).
+            Callers should build this via ``make_map_cache_key(bbox, zoom)``.
+
     Returns:
         numpy array or None if not found
     """
     if shared_map_cache is None:
         return None
-    if encoded_bbox in shared_map_cache:
-        return shared_map_cache[encoded_bbox].copy()
+    if cache_key in shared_map_cache:
+        return shared_map_cache[cache_key].copy()
     return None
 
 
-def _render_map_image(bbox, json_data, canvas_size_override=None):
+def _render_map_image(bbox, json_data, canvas_size_override=None, zoom_level=None):
     """
     Render a map image for *bbox* and return it as an (H, W, 3) uint8 numpy
     array.  Does not read from or write to any cache.
@@ -89,6 +90,13 @@ def _render_map_image(bbox, json_data, canvas_size_override=None):
         json_data (dict): Job parameters (map_style, resolution, opacity, …).
         canvas_size_override (tuple | None): (width_px, height_px) or None.
             Pass the oversized square canvas size for follow_3d_rotate bg images.
+        zoom_level (int | None): Force this exact zoom level. When the zoom
+            comes from step 2.5 stabilization it MUST be passed here so the
+            pre-cached map image matches what the frame generator later looks
+            up in the (bbox, zoom)-keyed cache. When None, falls back to
+            ``detect_zoom_level`` with the shared max_tiles helper (used only
+            by legacy callers or debug paths that don't have a stabilized
+            zoom).
 
     Returns:
         numpy.ndarray (H, W, 3) uint8, or None on failure.
@@ -103,23 +111,6 @@ def _render_map_image(bbox, json_data, canvas_size_override=None):
         video_resolution_x = int(json_data.get('video_resolution_x', 1920))
         video_resolution_y = int(json_data.get('video_resolution_y', 1080))
 
-        max_tiles_config = {
-            'osm': 100, 'otm': 100, 'cyclosm': 100,
-            'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
-            'stadia_toner': 100, 'stadia_watercolor': 150,
-        }
-        base_max_map_tiles = max_tiles_config.get(map_style, 100)
-        resolution_scale = calculate_resolution_scale(video_resolution_x, video_resolution_y)
-        map_detail = json_data.get('map_detail')
-        video_tilt = json_data.get('video_tilt')
-        max_map_tiles = apply_tile_threshold_multiplier(
-            base_max_map_tiles, resolution_scale, min_value=1, map_detail=map_detail, video_tilt=video_tilt,
-        )
-        if canvas_size_override is not None:
-            canvas_w, canvas_h = canvas_size_override
-            area_ratio = (canvas_w * canvas_h) / max(1, video_resolution_x * video_resolution_y)
-            max_map_tiles = max(1, int(max_map_tiles * area_ratio))
-
         if canvas_size_override is not None:
             width, height = canvas_size_override
         else:
@@ -129,11 +120,18 @@ def _render_map_image(bbox, json_data, canvas_size_override=None):
 
         set_cache_directory(map_style)
         map_tiles = create_map_tiles(map_style, log_cache_miss=True)
-        zoom_level = detect_zoom_level(
-            (lon_min, lon_max, lat_min, lat_max),
-            max_tiles=max_map_tiles,
-            map_style=map_style,
-        )
+
+        if zoom_level is None:
+            max_map_tiles = compute_video_max_tiles(
+                json_data, map_style, canvas_size_override=canvas_size_override,
+            )
+            zoom_level = detect_zoom_level(
+                (lon_min, lon_max, lat_min, lat_max),
+                max_tiles=max_map_tiles,
+                map_style=map_style,
+            )
+        else:
+            zoom_level = int(zoom_level)
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(1, 1, 1, projection=map_tiles.crs)
@@ -159,11 +157,11 @@ def _render_map_image(bbox, json_data, canvas_size_override=None):
 
 def create_map_image_worker(args):
     """
-    Worker function to create a map image for a single bounding box.
+    Worker function to create a map image for a single (bbox, zoom) pair.
 
     Args:
         args (tuple): Contains
-            (bbox_index, bbox, json_data, shared_progress_dict,
+            (bbox_index, bbox, zoom_level, json_data, shared_progress_dict,
              shared_map_cache, canvas_size_override)
             canvas_size_override: (width_px, height_px) or None.
             When provided the image is rendered at that canvas size instead
@@ -171,9 +169,9 @@ def create_map_image_worker(args):
             background (bg) images which need an oversized square canvas.
 
     Returns:
-        dict: Result information for this bounding box
+        dict: Result information for this (bbox, zoom) pair.
     """
-    bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache, canvas_size_override = args
+    bbox_index, bbox, zoom_level, json_data, shared_progress_dict, shared_map_cache, canvas_size_override = args
 
     def _bump_progress():
         with shared_progress_dict['lock']:
@@ -181,8 +179,7 @@ def create_map_image_worker(args):
             return shared_progress_dict['completed'], shared_progress_dict['total']
 
     try:
-        lon_min, lon_max, lat_min, lat_max = bbox
-        encoded_bbox = encode_coords(lon_min, lon_max, lat_min, lat_max)
+        cache_key = make_map_cache_key(bbox, zoom_level)
 
         # Skip immediately if the cache memory limit was already reached by a
         # previous worker.  The frame generator will produce this image on-the-fly.
@@ -191,6 +188,7 @@ def create_map_image_worker(args):
             return {
                 'bbox_index': bbox_index,
                 'bbox': bbox,
+                'zoom': zoom_level,
                 'success': True,
                 'was_cached': False,
                 'was_skipped': True,
@@ -200,11 +198,12 @@ def create_map_image_worker(args):
             }
 
         # Fast path: image already in shared cache from an earlier worker.
-        if shared_map_cache is not None and encoded_bbox in shared_map_cache:
+        if shared_map_cache is not None and cache_key in shared_map_cache:
             current_progress, total_work = _bump_progress()
             return {
                 'bbox_index': bbox_index,
                 'bbox': bbox,
+                'zoom': zoom_level,
                 'success': True,
                 'was_cached': True,
                 'was_skipped': False,
@@ -213,14 +212,17 @@ def create_map_image_worker(args):
                 'message': f"Map image already in cache for bbox {bbox_index + 1}",
             }
 
-        # Render the map image (no cache interaction).
-        img_array = _render_map_image(bbox, json_data, canvas_size_override)
+        # Render the map image (no cache interaction). Use the exact
+        # stabilized zoom so the image is bit-identical to what the frame
+        # generator expects when looking up by (bbox, zoom).
+        img_array = _render_map_image(bbox, json_data, canvas_size_override, zoom_level=zoom_level)
 
         if img_array is None:
             current_progress, total_work = _bump_progress()
             return {
                 'bbox_index': bbox_index,
                 'bbox': bbox,
+                'zoom': zoom_level,
                 'success': False,
                 'error': 'render returned None',
                 'was_cached': False,
@@ -232,7 +234,7 @@ def create_map_image_worker(args):
 
         # Store in shared cache and track memory usage.
         if shared_map_cache is not None:
-            shared_map_cache[encoded_bbox] = img_array
+            shared_map_cache[cache_key] = img_array
 
             limit_bytes = shared_progress_dict.get('cache_limit_bytes', 0)
             if limit_bytes > 0:
@@ -246,6 +248,7 @@ def create_map_image_worker(args):
         return {
             'bbox_index': bbox_index,
             'bbox': bbox,
+            'zoom': zoom_level,
             'success': True,
             'was_cached': False,
             'was_skipped': False,
@@ -260,6 +263,7 @@ def create_map_image_worker(args):
         return {
             'bbox_index': bbox_index,
             'bbox': bbox,
+            'zoom': zoom_level,
             'success': False,
             'error': str(e),
             'was_cached': False,
@@ -272,11 +276,13 @@ def create_map_image_worker(args):
 
 def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callback=None, log_callback=None, debug_callback=None, max_workers=None, shared_map_cache=None, canvas_size_override=None):
     """
-    Cache map images for all unique bounding boxes required for video generation.
+    Cache map images for all unique (bbox, zoom) pairs required for video generation.
     Uses shared memory cache exclusively for maximum performance.
 
     Args:
-        unique_bounding_boxes (set): Set of unique bounding boxes as tuples (lon_min, lon_max, lat_min, lat_max)
+        unique_bounding_boxes (list): List of unique ``(bbox, zoom)`` pairs where
+            bbox is ``(lon_min, lon_max, lat_min, lat_max)`` and zoom is an int
+            assigned by step 2.5's zoom stabilization.
         json_data (dict): Job data containing video parameters
         progress_callback (callable, optional): Function to call with progress updates (progress_bar_name, percentage, progress_text)
         log_callback (callable, optional): Function to call for logging messages
@@ -292,23 +298,22 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
     try:
         if debug_callback:
             debug_callback("Starting map image caching for video generation")
-        
-        # Validate that shared map cache is provided
+
         if shared_map_cache is None:
             if log_callback:
                 log_callback("Error: Shared map cache is required for map image caching")
             return None
-        
+
         if progress_callback:
             progress_callback("progress_bar_map_images", 0, "Preparing map image caching")
-        
-        # Convert bounding boxes to list and sort for locality (lat_min, lon_min)
-        # so that chunks processed by the same worker tend to share tile cache
-        bbox_list = sorted(unique_bounding_boxes, key=lambda b: (b[2], b[0]))  # (lat_min, lon_min)
-        total_bboxes = len(bbox_list)
-        
+
+        # Sort by (lat_min, lon_min) of the bbox for locality so chunks processed
+        # by the same worker tend to share tile cache.
+        pair_list = sorted(unique_bounding_boxes, key=lambda p: (p[0][2], p[0][0]))
+        total_bboxes = len(pair_list)
+
         if debug_callback:
-            debug_callback(f"Processing {total_bboxes} unique bounding boxes for map images")
+            debug_callback(f"Processing {total_bboxes} unique (bbox, zoom) pairs for map images")
         
         # Determine number of workers to use
         if max_workers is None:
@@ -352,8 +357,11 @@ def cache_map_images_for_video(unique_bounding_boxes, json_data, progress_callba
             
             # Prepare work arguments for each worker
             work_args = []
-            for bbox_index, bbox in enumerate(bbox_list):
-                work_args.append((bbox_index, bbox, json_data, shared_progress_dict, shared_map_cache, canvas_size_override))
+            for bbox_index, (bbox, zoom_level) in enumerate(pair_list):
+                work_args.append((
+                    bbox_index, bbox, zoom_level, json_data,
+                    shared_progress_dict, shared_map_cache, canvas_size_override,
+                ))
             
             # Start multiprocessing
             results = []

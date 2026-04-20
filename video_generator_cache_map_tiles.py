@@ -11,8 +11,7 @@ import os
 from pathlib import Path
 
 # Local imports
-from image_generator_maptileutils import detect_zoom_level, set_cache_directory
-from image_generator_utils import calculate_resolution_scale, apply_tile_threshold_multiplier
+from image_generator_maptileutils import set_cache_directory
 from job_request import set_attribution_from_theme
 from map_tile_caching import cache_required_tiles
 from video_generator_calculate_bounding_boxes import calculate_route_time_per_frame, calculate_unique_bounding_boxes
@@ -115,23 +114,23 @@ def pre_cache_map_tiles_for_video(
     canvas_size_override=None,
 ):
     """
-    Identify and cache map tiles for all unique bounding boxes required for
-    video generation.
+    Identify and cache map tiles for all unique (bbox, zoom) pairs required
+    for video generation.
 
     Args:
-        unique_bounding_boxes (set): Unique bounding boxes as
-            ``(lon_min, lon_max, lat_min, lat_max)`` tuples.
+        unique_bounding_boxes (list): Unique ``(bbox, zoom)`` pairs where
+            bbox is ``(lon_min, lon_max, lat_min, lat_max)`` and zoom is an
+            int. The zoom level was assigned by step 2.5's zoom stabilization
+            and is authoritative across the entire pipeline.
         json_data (dict): Job data containing video parameters.
         storage_box_credentials (dict | None): Storage box credentials.
         progress_callback: ``(bar_name, pct, text)`` progress function.
         log_callback: Regular log function.
         debug_callback: Debug log function.
-        canvas_size_override: (width_px, height_px) or None.  Pass the
-            oversized square canvas size for follow_3d_rotate so the
-            max-tiles budget matches the one ``_render_map_image`` uses at
-            render time.  Without this the two phases would pick different
-            zoom levels and step 4 would silently download additional tiles
-            from the provider.
+        canvas_size_override: (width_px, height_px) or None. Still accepted
+            for forward/backward compatibility of the call site (used by
+            follow_3d_rotate) but no longer affects zoom selection here
+            because zoom levels arrive already-decided from step 2.5.
 
     Returns:
         dict: Cache results, or ``None`` on error.
@@ -143,72 +142,22 @@ def pre_cache_map_tiles_for_video(
         map_style = json_data.get('map_style', 'osm')
         set_cache_directory(map_style)
 
-        bbox_list = list(unique_bounding_boxes)
-        total_bboxes = len(bbox_list)
+        pairs = list(unique_bounding_boxes)
+        total_pairs = len(pairs)
 
         if debug_callback:
-            debug_callback(f"Processing {total_bboxes} unique bounding boxes")
-
-        # Max tiles per bounding box (style-specific)
-        max_tiles_config = {
-            'osm': 100, 'otm': 100, 'cyclosm': 100,
-            'stadia_light': 100, 'stadia_dark': 100, 'stadia_outdoors': 100,
-            'stadia_toner': 100, 'stadia_watercolor': 150,
-        }
-        base_max_tiles = max_tiles_config.get(map_style, 100)
-
-        # Adjust the tile-count threshold based on output resolution scale.
-        # This affects only the "max tiles we allow" part of zoom detection;
-        # all subsequent zoom modifiers still apply normally.
-        resolution_x = int(json_data.get("video_resolution_x", 1920))
-        resolution_y = int(json_data.get("video_resolution_y", 1080))
-        resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
-
-        map_detail = json_data.get("map_detail")
-        video_tilt = json_data.get("video_tilt")
-        max_tiles = apply_tile_threshold_multiplier(
-            base_max_tiles,
-            resolution_scale,
-            min_value=1,
-            map_detail=map_detail,
-            video_tilt=video_tilt,
-        )
-
-        # Mirror the canvas-area scaling used in `_render_map_image` so that
-        # `detect_zoom_level` picks the same zoom level here as it will at
-        # render time.  Only follow_3d_rotate sets this override (oversized
-        # square bg canvas).
-        if canvas_size_override is not None:
-            canvas_w, canvas_h = canvas_size_override
-            area_ratio = (canvas_w * canvas_h) / max(1, resolution_x * resolution_y)
-            max_tiles = max(1, int(max_tiles * area_ratio))
-            if debug_callback:
-                debug_callback(
-                    f"Canvas override {canvas_w}x{canvas_h}: area_ratio={area_ratio:.3f}, "
-                    f"max_tiles scaled to {max_tiles}"
-                )
-
-        if debug_callback:
-            multiplier = (
-                float(max_tiles) / float(base_max_tiles)
-                if base_max_tiles
-                else 1.0
-            )
             debug_callback(
-                f"Zoom threshold adjustment: resolution_scale={resolution_scale} => "
-                f"multiplier={multiplier}, max_tiles={max_tiles} (base {base_max_tiles})"
+                f"Processing {total_pairs} unique (bbox, zoom) pairs "
+                f"(canvas_size_override={canvas_size_override})"
             )
 
-        # Phase 1: Gather all required tiles across all bounding boxes
+        # Phase 1: Gather all required tiles across all (bbox, zoom) pairs.
+        # Zoom levels arrive already-decided from step 2.5's stabilization
+        # pass, so we do not call detect_zoom_level here.
         all_required_tiles = set()
 
-        for bbox in bbox_list:
+        for bbox, zoom_level in pairs:
             lon_min, lon_max, lat_min, lat_max = bbox
-            map_bounds = (lon_min, lon_max, lat_min, lat_max)
-            zoom_level = detect_zoom_level(
-                map_bounds, max_tiles=max_tiles,
-                map_style=map_style,
-            )
 
             def deg2num(lat_deg, lon_deg, zoom):
                 lat_rad = math.radians(lat_deg)
@@ -254,7 +203,7 @@ def pre_cache_map_tiles_for_video(
             'total_tiles_cached': total_required,
             'total_tiles_skipped': 0,
             'total_tiles_to_cache': total_required,
-            'total_bboxes': total_bboxes,
+            'total_bboxes': total_pairs,
             'error_types': {},
             'success': bool(tile_cache_info.get('success')) if tile_cache_info else False,
             'tiles_local': int(tile_cache_info.get('count_local', 0)) if tile_cache_info else 0,

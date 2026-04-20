@@ -241,28 +241,32 @@ def calculate_bounding_box_for_wrapped_coordinates(lats, lons, padding_percent=0
     return final_bbox
 
 
-def save_final_bounding_box(final_bbox, log_callback=None, debug_callback=None):
+def save_final_bounding_box(final_bbox, zoom_level=None, log_callback=None, debug_callback=None):
     """
-    Save the final bounding box to a file for later use.
-    
+    Save the final bounding box (and optionally zoom level) to a file for later use.
+
+    Stored as a dict so that the shape can grow in the future without breaking
+    load. `final` mode persists the zoom picked at step 3 so step 5 can key the
+    map-image cache on the exact same (bbox, zoom) pair the renderer used.
+
     Args:
         final_bbox (tuple): Final bounding box as (lon_min, lon_max, lat_min, lat_max)
+        zoom_level (int, optional): Zoom level chosen for the final bbox.
         log_callback (callable, optional): Function to call for logging messages
         debug_callback (callable, optional): Function to call for debug logging messages
     """
     try:
-        # Create output directory
         output_dir = Path("temporary files/route")
         output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Save to file
+
         bbox_file = output_dir / "final_bounding_box.pkl"
+        payload = {'bbox': final_bbox, 'zoom': zoom_level}
         with open(bbox_file, 'wb') as f:
-            pickle.dump(final_bbox, f)
-        
+            pickle.dump(payload, f)
+
         if debug_callback:
-            debug_callback(f"Saved final bounding box to {bbox_file}")
-            
+            debug_callback(f"Saved final bounding box to {bbox_file} (zoom={zoom_level})")
+
     except Exception as e:
         if log_callback:
             log_callback(f"Error saving final bounding box: {str(e)}")
@@ -270,35 +274,47 @@ def save_final_bounding_box(final_bbox, log_callback=None, debug_callback=None):
 
 def load_final_bounding_box(log_callback=None, debug_callback=None):
     """
-    Load the final bounding box from file.
-    
+    Load the final bounding box (and zoom, if persisted) from file.
+
+    Accepts both the new dict format (`{'bbox': ..., 'zoom': ...}`) and the
+    legacy tuple format for backward compatibility during upgrades.
+
     Args:
         log_callback (callable, optional): Function to call for logging messages
         debug_callback (callable, optional): Function to call for debug logging messages
-    
+
     Returns:
-        tuple: Final bounding box as (lon_min, lon_max, lat_min, lat_max), or None if not found
+        tuple: (bbox, zoom_level) where zoom_level may be None if not persisted,
+            or (None, None) if the file cannot be read.
     """
     try:
         bbox_file = Path("temporary files/route/final_bounding_box.pkl")
-        
+
         if not bbox_file.exists():
             if log_callback:
                 log_callback(f"Warning: Final bounding box file not found: {bbox_file}")
-            return None
-        
+            return None, None
+
         with open(bbox_file, 'rb') as f:
-            final_bbox = pickle.load(f)
-        
+            payload = pickle.load(f)
+
+        if isinstance(payload, dict):
+            final_bbox = payload.get('bbox')
+            zoom_level = payload.get('zoom')
+        else:
+            # Legacy format: raw bbox tuple.
+            final_bbox = payload
+            zoom_level = None
+
         if debug_callback:
-            debug_callback(f"Loaded final bounding box: {final_bbox}")
-        
-        return final_bbox
-        
+            debug_callback(f"Loaded final bounding box: {final_bbox} (zoom={zoom_level})")
+
+        return final_bbox, zoom_level
+
     except Exception as e:
         if log_callback:
             log_callback(f"Error loading final bounding box: {str(e)}")
-        return None
+        return None, None
 
 
 def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=None, debug_callback=None):
@@ -694,18 +710,27 @@ def precompute_dynamic_bboxes(json_data, combined_route_data, log_callback=None,
 
 def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callback=None, max_workers=None, combined_route_data=None, debug_callback=None):
     """
-    Calculate unique bounding boxes for all frames in the video.
-    
+    Calculate unique (bbox, zoom) pairs for all frames in the video.
+
+    Returns the distinct pairs that will be used for map-tile caching (step 3)
+    and map-image caching (step 4). Including the zoom level in the cache unit
+    is necessary because follow-mode zoom stabilization can assign a different
+    zoom to the same bbox in different frames (rare but possible), and because
+    the frame generator keys the map-image cache on (bbox, zoom) at lookup.
+
     Args:
         json_data (dict): Job data containing video parameters
         route_time_per_frame (float): Route time per frame in seconds
         log_callback (callable, optional): Function to call for logging messages
         max_workers (int, optional): Maximum number of worker processes to use
-        combined_route_data (dict, optional): Combined route data containing gpx_time_per_video_time
+        combined_route_data (dict, optional): Combined route data containing
+            per-frame bboxes, per-frame stabilized zooms, and gpx_time_per_video_time.
         debug_callback (callable, optional): Function to call for debug logging messages
-    
+
     Returns:
-        list: List of unique bounding boxes as tuples (lon_min, lon_max, lat_min, lat_max), or None if error
+        list[tuple]: List of unique (bbox, zoom) pairs where bbox is
+            (lon_min, lon_max, lat_min, lat_max) and zoom is an int.
+            Returns None on error.
     """
     try:
         # Get video parameters and ensure they are numeric
@@ -881,21 +906,35 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 round(lat_min_padded, 6),   # lat_min_padded
                 round(lat_max_padded, 6)    # lat_max_padded
             )
-            
-            # Save the final bounding box for later use
-            save_final_bounding_box(final_bbox, log_callback, debug_callback)
-            
+
+            # Compute the zoom level once here so step 3/4 and the step 5
+            # frame-generator lookup (which re-loads the pickle) all agree on
+            # the same (bbox, zoom) cache unit.
+            from image_generator_maptileutils import detect_zoom_level
+            from image_generator_utils import compute_video_max_tiles
+            map_style = json_data.get('map_style', 'osm')
+            final_max_tiles = compute_video_max_tiles(json_data, map_style, canvas_size_override=None)
+            final_zoom = detect_zoom_level(
+                final_bbox,
+                max_tiles=final_max_tiles,
+                map_style=map_style,
+            )
+
+            # Save the final bounding box and zoom for later use
+            save_final_bounding_box(final_bbox, zoom_level=final_zoom, log_callback=log_callback, debug_callback=debug_callback)
+
             route_count = len(all_routes) if all_routes else 1
             if debug_callback:
-                debug_callback(f"Final zoom mode: calculated single bounding box {final_bbox} from {route_count} route{'s' if route_count > 1 else ''}")
-            
-            # Return list with single bounding box
-            return [final_bbox]
-        
+                debug_callback(
+                    f"Final zoom mode: calculated single bounding box {final_bbox} "
+                    f"at zoom {final_zoom} from {route_count} route{'s' if route_count > 1 else ''}"
+                )
+
+            return [(final_bbox, final_zoom)]
+
         elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
-            # follow_2d / follow_3d / follow_3d_rotate modes: bboxes were pre-computed
-            # (with EMA smoothing) and
-            # stored in combined_route_data before this function was called.
+            # follow_2d / follow_3d / follow_3d_rotate modes: bboxes AND stabilized
+            # zooms were pre-computed in step 2.5 and stored in combined_route_data.
             # follow_3d and follow_3d_rotate reuse follow_2d bboxes for camera smoothing.
             follow_2d_bboxes = combined_route_data.get('follow_2d_bboxes_per_frame') if combined_route_data else None
             if not follow_2d_bboxes:
@@ -905,6 +944,7 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                         "combined_route_data (run precompute_follow_2d/3d_bboxes first)"
                     )
                 return None
+
             if video_mode == 'follow_3d_rotate':
                 # For follow_3d_rotate only the expanded background bboxes are needed.
                 # The bg bboxes cover the same tile area as the normal follow_2d bboxes
@@ -913,27 +953,54 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                 bg_bboxes = (
                     combined_route_data.get('follow_3d_rotate_bg_bboxes_per_frame') or []
                 ) if combined_route_data else []
-                unique_bboxes = set(bg_bboxes)
+                bg_zooms = (
+                    combined_route_data.get('follow_3d_rotate_bg_zooms_per_frame') or []
+                ) if combined_route_data else []
+                if not bg_zooms or len(bg_zooms) != len(bg_bboxes):
+                    if log_callback:
+                        log_callback(
+                            "Error: follow_3d_rotate mode requires "
+                            "follow_3d_rotate_bg_zooms_per_frame matching bg bboxes"
+                        )
+                    return None
+                unique_pairs = {
+                    (bbox, zoom)
+                    for bbox, zoom in zip(bg_bboxes, bg_zooms)
+                    if bbox is not None and zoom is not None
+                }
                 if debug_callback:
                     debug_callback(
-                        f"follow_3d_rotate: using {len(unique_bboxes)} unique bg bboxes "
-                        f"(expanded from {len(follow_2d_bboxes)} frame bboxes)"
+                        f"follow_3d_rotate: using {len(unique_pairs)} unique (bg_bbox, zoom) pairs "
+                        f"(from {len(bg_bboxes)} frame bboxes)"
                     )
             else:
-                unique_bboxes = set(follow_2d_bboxes)
+                follow_2d_zooms = combined_route_data.get('follow_2d_zooms_per_frame') if combined_route_data else None
+                if not follow_2d_zooms or len(follow_2d_zooms) != len(follow_2d_bboxes):
+                    if log_callback:
+                        log_callback(
+                            f"Error: {video_mode} mode requires "
+                            "follow_2d_zooms_per_frame matching the bbox list"
+                        )
+                    return None
+                unique_pairs = {
+                    (bbox, zoom)
+                    for bbox, zoom in zip(follow_2d_bboxes, follow_2d_zooms)
+                    if bbox is not None and zoom is not None
+                }
                 if debug_callback:
                     debug_callback(
                         f"{video_mode} mode: {len(follow_2d_bboxes)} frame bboxes → "
-                        f"{len(unique_bboxes)} unique bboxes to cache"
+                        f"{len(unique_pairs)} unique (bbox, zoom) pairs to cache"
                     )
-            return list(unique_bboxes)
+            return list(unique_pairs)
 
         else:
-            # Dynamic zoom mode: bboxes were pre-computed for every frame in
-            # step 2.5 via precompute_dynamic_bboxes() and stored in
-            # combined_route_data.  Same pattern as the follow_* modes above.
-            # Deduping here yields the set of unique bboxes to cache in step 3.
+            # Dynamic zoom mode: bboxes AND stabilized zooms were pre-computed
+            # for every frame in step 2.5 (precompute_dynamic_bboxes +
+            # compute_stabilized_zooms) and stored in combined_route_data.
+            # Deduping here yields the set of unique (bbox, zoom) pairs to cache.
             dynamic_bboxes = combined_route_data.get('dynamic_bboxes_per_frame') if combined_route_data else None
+            dynamic_zooms = combined_route_data.get('dynamic_zooms_per_frame') if combined_route_data else None
             if not dynamic_bboxes:
                 if log_callback:
                     log_callback(
@@ -941,16 +1008,27 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
                         "combined_route_data (run precompute_dynamic_bboxes first)"
                     )
                 return None
+            if not dynamic_zooms or len(dynamic_zooms) != len(dynamic_bboxes):
+                if log_callback:
+                    log_callback(
+                        "Error: dynamic mode requires dynamic_zooms_per_frame "
+                        "matching the bbox list"
+                    )
+                return None
 
-            unique_bounding_boxes = list({b for b in dynamic_bboxes if b is not None})
+            unique_pairs = list({
+                (bbox, zoom)
+                for bbox, zoom in zip(dynamic_bboxes, dynamic_zooms)
+                if bbox is not None and zoom is not None
+            })
 
             if debug_callback:
                 debug_callback(
                     f"dynamic mode: {len(dynamic_bboxes)} frame bboxes → "
-                    f"{len(unique_bounding_boxes)} unique bboxes to cache"
+                    f"{len(unique_pairs)} unique (bbox, zoom) pairs to cache"
                 )
 
-            return unique_bounding_boxes
+            return unique_pairs
         
     except Exception as e:
         if log_callback:

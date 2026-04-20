@@ -418,9 +418,11 @@ class VideoGeneratorWorker(QObject):
             # and the step-4 map image renderer can all key off the same per-frame
             # bboxes that step 5 will look up at render time).
             video_mode = self.json_data.get('video_mode')
+            map_style = self.json_data.get('map_style', 'osm')
             if video_mode == 'dynamic':
                 self.log_message.emit("Step 2.5: Precomputing dynamic-mode per-frame bounding boxes")
                 from video_generator_calculate_bounding_boxes import precompute_dynamic_bboxes
+                from video_generator_zoom_stabilization import compute_stabilized_zooms
                 dynamic_bboxes = precompute_dynamic_bboxes(
                     self.json_data,
                     self.combined_route_data,
@@ -430,12 +432,22 @@ class VideoGeneratorWorker(QObject):
                 if dynamic_bboxes is None:
                     raise ValueError("Failed to precompute dynamic-mode bounding boxes")
                 self.combined_route_data['dynamic_bboxes_per_frame'] = dynamic_bboxes
+                dynamic_zooms = compute_stabilized_zooms(
+                    dynamic_bboxes,
+                    self.json_data,
+                    map_style,
+                    canvas_size_override=None,
+                    debug_callback=self.debug_message.emit,
+                    mode_label='dynamic',
+                )
+                self.combined_route_data['dynamic_zooms_per_frame'] = dynamic_zooms
                 self.debug_message.emit(
                     f"dynamic: {len(dynamic_bboxes)} frame bboxes precomputed"
                 )
             elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
                 mode_label = video_mode
                 self.log_message.emit(f"Step 2.5: Precomputing {mode_label} camera positions")
+                from video_generator_zoom_stabilization import compute_stabilized_zooms
                 if video_mode == 'follow_2d':
                     from video_generator_follow_2d import precompute_follow_2d_bboxes as _precompute
                 else:
@@ -449,6 +461,20 @@ class VideoGeneratorWorker(QObject):
                 if not follow_2d_bboxes:
                     raise ValueError(f"Failed to precompute {mode_label} bounding boxes")
                 self.combined_route_data['follow_2d_bboxes_per_frame'] = follow_2d_bboxes
+                # Stabilize follow_2d-equivalent zoom for every follow mode so that
+                # overlay-drawing paths (which always key off the normal follow_2d
+                # bbox) pick a consistent zoom. For follow_3d_rotate the rendered
+                # background uses the expanded bg bbox+zoom instead, but the
+                # follow_2d zoom list is still kept in sync for any legacy lookup.
+                follow_2d_zooms = compute_stabilized_zooms(
+                    follow_2d_bboxes,
+                    self.json_data,
+                    map_style,
+                    canvas_size_override=None,
+                    debug_callback=self.debug_message.emit,
+                    mode_label=f"{mode_label} (follow_2d bbox)",
+                )
+                self.combined_route_data['follow_2d_zooms_per_frame'] = follow_2d_zooms
                 self.debug_message.emit(
                     f"{mode_label}: {len(follow_2d_bboxes)} frame bboxes precomputed"
                 )
@@ -466,7 +492,7 @@ class VideoGeneratorWorker(QObject):
                     self.debug_message.emit(
                         f"follow_3d_rotate: {len(follow_3d_rotate_angles)} frame angles precomputed"
                     )
-                    from video_generator_follow_3d import precompute_follow_3d_rotate_bg_bboxes
+                    from video_generator_follow_3d import precompute_follow_3d_rotate_bg_bboxes, compute_bg_canvas_size
                     follow_3d_rotate_bg_bboxes = precompute_follow_3d_rotate_bg_bboxes(
                         self.json_data,
                         self.combined_route_data,
@@ -476,6 +502,22 @@ class VideoGeneratorWorker(QObject):
                     if not follow_3d_rotate_bg_bboxes:
                         raise ValueError("Failed to precompute follow_3d_rotate background bboxes")
                     self.combined_route_data['follow_3d_rotate_bg_bboxes_per_frame'] = follow_3d_rotate_bg_bboxes
+                    # Stabilized zooms for the oversized bg bboxes. The canvas_size_override
+                    # inflates max_tiles by the area ratio, matching what step 3/4 use when
+                    # they render the bg map, so stabilization picks the same zoom the
+                    # renderer would have picked for the bg bbox.
+                    video_w = int(self.json_data.get('video_resolution_x', 1920))
+                    video_h = int(self.json_data.get('video_resolution_y', 1080))
+                    bg_canvas_size = compute_bg_canvas_size(video_w, video_h)
+                    follow_3d_rotate_bg_zooms = compute_stabilized_zooms(
+                        follow_3d_rotate_bg_bboxes,
+                        self.json_data,
+                        map_style,
+                        canvas_size_override=(bg_canvas_size, bg_canvas_size),
+                        debug_callback=self.debug_message.emit,
+                        mode_label='follow_3d_rotate (bg bbox)',
+                    )
+                    self.combined_route_data['follow_3d_rotate_bg_zooms_per_frame'] = follow_3d_rotate_bg_zooms
                     self.debug_message.emit(
                         f"follow_3d_rotate: {len(follow_3d_rotate_bg_bboxes)} bg bboxes precomputed"
                     )

@@ -202,9 +202,13 @@ def _streaming_frame_worker(args):
     is_simultaneous_mode_flag = shared_data.get("is_simultaneous_mode", False)
     # Pre-computed per-frame camera data for follow_* modes and dynamic mode.
     follow_2d_bboxes = combined_route_data.get("follow_2d_bboxes_per_frame") if combined_route_data else None
+    follow_2d_zooms = combined_route_data.get("follow_2d_zooms_per_frame") if combined_route_data else None
     follow_3d_rotate_angles = combined_route_data.get("follow_3d_rotate_angles_per_frame") if combined_route_data else None
     follow_3d_rotate_bg_bboxes = combined_route_data.get("follow_3d_rotate_bg_bboxes_per_frame") if combined_route_data else None
+    follow_3d_rotate_bg_zooms = combined_route_data.get("follow_3d_rotate_bg_zooms_per_frame") if combined_route_data else None
     dynamic_bboxes = combined_route_data.get("dynamic_bboxes_per_frame") if combined_route_data else None
+    dynamic_zooms = combined_route_data.get("dynamic_zooms_per_frame") if combined_route_data else None
+    final_zoom_level = combined_route_data.get("final_zoom_level") if combined_route_data else None
 
     try:
         # Ensure frame_number is an integer
@@ -353,11 +357,15 @@ def _streaming_frame_worker(args):
             points_of_interest_for_frame,
             persistent_tracks,
             follow_2d_bboxes=follow_2d_bboxes,
+            follow_2d_zooms=follow_2d_zooms,
             follow_3d_rotate_angles=follow_3d_rotate_angles,
             follow_3d_rotate_bg_bboxes=follow_3d_rotate_bg_bboxes,
+            follow_3d_rotate_bg_zooms=follow_3d_rotate_bg_zooms,
             worker_image_cache=_worker_local_image_cache,
             attribution_array=attribution_array,
             dynamic_bboxes=dynamic_bboxes,
+            dynamic_zooms=dynamic_zooms,
+            final_zoom_level=final_zoom_level,
         )
 
         _hit_delta = _worker_local_image_cache.get('_stat_hit', 0) - _hit_before

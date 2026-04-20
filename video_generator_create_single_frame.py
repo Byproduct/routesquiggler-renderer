@@ -21,7 +21,7 @@ from PIL import Image as PILImage
 from image_generator_utils import calculate_resolution_scale, composite_clock_onto_frame_array, font_scale_from_name_tag_size, get_text_theme_colors, PointOfInterest
 from speed_based_color import speed_based_color
 from video_generator_calculate_bounding_boxes import calculate_bounding_box_for_points, load_final_bounding_box
-from video_generator_coordinate_encoder import encode_coords
+from video_generator_coordinate_encoder import make_map_cache_key
 from video_generator_create_combined_route import RoutePoint
 from video_generator_create_single_frame_utils import (
     _draw_filename_tags_for_routes,
@@ -938,7 +938,7 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, worker_image_cache=None, attribution_array=None, dynamic_bboxes=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_2d_zooms=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, follow_3d_rotate_bg_zooms=None, worker_image_cache=None, attribution_array=None, dynamic_bboxes=None, dynamic_zooms=None, final_zoom_level=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -1043,13 +1043,25 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
     video_resolution_y = float(json_data.get('video_resolution_y', 1080))
     target_aspect_ratio = video_resolution_x / video_resolution_y
 
+    # Resolve (bbox, zoom) for the main foreground map image and, separately,
+    # the (bg_bbox, bg_zoom) for follow_3d_rotate below. The zoom level is
+    # part of the cache key so step 5 must look up the same zoom step 4 used.
+    frame_zoom = None
     if video_mode == 'final':
-        # Use the pre-calculated final bounding box for all frames
-        final_bbox = load_final_bounding_box()
+        # Use the pre-calculated final bounding box for all frames.
+        loaded = load_final_bounding_box()
+        if isinstance(loaded, tuple) and len(loaded) == 2:
+            final_bbox, loaded_zoom = loaded
+        else:
+            final_bbox, loaded_zoom = loaded, None
         if final_bbox is None:
             print(f"Error: Could not load final bounding box for frame {frame_number}")
             return None
         bbox = final_bbox
+        # Prefer zoom passed in by the caller, fall back to the value persisted
+        # in the pickle; both paths go through compute_video_max_tiles upstream
+        # so they produce the same zoom.
+        frame_zoom = final_zoom_level if final_zoom_level is not None else loaded_zoom
     elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
         # Bbox was pre-computed (with EMA smoothing) for every frame.
         # follow_3d and follow_3d_rotate reuse the same bboxes as follow_2d.
@@ -1062,6 +1074,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             print(f"Error: frame {frame_number} out of range for follow_2d_bboxes (len={len(follow_2d_bboxes)})")
             return None
         bbox = follow_2d_bboxes[idx]
+        if follow_2d_zooms is not None and 0 <= idx < len(follow_2d_zooms):
+            frame_zoom = follow_2d_zooms[idx]
     else:
         # Dynamic zoom mode: bbox was pre-computed for every frame in step 2.5
         # (precompute_dynamic_bboxes) and passed in via the dynamic_bboxes
@@ -1081,6 +1095,8 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 # empty (and therefore never calls us for), but guard anyway.
                 print(f"Error: no precomputed bbox for frame {frame_number} (empty frame?)")
                 return None
+            if dynamic_zooms is not None and 0 <= idx < len(dynamic_zooms):
+                frame_zoom = dynamic_zooms[idx]
         else:
             # Defensive fallback: no precomputed list available (e.g. direct
             # call from legacy code path).  Recompute the same way the
@@ -1106,6 +1122,20 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             if bbox is None:
                 print(f"Error: Could not calculate bounding box for frame {frame_number}")
                 return None
+
+    # If we still don't have a zoom, fall through to the shared helper. Both
+    # step 3/4 and this fallback call compute_video_max_tiles + detect_zoom_level,
+    # so the resulting zoom is identical — no cache-miss risk. This is only
+    # exercised by the legacy dynamic-fallback recomputation path above.
+    if frame_zoom is None:
+        from image_generator_maptileutils import detect_zoom_level as _detect_zoom
+        from image_generator_utils import compute_video_max_tiles as _compute_max_tiles
+        _map_style = json_data.get('map_style', 'osm')
+        frame_zoom = _detect_zoom(
+            bbox,
+            max_tiles=_compute_max_tiles(json_data, _map_style, canvas_size_override=None),
+            map_style=_map_style,
+        )
     
     # For follow_3d_rotate: prepare the oversized background canvas so that
     # heading rotation never exposes black corners.  The bg image was pre-rendered
@@ -1120,25 +1150,49 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         idx_bg = frame_number - 1
         if 0 <= idx_bg < len(follow_3d_rotate_bg_bboxes):
             bg_bbox = follow_3d_rotate_bg_bboxes[idx_bg]
-            encoded_bg_bbox = encode_coords(*bg_bbox)
-            from video_generator_cache_map_images import _get_from_cache_safe as _get_bg
-            bg_img = _get_bg(shared_map_cache, encoded_bg_bbox)
+            # Resolve bg zoom from the precomputed stabilized list (same
+            # rule step 3/4 used when caching the bg image). Fall back to a
+            # shared-helper recompute only in legacy paths that didn't pass
+            # the zoom list through.
+            if follow_3d_rotate_bg_zooms is not None and 0 <= idx_bg < len(follow_3d_rotate_bg_zooms):
+                bg_zoom = follow_3d_rotate_bg_zooms[idx_bg]
+            else:
+                bg_zoom = None
             from video_generator_follow_3d import compute_bg_canvas_size
             _bg_canvas_size = compute_bg_canvas_size(width, height)
+            if bg_zoom is None:
+                from image_generator_maptileutils import detect_zoom_level as _detect_zoom_bg
+                from image_generator_utils import compute_video_max_tiles as _compute_max_tiles_bg
+                _bg_map_style = json_data.get('map_style', 'osm')
+                bg_zoom = _detect_zoom_bg(
+                    bg_bbox,
+                    max_tiles=_compute_max_tiles_bg(
+                        json_data, _bg_map_style,
+                        canvas_size_override=(_bg_canvas_size, _bg_canvas_size),
+                    ),
+                    map_style=_bg_map_style,
+                )
+            bg_cache_key = make_map_cache_key(bg_bbox, bg_zoom)
+            from video_generator_cache_map_images import _get_from_cache_safe as _get_bg
+            bg_img = _get_bg(shared_map_cache, bg_cache_key)
             if bg_img is not None:
                 # Shared cache hit — record for per-job stats.
                 if worker_image_cache is not None:
                     worker_image_cache['_stat_hit'] = worker_image_cache.get('_stat_hit', 0) + 1
             else:
                 # Shared cache miss — try worker-local cache first, then render on-the-fly.
-                if worker_image_cache is not None and encoded_bg_bbox in worker_image_cache:
-                    bg_img = worker_image_cache[encoded_bg_bbox]
+                if worker_image_cache is not None and bg_cache_key in worker_image_cache:
+                    bg_img = worker_image_cache[bg_cache_key]
                 if bg_img is None:
                     from video_generator_cache_map_images import _render_map_image
-                    bg_img = _render_map_image(bg_bbox, json_data, canvas_size_override=(_bg_canvas_size, _bg_canvas_size))
+                    bg_img = _render_map_image(
+                        bg_bbox, json_data,
+                        canvas_size_override=(_bg_canvas_size, _bg_canvas_size),
+                        zoom_level=bg_zoom,
+                    )
                     if bg_img is not None and worker_image_cache is not None:
                         worker_image_cache.clear()
-                        worker_image_cache[encoded_bg_bbox] = bg_img
+                        worker_image_cache[bg_cache_key] = bg_img
                 # Both worker-cache hit and fresh render count as on-the-fly from the job's perspective.
                 if bg_img is not None and worker_image_cache is not None:
                     worker_image_cache['_stat_fly'] = worker_image_cache.get('_stat_fly', 0) + 1
@@ -1150,31 +1204,31 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             else:
                 print(
                     f"Warning: bg map image not found (and on-the-fly render failed) for frame {frame_number} "
-                    f"({encoded_bg_bbox}); falling back to normal canvas"
+                    f"({bg_cache_key}); falling back to normal canvas"
                 )
 
-    # Check if we have a precached map image for these bounds
-    encoded_bbox = encode_coords(*bbox)
+    # Check if we have a precached map image for these bounds at this zoom.
+    cache_key = make_map_cache_key(bbox, frame_zoom)
 
     # Try to load from shared memory cache using thread-safe read (returns a copy)
     # Lazy import to avoid circular import: video_generator_cache_map_images imports this module
     from video_generator_cache_map_images import _get_from_cache_safe
-    img = _get_from_cache_safe(shared_map_cache, encoded_bbox)
+    img = _get_from_cache_safe(shared_map_cache, cache_key)
     if img is not None:
         if worker_image_cache is not None:
             worker_image_cache['_stat_hit'] = worker_image_cache.get('_stat_hit', 0) + 1
     elif not use_bg_canvas:
         # Shared cache miss — try worker-local cache first, then render on-the-fly.
-        if worker_image_cache is not None and encoded_bbox in worker_image_cache:
-            img = worker_image_cache[encoded_bbox]
+        if worker_image_cache is not None and cache_key in worker_image_cache:
+            img = worker_image_cache[cache_key]
         if img is None:
             from video_generator_cache_map_images import _render_map_image
-            img = _render_map_image(bbox, json_data, canvas_size_override=None)
+            img = _render_map_image(bbox, json_data, canvas_size_override=None, zoom_level=frame_zoom)
             if img is not None and worker_image_cache is not None:
                 worker_image_cache.clear()
-                worker_image_cache[encoded_bbox] = img
+                worker_image_cache[cache_key] = img
         if img is None:
-            print(f"ERROR: Map image not found in cache and on-the-fly render failed for frame {frame_number}: {encoded_bbox}")
+            print(f"ERROR: Map image not found in cache and on-the-fly render failed for frame {frame_number}: {cache_key}")
             return None
         if worker_image_cache is not None:
             worker_image_cache['_stat_fly'] = worker_image_cache.get('_stat_fly', 0) + 1
