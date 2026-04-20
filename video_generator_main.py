@@ -478,6 +478,24 @@ class VideoGeneratorWorker(QObject):
                 self.debug_message.emit(
                     f"{mode_label}: {len(follow_2d_bboxes)} frame bboxes precomputed"
                 )
+                if video_mode in ('follow_3d', 'follow_3d_rotate'):
+                    # Per-frame tilt list. For pre-pan frames this is just the
+                    # constant json_data['video_tilt'] value; during the final
+                    # pan-out it smoothsteps to 0° so the perspective warp
+                    # unwinds alongside the bbox zoom-out.
+                    from video_generator_follow_3d import precompute_follow_tilts
+                    follow_tilts = precompute_follow_tilts(
+                        self.json_data,
+                        self.combined_route_data,
+                        log_callback=self.log_message.emit,
+                        debug_callback=self.debug_message.emit,
+                    )
+                    if follow_tilts is None:
+                        raise ValueError("Failed to precompute follow tilts")
+                    self.combined_route_data['follow_tilts_per_frame'] = follow_tilts
+                    self.debug_message.emit(
+                        f"{mode_label}: {len(follow_tilts)} frame tilts precomputed"
+                    )
                 if video_mode == 'follow_3d_rotate':
                     from video_generator_follow_3d import precompute_follow_3d_rotate_angles
                     follow_3d_rotate_angles = precompute_follow_3d_rotate_angles(

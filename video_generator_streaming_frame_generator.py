@@ -206,6 +206,7 @@ def _streaming_frame_worker(args):
     follow_3d_rotate_angles = combined_route_data.get("follow_3d_rotate_angles_per_frame") if combined_route_data else None
     follow_3d_rotate_bg_bboxes = combined_route_data.get("follow_3d_rotate_bg_bboxes_per_frame") if combined_route_data else None
     follow_3d_rotate_bg_zooms = combined_route_data.get("follow_3d_rotate_bg_zooms_per_frame") if combined_route_data else None
+    follow_tilts = combined_route_data.get("follow_tilts_per_frame") if combined_route_data else None
     dynamic_bboxes = combined_route_data.get("dynamic_bboxes_per_frame") if combined_route_data else None
     dynamic_zooms = combined_route_data.get("dynamic_zooms_per_frame") if combined_route_data else None
     final_zoom_level = combined_route_data.get("final_zoom_level") if combined_route_data else None
@@ -361,6 +362,7 @@ def _streaming_frame_worker(args):
             follow_3d_rotate_angles=follow_3d_rotate_angles,
             follow_3d_rotate_bg_bboxes=follow_3d_rotate_bg_bboxes,
             follow_3d_rotate_bg_zooms=follow_3d_rotate_bg_zooms,
+            follow_tilts=follow_tilts,
             worker_image_cache=_worker_local_image_cache,
             attribution_array=attribution_array,
             dynamic_bboxes=dynamic_bboxes,

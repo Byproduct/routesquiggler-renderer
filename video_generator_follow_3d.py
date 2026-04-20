@@ -31,7 +31,13 @@ import numpy as np
 from PIL import Image
 
 from video_generator_follow_2d import precompute_follow_2d_bboxes
-from video_generator_utils import binary_search_cutoff_index, compute_sequential_ending_lengths
+from video_generator_utils import (
+    binary_search_cutoff_index,
+    compute_sequential_ending_lengths,
+    final_pan_out_frame_window,
+    should_apply_final_pan_out,
+    smoothstep,
+)
 
 
 def get_most_recent_point(points_for_frame):
@@ -180,6 +186,41 @@ def precompute_follow_3d_rotate_angles(json_data, combined_route_data, log_callb
             sy = alpha * ty + (1.0 - alpha) * sy
             smoothed_angles.append(math.degrees(math.atan2(sy, sx)))
 
+        # ── Final pan-out rotation fade ───────────────────────────────────
+        # During the pan window ease the smoothed heading toward 0° so the
+        # map settles "north up" exactly as the goal is reached. Post-goal
+        # frames hold at 0° while the tail/cloned ending plays out.
+        if should_apply_final_pan_out(json_data):
+            anchor_frame, goal_frame, pan_frames = final_pan_out_frame_window(
+                video_length, video_fps
+            )
+            if (
+                1 <= anchor_frame
+                and goal_frame <= len(smoothed_angles)
+                and pan_frames > 0
+            ):
+                anchor_angle = smoothed_angles[anchor_frame - 1]
+                for frame_number in range(anchor_frame + 1, goal_frame + 1):
+                    t_linear = (frame_number - anchor_frame) / pan_frames
+                    t_eased = smoothstep(t_linear)
+                    # Blend in unit-vector space so long rotations choose the
+                    # short way around and never spin through the antipode.
+                    theta_a = math.radians(anchor_angle)
+                    ax = math.cos(theta_a)
+                    ay = math.sin(theta_a)
+                    bx = 1.0  # unit vector for 0°
+                    by = 0.0
+                    mx = (1.0 - t_eased) * ax + t_eased * bx
+                    my = (1.0 - t_eased) * ay + t_eased * by
+                    smoothed_angles[frame_number - 1] = math.degrees(math.atan2(my, mx))
+                for frame_number in range(goal_frame + 1, len(smoothed_angles) + 1):
+                    smoothed_angles[frame_number - 1] = 0.0
+                if debug_callback:
+                    debug_callback(
+                        f"follow_3d_rotate: applied rotation fade-to-zero over "
+                        f"frames {anchor_frame + 1}..{goal_frame} ({pan_frames} frames)"
+                    )
+
         if debug_callback:
             debug_callback(
                 f"follow_3d_rotate: precomputed {len(smoothed_angles)} angles "
@@ -190,6 +231,64 @@ def precompute_follow_3d_rotate_angles(json_data, combined_route_data, log_callb
     except Exception as e:
         if log_callback:
             log_callback(f"Error in precompute_follow_3d_rotate_angles: {str(e)}")
+        return None
+
+
+def precompute_follow_tilts(json_data, combined_route_data, log_callback=None, debug_callback=None):
+    """
+    Pre-compute per-frame tilt angles (degrees) for follow_3d / follow_3d_rotate.
+
+    Pre-pan frames all use ``json_data['video_tilt']`` (the regular fixed tilt).
+    During the final pan window the tilt smoothstep-eases to 0° so the
+    perspective warp unwinds in lock-step with the bbox zoom-out. Post-goal
+    frames (tail + cloned ending) hold at 0° — no tilt while the fade-out
+    plays over a fully top-down view.
+
+    Returns a list indexed by ``frame_number - 1`` of length ``total_frames``
+    (matching the follow bbox list), or ``None`` on error.
+    """
+    try:
+        video_fps = float(json_data.get('video_fps', 30))
+        video_length = float(json_data.get('video_length', 30))
+        tail_length = int(json_data.get('tail_length', 0))
+        base_tilt = float(json_data.get('video_tilt', 20.0))
+
+        extended_video_length, _, _ = compute_sequential_ending_lengths(video_length, tail_length)
+        total_frames = int(extended_video_length * video_fps)
+
+        if total_frames <= 0:
+            return []
+
+        tilts = [base_tilt] * total_frames
+
+        if should_apply_final_pan_out(json_data):
+            anchor_frame, goal_frame, pan_frames = final_pan_out_frame_window(
+                video_length, video_fps
+            )
+            if 1 <= anchor_frame and goal_frame <= total_frames and pan_frames > 0:
+                for frame_number in range(anchor_frame + 1, goal_frame + 1):
+                    t_linear = (frame_number - anchor_frame) / pan_frames
+                    t_eased = smoothstep(t_linear)
+                    tilts[frame_number - 1] = base_tilt * (1.0 - t_eased)
+                for frame_number in range(goal_frame + 1, total_frames + 1):
+                    tilts[frame_number - 1] = 0.0
+                if debug_callback:
+                    debug_callback(
+                        f"follow tilts: applied fade-to-zero over frames "
+                        f"{anchor_frame + 1}..{goal_frame} ({pan_frames} frames), "
+                        f"base tilt={base_tilt}°"
+                    )
+
+        if debug_callback:
+            unique_tilts = len(set(round(t, 3) for t in tilts))
+            debug_callback(
+                f"follow tilts: precomputed {total_frames} frames ({unique_tilts} unique values)"
+            )
+        return tilts
+
+    except Exception as e:
+        if log_callback:
+            log_callback(f"Error in precompute_follow_tilts: {str(e)}")
         return None
 
 

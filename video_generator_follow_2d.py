@@ -17,7 +17,15 @@ steps use bit-for-bit identical values.
 
 import math
 
-from video_generator_utils import binary_search_cutoff_index, compute_sequential_ending_lengths
+from video_generator_calculate_bounding_boxes import compute_final_route_bbox
+from video_generator_utils import (
+    binary_search_cutoff_index,
+    compute_sequential_ending_lengths,
+    final_pan_out_frame_window,
+    lerp_bbox,
+    should_apply_final_pan_out,
+    smoothstep,
+)
 
 # Approximate km per degree of latitude (constant).
 _KM_PER_DEG_LAT = 111.0
@@ -154,6 +162,53 @@ def precompute_follow_2d_bboxes(json_data, combined_route_data, log_callback=Non
                 video_resolution_x, video_resolution_y,
             )
             bboxes.append(bbox)
+
+        # ── Final pan-out ──────────────────────────────────────────────────
+        # Over the last FINAL_PAN_OUT_DURATION_SECONDS before the goal, ease
+        # the bbox from its current EMA-follow position to the full-route
+        # bbox (the same view `video_mode == 'final'` uses).  Post-goal
+        # frames (tail + cloned) hold at that final bbox so the fade-out
+        # happens over a static, fully zoomed-out view.
+        #
+        # The list is mutated IN PLACE before any downstream step runs, so
+        # step 3 (tile cache), step 4 (map-image cache) and step 5 (frame
+        # lookup) all see the same per-frame bbox values and key their
+        # caches off identical (bbox, zoom) pairs.
+        if should_apply_final_pan_out(json_data):
+            anchor_frame, goal_frame, pan_frames = final_pan_out_frame_window(
+                video_length, video_fps
+            )
+            final_bbox = compute_final_route_bbox(
+                json_data, combined_route_data,
+                log_callback=log_callback,
+                debug_callback=debug_callback,
+            )
+            if (
+                final_bbox is not None
+                and 1 <= anchor_frame
+                and goal_frame <= len(bboxes)
+                and pan_frames > 0
+            ):
+                anchor_bbox = bboxes[anchor_frame - 1]
+                for frame_number in range(anchor_frame + 1, goal_frame + 1):
+                    t_linear = (frame_number - anchor_frame) / pan_frames
+                    t_eased = smoothstep(t_linear)
+                    bboxes[frame_number - 1] = lerp_bbox(anchor_bbox, final_bbox, t_eased)
+                for frame_number in range(goal_frame + 1, total_frames + 1):
+                    bboxes[frame_number - 1] = final_bbox
+                if debug_callback:
+                    debug_callback(
+                        f"follow_2d: applied final pan-out over frames "
+                        f"{anchor_frame + 1}..{goal_frame} ({pan_frames} frames) "
+                        f"to final bbox {final_bbox}"
+                    )
+            elif debug_callback:
+                debug_callback(
+                    "follow_2d: final pan-out enabled but skipped "
+                    f"(anchor_frame={anchor_frame}, goal_frame={goal_frame}, "
+                    f"pan_frames={pan_frames}, total_frames={total_frames}, "
+                    f"final_bbox={final_bbox})"
+                )
 
         if debug_callback:
             unique_count = len(set(bboxes))

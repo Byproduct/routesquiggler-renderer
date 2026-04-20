@@ -6,6 +6,78 @@ import math
 from typing import NamedTuple
 
 
+# Final pan-out (follow modes only): over the last N seconds before the goal
+# the camera smoothly pans to the full-route view and any tilt / rotation fades
+# to zero. The duration matches the existing 5-second tail + cloned-ending
+# window so the zoomed-out view is already in place when fade-out begins.
+FINAL_PAN_OUT_DURATION_SECONDS = 5.0
+
+# Very short videos skip the pan-out entirely — the pan would otherwise eat
+# most of the route animation. Matches the 10s threshold documented to users.
+FINAL_PAN_OUT_MIN_VIDEO_LENGTH_SECONDS = 10.0
+
+
+def smoothstep(t):
+    """Smoothstep easing: 3t² - 2t³, with the input clamped to [0, 1]."""
+    t = max(0.0, min(1.0, float(t)))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def lerp_bbox(bbox_a, bbox_b, t):
+    """
+    Linearly interpolate between two bboxes corner-by-corner.
+
+    Both inputs are (lon_min, lon_max, lat_min, lat_max). The result is rounded
+    to 6 decimals to match the precision used elsewhere in the pipeline, so
+    frame-to-frame bbox values used as cache keys stay stable.
+    """
+    return tuple(round(a + (b - a) * float(t), 6) for a, b in zip(bbox_a, bbox_b))
+
+
+def parse_final_pan_out_flag(json_data):
+    """Parse json_data['final_pan_out'] into a bool (default True)."""
+    raw = json_data.get('final_pan_out', True) if json_data else True
+    if isinstance(raw, str):
+        return raw.lower() in ('true', '1', 'yes')
+    return bool(raw)
+
+
+def should_apply_final_pan_out(json_data):
+    """
+    Return True when the final pan-out feature should be active for this job.
+
+    Gated on both the ``final_pan_out`` job flag (default on) and a minimum
+    ``video_length`` so very short videos don't spend most of their runtime
+    in the pan. Called from every precompute path (bbox, rotation, tilt) so
+    all three agree on when the effect kicks in.
+    """
+    if not parse_final_pan_out_flag(json_data):
+        return False
+    try:
+        video_length = float(json_data.get('video_length', 0))
+    except (TypeError, ValueError):
+        return False
+    return video_length >= FINAL_PAN_OUT_MIN_VIDEO_LENGTH_SECONDS
+
+
+def final_pan_out_frame_window(video_length, video_fps):
+    """
+    Return ``(anchor_frame, goal_frame, pan_frames)`` for the final pan-out.
+
+    Frame numbers are 1-based:
+      * ``goal_frame``   — last frame of the main route phase (= ``video_length * fps``).
+                           Its bbox / tilt / rotation equals the fully zoomed-out state.
+      * ``anchor_frame`` — last frame before the pan begins. Its current
+                           (follow) bbox / tilt / rotation is the 'from' value.
+      * ``pan_frames``   — number of frames in the pan window
+                           (anchor_frame+1 .. goal_frame, inclusive).
+    """
+    goal_frame = int(float(video_length) * float(video_fps))
+    pan_frames = int(FINAL_PAN_OUT_DURATION_SECONDS * float(video_fps))
+    anchor_frame = goal_frame - pan_frames
+    return anchor_frame, goal_frame, pan_frames
+
+
 def binary_search_cutoff_index(route_points, target_time):
     """
     Binary search to find the cutoff index for points up to target_time.

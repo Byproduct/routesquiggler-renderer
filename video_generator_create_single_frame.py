@@ -938,7 +938,7 @@ def _draw_route_tail(tail_points, tail_rgba_color, tail_width, effective_line_wi
                 )
 
 
-def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_2d_zooms=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, follow_3d_rotate_bg_zooms=None, worker_image_cache=None, attribution_array=None, dynamic_bboxes=None, dynamic_zooms=None, final_zoom_level=None):
+def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, shared_map_cache=None, filename_to_rgba=None, gpx_time_per_video_time=None, target_time=None, shared_route_cache=None, virtual_leading_time=None, route_specific_tail_info=None, points_of_interest_for_frame=None, persistent_tracks=None, follow_2d_bboxes=None, follow_2d_zooms=None, follow_3d_rotate_angles=None, follow_3d_rotate_bg_bboxes=None, follow_3d_rotate_bg_zooms=None, follow_tilts=None, worker_image_cache=None, attribution_array=None, dynamic_bboxes=None, dynamic_zooms=None, final_zoom_level=None):
     """
     Generate a single frame for the video in memory, returning numpy array instead of saving to disk.
     Uses shared memory cache for map images exclusively.
@@ -2027,6 +2027,17 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
         # Apply heading rotation + perspective tilt for follow_3d variants.
         # Static HUD overlays are composited after this transform to keep them screen-aligned.
         if defer_static_overlays:
+            # Resolve the tilt angle for this frame.  Pre-computed per-frame
+            # tilts (from `precompute_follow_tilts`) drive the final pan-out
+            # fade to 0°; when the list isn't provided we fall back to the
+            # constant `json_data['video_tilt']` value so legacy call sites
+            # and short-video (pan-out-skipped) jobs keep the old behavior.
+            idx_tilt = frame_number - 1
+            if follow_tilts is not None and 0 <= idx_tilt < len(follow_tilts):
+                tilt_degrees = float(follow_tilts[idx_tilt])
+            else:
+                tilt_degrees = float(json_data.get('video_tilt', 20.0)) if json_data else 20.0
+
             if video_mode == 'follow_3d_rotate' and use_bg_canvas:
                 # ── Oversized-canvas path for follow_3d_rotate ──────────────────────
                 # 1. Rotate the full canvas_size × canvas_size frame.
@@ -2037,7 +2048,6 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 x_off = (canvas_size - width) // 2
                 frame_array = frame_array[y_off:y_off + height, x_off:x_off + width]
                 # 3. Apply tilt to the already-cropped video-resolution frame.
-                tilt_degrees = float(json_data.get('video_tilt', 20.0)) if json_data else 20.0
                 if tilt_degrees > 0:
                     frame_array = apply_tilt_to_frame(frame_array, tilt_degrees)
             else:
@@ -2045,7 +2055,6 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 if video_mode == 'follow_3d_rotate' and abs(follow_3d_heading_rotation_degrees) > 1e-6:
                     frame_array = apply_heading_rotation_to_frame(frame_array, follow_3d_heading_rotation_degrees)
 
-                tilt_degrees = float(json_data.get('video_tilt', 20.0)) if json_data else 20.0
                 if tilt_degrees > 0:
                     frame_array = apply_tilt_to_frame(frame_array, tilt_degrees)
 

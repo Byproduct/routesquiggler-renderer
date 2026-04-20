@@ -540,6 +540,132 @@ def calculate_route_time_per_frame(json_data, combined_route_data, log_callback=
         return None
 
 
+def compute_final_route_bbox(json_data, combined_route_data, log_callback=None, debug_callback=None):
+    """
+    Compute the full-route bounding box (with 10% padding + video aspect-ratio fit)
+    used by ``video_mode='final'`` and by the final-pan-out feature for follow modes.
+
+    The calculation mirrors the logic that ``calculate_unique_bounding_boxes`` uses
+    in its 'final' branch:
+
+      * Collect all points (from 'all_routes' when present, sorted chronologically;
+        otherwise from 'combined_route').
+      * 10% padding on both axes.
+      * Expand the shorter axis so the padded bbox matches the video's
+        width/height aspect ratio, accounting for latitude distortion.
+      * Clamp to valid GPS range and round to 6 decimals.
+
+    Args:
+        json_data (dict): Job data (for ``video_resolution_x/y``).
+        combined_route_data (dict): Combined route data.
+        log_callback (callable, optional): For error/warning messages.
+        debug_callback (callable, optional): For verbose debug messages.
+
+    Returns:
+        tuple: (lon_min, lon_max, lat_min, lat_max), or None on error.
+    """
+    try:
+        video_resolution_x = float(json_data.get('video_resolution_x', 1920))
+        video_resolution_y = float(json_data.get('video_resolution_y', 1080))
+        target_aspect_ratio = video_resolution_x / video_resolution_y
+
+        all_routes = combined_route_data.get('all_routes', None) if combined_route_data else None
+
+        if all_routes and len(all_routes) > 1:
+            combined_route = []
+            for route_data in all_routes:
+                combined_route.extend(route_data.get('combined_route', []))
+            combined_route.sort(key=lambda point: point.accumulated_time)
+        else:
+            combined_route = combined_route_data.get('combined_route', []) if combined_route_data else []
+
+        if not combined_route:
+            if log_callback:
+                log_callback("Error: compute_final_route_bbox found no route points")
+            return None
+
+        all_lats = [point.lat for point in combined_route]
+        all_lons = [point.lon for point in combined_route]
+
+        lon_min, lon_max = min(all_lons), max(all_lons)
+        lat_min, lat_max = min(all_lats), max(all_lats)
+
+        lon_center = (lon_min + lon_max) / 2
+        lat_center = (lat_min + lat_max) / 2
+
+        lon_span_raw = lon_max - lon_min
+        lat_span_raw = lat_max - lat_min
+
+        if lon_span_raw == 0 and lat_span_raw == 0:
+            default_span = 0.001
+            lon_min_padded = lon_center - default_span
+            lon_max_padded = lon_center + default_span
+            lat_min_padded = lat_center - default_span
+            lat_max_padded = lat_center + default_span
+        elif lon_span_raw == 0:
+            default_lon_span = lat_span_raw * 0.1
+            lon_min_padded = lon_center - default_lon_span
+            lon_max_padded = lon_center + default_lon_span
+            lat_padding = lat_span_raw * 0.1
+            lat_min_padded = lat_min - lat_padding
+            lat_max_padded = lat_max + lat_padding
+        elif lat_span_raw == 0:
+            default_lat_span = lon_span_raw * 0.1
+            lat_min_padded = lat_center - default_lat_span
+            lat_max_padded = lat_center + default_lat_span
+            lon_padding = lon_span_raw * 0.1
+            lon_min_padded = lon_min - lon_padding
+            lon_max_padded = lon_max + lon_padding
+        else:
+            base_padding = 0.1
+            lon_padding = lon_span_raw * base_padding
+            lat_padding = lat_span_raw * base_padding
+
+            lon_min_padded = lon_min - lon_padding
+            lon_max_padded = lon_max + lon_padding
+            lat_min_padded = lat_min - lat_padding
+            lat_max_padded = lat_max + lat_padding
+
+            lon_span_padded = lon_max_padded - lon_min_padded
+            lat_span_padded = lat_max_padded - lat_min_padded
+
+            cos_factor = max(0.01, abs(math.cos(math.radians(lat_center))))
+            route_aspect_ratio = (lon_span_padded * cos_factor) / lat_span_padded
+
+            if route_aspect_ratio < target_aspect_ratio:
+                desired_lon_span = lat_span_padded * target_aspect_ratio / cos_factor
+                lon_expansion = (desired_lon_span - lon_span_padded) / 2
+                lon_min_padded -= lon_expansion
+                lon_max_padded += lon_expansion
+            elif route_aspect_ratio > target_aspect_ratio:
+                desired_lat_span = (lon_span_padded * cos_factor) / target_aspect_ratio
+                lat_expansion = (desired_lat_span - lat_span_padded) / 2
+                lat_min_padded -= lat_expansion
+                lat_max_padded += lat_expansion
+
+        lon_min_padded = max(-180.0, lon_min_padded)
+        lon_max_padded = min(180.0, lon_max_padded)
+        lat_min_padded = max(-90.0, lat_min_padded)
+        lat_max_padded = min(90.0, lat_max_padded)
+
+        final_bbox = (
+            round(lon_min_padded, 6),
+            round(lon_max_padded, 6),
+            round(lat_min_padded, 6),
+            round(lat_max_padded, 6),
+        )
+
+        if debug_callback:
+            debug_callback(f"compute_final_route_bbox: {final_bbox}")
+
+        return final_bbox
+
+    except Exception as e:
+        if log_callback:
+            log_callback(f"Error in compute_final_route_bbox: {str(e)}")
+        return None
+
+
 def calculate_bounding_box_for_points(points, padding_percent=0.1, target_aspect_ratio=None):
     """
     Calculate a bounding box for a set of points with consistent padding and aspect ratio adjustment.
@@ -777,135 +903,16 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
             # For final video mode, calculate only the bounding box of the complete route
             if debug_callback:
                 debug_callback("Using 'final' zoom mode - calculating single bounding box for entire route")
-            
-            # Check if we have multiple routes
-            all_routes = combined_route_data.get('all_routes', None)
-            
-            if all_routes and len(all_routes) > 1:
-                # Multiple routes mode - collect points from all routes
-                combined_route = []
-                route_count = len(all_routes)
-                
-                if debug_callback:
-                    debug_callback(f"Final zoom mode: Collecting points from {route_count} routes")
-                
-                for route_data in all_routes:
-                    route_points = route_data.get('combined_route', [])
-                    combined_route.extend(route_points)
-                
-                # Sort all points by accumulated_time to ensure chronological order
-                combined_route.sort(key=lambda point: point.accumulated_time)
-                
-                if debug_callback:
-                    debug_callback(f"Final zoom mode: Total points from all routes: {len(combined_route)}")
-            else:
-                # Single route mode (backward compatibility)
-                combined_route = combined_route_data.get('combined_route', [])
-                           
-            if not combined_route:
+
+            final_bbox = compute_final_route_bbox(
+                json_data, combined_route_data,
+                log_callback=log_callback,
+                debug_callback=debug_callback,
+            )
+            if final_bbox is None:
                 if log_callback:
                     log_callback("Error: No route data found")
                 return None
-            
-            # Calculate bounding box for the entire route using named attributes
-            all_lats = [point.lat for point in combined_route]
-            all_lons = [point.lon for point in combined_route]
-            
-            # Calculate the data extent
-            lon_min, lon_max = min(all_lons), max(all_lons)
-            lat_min, lat_max = min(all_lats), max(all_lats)
-            
-            # Calculate center point
-            lon_center = (lon_min + lon_max) / 2
-            lat_center = (lat_min + lat_max) / 2
-            
-            # Calculate spans with basic padding (10%)
-            lon_span_raw = lon_max - lon_min
-            lat_span_raw = lat_max - lat_min
-            
-            # Handle case where all points are at the same location (zero span)
-            if lon_span_raw == 0 and lat_span_raw == 0:
-                # Single point - create a small default bounding box around it
-                default_span = 0.001  # About 100 meters at the equator
-                lon_min_padded = lon_center - default_span
-                lon_max_padded = lon_center + default_span
-                lat_min_padded = lat_center - default_span
-                lat_max_padded = lat_center + default_span
-            elif lon_span_raw == 0:
-                # All points have same longitude - create narrow horizontal box
-                default_lon_span = lat_span_raw * 0.1  # Make it 10% of lat span
-                lon_min_padded = lon_center - default_lon_span
-                lon_max_padded = lon_center + default_lon_span
-                # Use normal lat span calculation
-                base_padding = 0.1
-                lat_padding = lat_span_raw * base_padding
-                lat_min_padded = lat_min - lat_padding
-                lat_max_padded = lat_max + lat_padding
-            elif lat_span_raw == 0:
-                # All points have same latitude - create narrow vertical box
-                default_lat_span = lon_span_raw * 0.1  # Make it 10% of lon span
-                lat_min_padded = lat_center - default_lat_span
-                lat_max_padded = lat_center + default_lat_span
-                # Use normal lon span calculation
-                base_padding = 0.1
-                lon_padding = lon_span_raw * base_padding
-                lon_min_padded = lon_min - lon_padding
-                lon_max_padded = lon_max + lon_padding
-            else:
-                # Normal case - both spans are non-zero
-                # Base padding (percentage of the span)
-                base_padding = 0.1  # 10% padding
-                
-                # Apply base padding to both dimensions
-                lon_padding = lon_span_raw * base_padding
-                lat_padding = lat_span_raw * base_padding
-                
-                # Initial padded bounds
-                lon_min_padded = lon_min - lon_padding
-                lon_max_padded = lon_max + lon_padding
-                lat_min_padded = lat_min - lat_padding
-                lat_max_padded = lat_max + lat_padding
-                
-                # Calculate aspect ratio of the route after initial padding
-                lon_span_padded = lon_max_padded - lon_min_padded
-                lat_span_padded = lat_max_padded - lat_min_padded
-                
-                # Adjust for latitude distortion - at the equator, 1 degree longitude ≈ 1 degree latitude
-                # But at higher latitudes, 1 degree longitude < 1 degree latitude in terms of distance
-                cos_factor = max(0.01, abs(math.cos(math.radians(lat_center))))  # Prevent division by zero
-                
-                # Calculate the effective aspect ratio of the padded route (accounting for latitude distortion)
-                route_aspect_ratio = (lon_span_padded * cos_factor) / lat_span_padded
-                
-                # Use target_aspect_ratio calculated from video resolution at function start
-                
-                # If route is more vertical than our target aspect ratio, expand horizontally
-                if route_aspect_ratio < target_aspect_ratio:
-                    # Calculate how much horizontal space we need to add to match target aspect ratio
-                    desired_lon_span = lat_span_padded * target_aspect_ratio / cos_factor
-                    # How much to add on each side
-                    lon_expansion = (desired_lon_span - lon_span_padded) / 2
-                    # Apply expansion
-                    lon_min_padded -= lon_expansion
-                    lon_max_padded += lon_expansion
-                
-                # If route is more horizontal than our target aspect ratio, expand vertically
-                elif route_aspect_ratio > target_aspect_ratio:
-                    # Calculate how much vertical space we need to add to match target aspect ratio
-                    desired_lat_span = (lon_span_padded * cos_factor) / target_aspect_ratio
-                    # How much to add on each side
-                    lat_expansion = (desired_lat_span - lat_span_padded) / 2
-                    # Apply expansion
-                    lat_min_padded -= lat_expansion
-                    lat_max_padded += lat_expansion
-            
-            # Create the final bounding box (rounded to 6 decimal places)
-            final_bbox = (
-                round(lon_min_padded, 6),   # lon_min_padded
-                round(lon_max_padded, 6),   # lon_max_padded
-                round(lat_min_padded, 6),   # lat_min_padded
-                round(lat_max_padded, 6)    # lat_max_padded
-            )
 
             # Compute the zoom level once here so step 3/4 and the step 5
             # frame-generator lookup (which re-loads the pickle) all agree on
@@ -923,6 +930,7 @@ def calculate_unique_bounding_boxes(json_data, route_time_per_frame, log_callbac
             # Save the final bounding box and zoom for later use
             save_final_bounding_box(final_bbox, zoom_level=final_zoom, log_callback=log_callback, debug_callback=debug_callback)
 
+            all_routes = combined_route_data.get('all_routes', None)
             route_count = len(all_routes) if all_routes else 1
             if debug_callback:
                 debug_callback(
