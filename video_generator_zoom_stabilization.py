@@ -54,6 +54,7 @@ def compute_stabilized_zooms(
     canvas_size_override=None,
     debug_callback=None,
     mode_label=None,
+    bypass_hysteresis_from_index=None,
 ):
     """
     Produce a stabilized per-frame zoom-level list for the given bbox list,
@@ -76,6 +77,13 @@ def compute_stabilized_zooms(
             actually produce.
         debug_callback: optional callable for debug logging.
         mode_label: optional string used in debug messages only.
+        bypass_hysteresis_from_index: optional 0-based frame index from which
+            onward hysteresis is disabled and zoom simply tracks the natural
+            (per-frame `detect_zoom_level`) value. Intended for the final
+            pan-out window in follow modes, where the bbox grows rapidly and
+            the hysteresis rule would otherwise lock zoom at a much too high
+            level — rendering a huge area at zoom-in tiles, blowing the tile
+            budget. All frames before this index still use the normal rule.
 
     Returns:
         list[int | None] of length len(bboxes).
@@ -119,12 +127,24 @@ def compute_stabilized_zooms(
     pending_count = 0
     result = []
 
-    for bbox in bboxes:
+    bypass_idx = bypass_hysteresis_from_index if bypass_hysteresis_from_index is not None else None
+    pan_bypass_frame_count = 0
+
+    for i, bbox in enumerate(bboxes):
         natural = _natural_zoom(bbox)
 
         if natural is None:
             result.append(None)
             continue
+
+        # Final-pan-out bypass: once we enter the pan window, the bbox grows
+        # rapidly on every frame and the hysteresis rule would hold zoom at
+        # the prior (much higher) level while the viewport expands — pulling
+        # in huge numbers of zoom-in tiles to cover the now-large area. Track
+        # natural zoom for the rest of the video so the tile budget is
+        # respected and the zoom-out reads visually natural. The same zoom
+        # list is consumed by steps 3, 4, and 5, so cache keys stay in sync.
+        in_pan_bypass = bypass_idx is not None and i >= bypass_idx
 
         if current_zoom is None:
             # First valid frame — adopt natural without establishing a direction.
@@ -132,6 +152,13 @@ def compute_stabilized_zooms(
             last_change_direction = 0
             pending_zoom = None
             pending_count = 0
+        elif in_pan_bypass:
+            if natural != current_zoom:
+                last_change_direction = 1 if natural > current_zoom else -1
+                current_zoom = natural
+            pending_zoom = None
+            pending_count = 0
+            pan_bypass_frame_count += 1
         elif not stabilization_enabled:
             if natural != current_zoom:
                 last_change_direction = 1 if natural > current_zoom else -1
@@ -180,17 +207,25 @@ def compute_stabilized_zooms(
             transitions = sum(1 for a, b in zip(valid, valid[1:]) if a != b)
             unique_sorted = sorted(set(valid))
             label = mode_label or "zoom"
+            bypass_suffix = (
+                f"; pan-out bypass from frame {bypass_idx + 1}"
+                f" ({pan_bypass_frame_count} frames tracked natural)"
+                if bypass_idx is not None
+                else ""
+            )
             if stabilization_enabled:
                 debug_callback(
                     f"{label} zoom stabilization: dwell={dwell_frames} frames "
                     f"({dwell_seconds:g}s @ {video_fps:g}fps), max_tiles={max_tiles}; "
                     f"zoom levels used: {unique_sorted}; transitions: {transitions}"
+                    f"{bypass_suffix}"
                 )
             else:
                 debug_callback(
                     f"{label} zoom stabilization: DISABLED "
                     f"(camera_zoom_stabilization={dwell_seconds_raw}); "
                     f"zoom levels used: {unique_sorted}; transitions: {transitions}"
+                    f"{bypass_suffix}"
                 )
 
     return result

@@ -461,6 +461,27 @@ class VideoGeneratorWorker(QObject):
                 if not follow_2d_bboxes:
                     raise ValueError(f"Failed to precompute {mode_label} bounding boxes")
                 self.combined_route_data['follow_2d_bboxes_per_frame'] = follow_2d_bboxes
+
+                # When the final pan-out is active, disable zoom hysteresis for
+                # the pan window (anchor_frame+1 onward, 0-based anchor_frame).
+                # The pan-out bbox grows rapidly each frame and the hysteresis
+                # would otherwise hold zoom at the pre-pan level, rendering a
+                # huge area at zoom-in tiles and blowing the tile budget.
+                from video_generator_utils import (
+                    should_apply_final_pan_out,
+                    final_pan_out_frame_window,
+                )
+                pan_bypass_idx = None
+                if should_apply_final_pan_out(self.json_data):
+                    video_fps = float(self.json_data.get('video_fps', 30))
+                    video_length = float(self.json_data.get('video_length', 30))
+                    anchor_frame, _, pan_frames = final_pan_out_frame_window(
+                        video_length, video_fps
+                    )
+                    if pan_frames > 0 and 1 <= anchor_frame < len(follow_2d_bboxes):
+                        # bypass from the first pan frame onward (0-based index)
+                        pan_bypass_idx = anchor_frame
+
                 # Stabilize follow_2d-equivalent zoom for every follow mode so that
                 # overlay-drawing paths (which always key off the normal follow_2d
                 # bbox) pick a consistent zoom. For follow_3d_rotate the rendered
@@ -473,6 +494,7 @@ class VideoGeneratorWorker(QObject):
                     canvas_size_override=None,
                     debug_callback=self.debug_message.emit,
                     mode_label=f"{mode_label} (follow_2d bbox)",
+                    bypass_hysteresis_from_index=pan_bypass_idx,
                 )
                 self.combined_route_data['follow_2d_zooms_per_frame'] = follow_2d_zooms
                 self.debug_message.emit(
@@ -534,6 +556,7 @@ class VideoGeneratorWorker(QObject):
                         canvas_size_override=(bg_canvas_size, bg_canvas_size),
                         debug_callback=self.debug_message.emit,
                         mode_label='follow_3d_rotate (bg bbox)',
+                        bypass_hysteresis_from_index=pan_bypass_idx,
                     )
                     self.combined_route_data['follow_3d_rotate_bg_zooms_per_frame'] = follow_3d_rotate_bg_zooms
                     self.debug_message.emit(
