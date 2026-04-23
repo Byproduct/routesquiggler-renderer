@@ -13,8 +13,8 @@
   "newest_on_top": true,
   "route_name": "Kypäränouto_imgtest_2",
   "statistics": "dark",
-  "statistics_distance": true,
-  "statistics_elapsed_time": true,
+  "statistics_distance_corner": true,
+  "statistics_elapsed_time_corner": true,
   "user_id": 1,
   "track_objects": [
     {

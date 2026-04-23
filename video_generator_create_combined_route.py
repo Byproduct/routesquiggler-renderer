@@ -219,8 +219,8 @@ def _apply_smoothed_statistics_to_routes(all_routes, gpx_time_per_video_time, js
         list: Updated routes with smoothed statistics calculated
     """
     # Check if we need to calculate any smoothed values
-    calculate_hr = json_data.get('statistics_current_hr', False) if json_data else False
-    calculate_speed = json_data.get('statistics_current_speed', False) if json_data else False
+    calculate_hr = json_data.get('statistics_current_hr_point', False) if json_data else False
+    calculate_speed = json_data.get('statistics_current_speed_point', False) if json_data else False
     
     # Also calculate speed if speed-based coloring is enabled (needed for both video and image generation)
     if json_data and json_data.get('speed_based_color', False):
@@ -787,7 +787,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
         # Check if heart rate extraction is needed (optimization: skip if not requested)
         extract_heart_rate = False
         if json_data:
-            extract_heart_rate = json_data.get('statistics_average_hr', False) or json_data.get('statistics_current_hr', False) or json_data.get('hr_based_color', False) or json_data.get('hr_based_width', False) or json_data.get('hr_based_width_label', False)
+            extract_heart_rate = json_data.get('statistics_average_hr_corner', False) or json_data.get('statistics_current_hr_point', False) or json_data.get('hr_based_color', False) or json_data.get('hr_based_width', False) or json_data.get('hr_based_width_label', False)
         
         # Check if imperial units should be used
         imperial_units = _is_imperial_units(json_data)
@@ -836,7 +836,7 @@ def _create_route_for_track(track_files, route_index, track_name, json_data=None
                             
                             # Extract elevation if enabled and available
                             elevation = None
-                            if json_data and json_data.get('statistics_current_elevation', False):
+                            if json_data and json_data.get('statistics_current_elevation_point', False):
                                 if point.elevation is not None:
                                     try:
                                         elevation = float(point.elevation)

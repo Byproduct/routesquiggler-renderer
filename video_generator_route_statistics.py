@@ -82,7 +82,7 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
     accumulated_distance = last_point.accumulated_distance
     
     # Statistics: Current time (timestamp of last point)
-    if json_data.get('statistics_current_time', False) and timestamp:
+    if json_data.get('statistics_current_time_corner', False) and timestamp:
         try:
             current_time_str = timestamp.strftime('%Y-%m-%d %H:%M')
             statistics_data['current_time'] = current_time_str
@@ -90,7 +90,7 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
             statistics_data['current_time'] = str(timestamp)
     
     # Statistics: Elapsed time (format depends on whether we're in tail mode)
-    if json_data.get('statistics_elapsed_time', False):
+    if json_data.get('statistics_elapsed_time_corner', False) or json_data.get('statistics_elapsed_time_point', False):
         hours = int(accumulated_time // 3600)
         minutes = int((accumulated_time % 3600) // 60)
         seconds = int(accumulated_time % 60)
@@ -115,7 +115,7 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         statistics_data['elapsed_time'] = elapsed_time_str
     
     # Statistics: Distance (accumulated distance converted to km or miles with 1 decimal)
-    if json_data.get('statistics_distance', False):
+    if json_data.get('statistics_distance_corner', False) or json_data.get('statistics_distance_point', False):
         imperial_units = _is_imperial_units(json_data)
         if imperial_units:
             # accumulated_distance is already in miles
@@ -126,11 +126,11 @@ def _calculate_video_statistics(points_for_frame, json_data, gpx_time_per_video_
         statistics_data['distance'] = f"{distance_value:.1f}"
     
     # Statistics: Speed handling (different logic for normal vs tail mode)
-    current_speed_requested = json_data.get('statistics_current_speed', False)
-    average_speed_requested = json_data.get('statistics_average_speed', False)
-    current_elevation_requested = json_data.get('statistics_current_elevation', False)
-    current_hr_requested = json_data.get('statistics_current_hr', False)
-    average_hr_requested = json_data.get('statistics_average_hr', False)
+    current_speed_requested = json_data.get('statistics_current_speed_point', False)
+    average_speed_requested = json_data.get('statistics_average_speed_corner', False)
+    current_elevation_requested = json_data.get('statistics_current_elevation_point', False)
+    current_hr_requested = json_data.get('statistics_current_hr_point', False)
+    average_hr_requested = json_data.get('statistics_average_hr_corner', False)
     
     if is_tail_only:
         # Tail mode: hide current speed, show average speed if either speed stat is requested
@@ -413,6 +413,238 @@ def _draw_current_speed_at_point(ax, points_for_frame, current_speed, effective_
     )
 
 
+def _draw_current_distance_at_point(ax, points_for_frame, current_distance, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0, text_rotation_degrees=0.0, stack_step_mercator=None):
+    """
+    Draw current accumulated distance near the latest point on the chart.
+
+    Args:
+        ax (matplotlib.axes.Axes): Matplotlib axes for drawing
+        points_for_frame (list): List of route points (single route) or list of sub-lists (multiple routes)
+        current_distance (str): Current distance value to display
+        effective_line_width (float): Base line width for scaling (unused, kept for compatibility)
+        theme (str): Theme for distance display ('light' or 'dark')
+        json_data (dict): Job data containing video parameters for resolution scaling
+        resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
+        vertical_position (int): Vertical stack position (0=top, 1=second, 2=third, etc.)
+        text_rotation_degrees (float): Matplotlib text rotation (degrees CCW). Used to counter-rotate
+            labels when the frame is rotated later (e.g. follow_3d_rotate).
+        stack_step_mercator (tuple or None): Optional (dx, dy) in Mercator data units
+            per vertical_position step so labels stack on screen after heading rotation (follow_3d_rotate).
+    """
+    if not current_distance or not points_for_frame:
+        return
+
+    # Find the latest point across all routes to position the distance label
+    latest_point = None
+    latest_time = None
+
+    # Determine if we have multiple routes or single route
+    is_multiple_routes = points_for_frame and isinstance(points_for_frame[0], list)
+
+    if is_multiple_routes:
+        # Multiple routes mode - find the most recent point across all routes
+        for route_points in points_for_frame:
+            if not route_points:  # Skip empty routes
+                continue
+            route_last_point = route_points[-1]
+            point_time = route_last_point.accumulated_time
+            if latest_time is None or point_time > latest_time:
+                latest_time = point_time
+                latest_point = route_last_point
+    else:
+        # Single route mode
+        if points_for_frame:
+            latest_point = points_for_frame[-1]
+
+    if not latest_point:
+        return
+
+    # Extract coordinates from the latest point using named attributes
+    lat = latest_point.lat
+    lon = latest_point.lon
+
+    # Convert GPS coordinates to Web Mercator for proper positioning
+    def _gps_to_web_mercator(lon, lat):
+        """Convert GPS coordinates to Web Mercator projection."""
+        import math
+        x = lon * 20037508.34 / 180
+        y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
+        y = y * 20037508.34 / 180
+        return x, y
+
+    x, y = _gps_to_web_mercator(lon, lat)
+
+    # Calculate offset for distance label position (scales with resolution)
+    # Convert scaled pixels to coordinate space based on current axes limits
+    x_range = ax.get_xlim()[1] - ax.get_xlim()[0]
+    y_range = ax.get_ylim()[1] - ax.get_ylim()[0]
+
+    # Use pre-calculated resolution scale if provided, otherwise calculate it
+    if resolution_scale is None:
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        else:
+            resolution_scale = 1.0
+
+    # Calculate resolution-scaled offset (15px baseline for 1080p)
+    base_offset_pixels = 15  # Baseline for 1080p
+    scaled_offset_pixels = base_offset_pixels * resolution_scale
+
+    # Estimate pixel-to-coordinate conversion (rough approximation)
+    width = int(ax.figure.get_figwidth() * ax.figure.dpi)
+    x_offset = (scaled_offset_pixels / width) * x_range
+
+    distance_x = x + x_offset
+    height = int(ax.figure.get_figheight() * ax.figure.dpi)
+    if stack_step_mercator is not None:
+        sdx, sdy = stack_step_mercator
+        distance_x += vertical_position * sdx
+        distance_y = y + vertical_position * sdy
+    else:
+        base_vertical_offset_pixels = 30  # Baseline spacing for 1080p
+        scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
+        y_offset = (scaled_vertical_offset_pixels / height) * y_range
+        distance_y = y - y_offset
+
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+
+    # Use hardcoded base font size that scales with resolution
+    base_font_size = 13  # Hardcoded base size for 1080p
+    font_size = base_font_size * resolution_scale
+
+    imperial_units = _is_imperial_units(json_data)
+    distance_unit = "miles" if imperial_units else "km"
+
+    bbox_linewidth = 0.5 * resolution_scale
+    ax.text(
+        distance_x, distance_y, f"{current_distance} {distance_unit}",
+        color=text_color,
+        fontsize=font_size,
+        fontweight='bold',
+        rotation=text_rotation_degrees,
+        ha='left',
+        va='center',
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=bbox_linewidth
+        ),
+        zorder=100
+    )
+
+
+def _draw_elapsed_time_at_point(ax, points_for_frame, elapsed_time, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0, text_rotation_degrees=0.0, stack_step_mercator=None):
+    """
+    Draw elapsed time near the latest point on the chart.
+
+    Args:
+        ax (matplotlib.axes.Axes): Matplotlib axes for drawing
+        points_for_frame (list): List of route points (single route) or list of sub-lists (multiple routes)
+        elapsed_time (str): Elapsed time value to display
+        effective_line_width (float): Base line width for scaling (unused, kept for compatibility)
+        theme (str): Theme for elapsed-time display ('light' or 'dark')
+        json_data (dict): Job data containing video parameters for resolution scaling
+        resolution_scale (float, optional): Pre-calculated resolution scale factor for optimization
+        vertical_position (int): Vertical stack position (0=top, 1=second, 2=third, etc.)
+        text_rotation_degrees (float): Matplotlib text rotation (degrees CCW). Used to counter-rotate
+            labels when the frame is rotated later (e.g. follow_3d_rotate).
+        stack_step_mercator (tuple or None): Optional (dx, dy) in Mercator data units
+            per vertical_position step so labels stack on screen after heading rotation (follow_3d_rotate).
+    """
+    if not elapsed_time or not points_for_frame:
+        return
+
+    # Find the latest point across all routes to position the elapsed-time label
+    latest_point = None
+    latest_time = None
+    is_multiple_routes = points_for_frame and isinstance(points_for_frame[0], list)
+
+    if is_multiple_routes:
+        for route_points in points_for_frame:
+            if not route_points:
+                continue
+            route_last_point = route_points[-1]
+            point_time = route_last_point.accumulated_time
+            if latest_time is None or point_time > latest_time:
+                latest_time = point_time
+                latest_point = route_last_point
+    else:
+        if points_for_frame:
+            latest_point = points_for_frame[-1]
+
+    if not latest_point:
+        return
+
+    lat = latest_point.lat
+    lon = latest_point.lon
+
+    def _gps_to_web_mercator(lon, lat):
+        """Convert GPS coordinates to Web Mercator projection."""
+        import math
+        x = lon * 20037508.34 / 180
+        y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
+        y = y * 20037508.34 / 180
+        return x, y
+
+    x, y = _gps_to_web_mercator(lon, lat)
+    x_range = ax.get_xlim()[1] - ax.get_xlim()[0]
+    y_range = ax.get_ylim()[1] - ax.get_ylim()[0]
+
+    if resolution_scale is None:
+        if json_data:
+            from image_generator_utils import calculate_resolution_scale
+            resolution_x = int(json_data.get('video_resolution_x', 1920))
+            resolution_y = int(json_data.get('video_resolution_y', 1080))
+            resolution_scale = calculate_resolution_scale(resolution_x, resolution_y)
+        else:
+            resolution_scale = 1.0
+
+    base_offset_pixels = 15
+    scaled_offset_pixels = base_offset_pixels * resolution_scale
+    width = int(ax.figure.get_figwidth() * ax.figure.dpi)
+    x_offset = (scaled_offset_pixels / width) * x_range
+
+    elapsed_x = x + x_offset
+    height = int(ax.figure.get_figheight() * ax.figure.dpi)
+    if stack_step_mercator is not None:
+        sdx, sdy = stack_step_mercator
+        elapsed_x += vertical_position * sdx
+        elapsed_y = y + vertical_position * sdy
+    else:
+        base_vertical_offset_pixels = 30
+        scaled_vertical_offset_pixels = base_vertical_offset_pixels * resolution_scale * vertical_position
+        y_offset = (scaled_vertical_offset_pixels / height) * y_range
+        elapsed_y = y - y_offset
+
+    bg_color, border_color, text_color = get_text_theme_colors(theme)
+    base_font_size = 13
+    font_size = base_font_size * resolution_scale
+    bbox_linewidth = 0.5 * resolution_scale
+
+    ax.text(
+        elapsed_x, elapsed_y, f"{elapsed_time}",
+        color=text_color,
+        fontsize=font_size,
+        fontweight='bold',
+        rotation=text_rotation_degrees,
+        ha='left',
+        va='center',
+        bbox=dict(
+            boxstyle='round,pad=0.3',
+            facecolor=bg_color,
+            edgecolor=border_color,
+            alpha=0.9,
+            linewidth=bbox_linewidth
+        ),
+        zorder=100
+    )
+
+
 def _draw_current_elevation_at_point(ax, points_for_frame, current_elevation, effective_line_width, theme='light', json_data=None, resolution_scale=None, vertical_position=0, text_rotation_degrees=0.0, stack_step_mercator=None):
     """
     Draw current elevation near the latest point on the chart.
@@ -682,7 +914,8 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     if 'current_time' in statistics_data:
         stats_lines.append(statistics_data['current_time'])
     
-    if 'elapsed_time' in statistics_data:
+    elapsed_time_at_point = json_data.get('statistics_elapsed_time_point', False)
+    if 'elapsed_time' in statistics_data and not elapsed_time_at_point:
         stats_lines.append(statistics_data['elapsed_time'])
     
     # Determine units based on imperial_units setting
@@ -690,11 +923,12 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
     distance_unit = "miles" if imperial_units else "km"
     speed_unit = "mph" if imperial_units else "km/h"
     
-    if 'distance' in statistics_data:
+    distance_at_point = json_data.get('statistics_distance_point', False)
+    if 'distance' in statistics_data and not distance_at_point:
         stats_lines.append(f"{statistics_data['distance']} {distance_unit}")
     
     # Include current speed only if not excluded and not being displayed at point
-    current_speed_at_point = json_data.get('statistics_current_speed', False)
+    current_speed_at_point = json_data.get('statistics_current_speed_point', False)
     if not exclude_current_speed and 'current_speed' in statistics_data and not current_speed_at_point:
         stats_lines.append(f"{statistics_data['current_speed']} {speed_unit}")
     
@@ -702,7 +936,7 @@ def _draw_video_statistics(ax, statistics_data, json_data, effective_line_width,
         stats_lines.append(f"{statistics_data['average_speed']} {speed_unit}")
     
     # Include current elevation only if not excluded and not being displayed at point
-    current_elevation_at_point = json_data.get('statistics_current_elevation', False)
+    current_elevation_at_point = json_data.get('statistics_current_elevation_point', False)
     if not exclude_current_elevation and 'current_elevation' in statistics_data and not current_elevation_at_point:
         stats_lines.append(f"{statistics_data['current_elevation']} m ↑")
     

@@ -988,13 +988,13 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
 
     avg_hr_value = None
     if statistics_data:
-        if json_data.get('statistics_starting_time', False):
+        if json_data.get('statistics_starting_time_corner', False):
             stats_lines.append(f"{statistics_data.get('starting_time', 'N/A')}")
         
-        if json_data.get('statistics_ending_time', False):
+        if json_data.get('statistics_ending_time_corner', False):
             stats_lines.append(f"{statistics_data.get('ending_time', 'N/A')}")
         
-        if json_data.get('statistics_elapsed_time', False):
+        if json_data.get('statistics_elapsed_time_corner', False):
             stats_lines.append(f"{statistics_data.get('elapsed_time', 'N/A')}")
         
         # Determine units based on imperial_units setting
@@ -1002,19 +1002,19 @@ def add_statistics_to_plot(ax, statistics_data: Dict[str, str], json_data: Dict,
         distance_unit = "miles" if imperial_units else "km"
         speed_unit = "mph" if imperial_units else "km/h"
         
-        if json_data.get('statistics_distance', False):
+        if json_data.get('statistics_distance_corner', False):
             stats_lines.append(f"{statistics_data.get('distance', 'N/A')} {distance_unit}")
         
-        if json_data.get('statistics_average_speed', False):
+        if json_data.get('statistics_average_speed_corner', False):
             stats_lines.append(f"{statistics_data.get('average_speed', 'N/A')} {speed_unit}")
         
-        if json_data.get('statistics_average_hr', False):
+        if json_data.get('statistics_average_hr_corner', False):
             avg_hr = statistics_data.get('average_hr', '0')
             if avg_hr and avg_hr != '0':
                 stats_lines.append(f"{avg_hr} ♥")
 
     # Add free text lines (sanitized earlier; may contain \n-separated lines)
-    free_text = (json_data or {}).get('statistics_free_text', '') or ''
+    free_text = (json_data or {}).get('statistics_free_text_corner', '') or ''
     if free_text:
         for line in free_text.split('\n'):
             line = line.strip()

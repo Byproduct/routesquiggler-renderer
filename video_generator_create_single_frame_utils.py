@@ -257,9 +257,11 @@ def _draw_filename_tags_for_routes(points_for_frame, json_data, filename_to_rgba
     # Check if realtime statistics are enabled - if so, we need to offset the tag vertically
     # Statistics stack downward from the point, so we only need to clear the topmost statistic
     has_realtime_stats = (
-        json_data.get('statistics_current_speed', False) or
-        json_data.get('statistics_current_elevation', False) or
-        json_data.get('statistics_current_hr', False)
+        json_data.get('statistics_current_speed_point', False) or
+        json_data.get('statistics_distance_point', False) or
+        json_data.get('statistics_elapsed_time_point', False) or
+        json_data.get('statistics_current_elevation_point', False) or
+        json_data.get('statistics_current_hr_point', False)
     )
     
     # Calculate vertical offset: move up just enough to clear the topmost statistic

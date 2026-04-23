@@ -712,7 +712,7 @@ class GPXProcessor:
         total_distance = 0.0
         
         # Check if heart rate extraction is needed (optimization: skip if not requested)
-        extract_heart_rate = json_data.get('statistics_average_hr', False) if json_data else False
+        extract_heart_rate = json_data.get('statistics_average_hr_corner', False) if json_data else False
         all_heart_rates = []
         
         # Process each GPX file

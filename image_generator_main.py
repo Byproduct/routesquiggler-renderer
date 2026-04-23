@@ -69,13 +69,13 @@ class ImageGeneratorWorker(QObject):
             
             self.log_message.emit("Starting image generation.")
 
-            # Sanitize statistics_free_text on first read: allow only \n and plain text, no code/formatting/tags
-            raw_free_text = self.json_data.get('statistics_free_text')
+            # Sanitize statistics_free_text_corner on first read: allow only \n and plain text, no code/formatting/tags
+            raw_free_text = self.json_data.get('statistics_free_text_corner')
             if raw_free_text is not None:
                 if not isinstance(raw_free_text, str):
                     raw_free_text = str(raw_free_text)
                 # Allow only newline and printable characters; strip < > & and control chars to prevent any code/tags
-                self.json_data['statistics_free_text'] = ''.join(
+                self.json_data['statistics_free_text_corner'] = ''.join(
                     c for c in raw_free_text
                     if c == '\n' or (c not in '<>&\0' and ord(c) >= 32)
                 )

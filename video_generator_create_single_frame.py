@@ -31,6 +31,8 @@ from video_generator_create_single_frame_utils import (
 )
 from video_generator_route_statistics import (
     _calculate_video_statistics,
+    _draw_current_distance_at_point,
+    _draw_elapsed_time_at_point,
     _draw_current_elevation_at_point,
     _draw_current_hr_at_point,
     _draw_current_speed_at_point,
@@ -1880,16 +1882,18 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             else:
                 follow_3d_heading_rotation_degrees = follow_3d_rotate_angle_degrees(bbox, points_for_frame)
         statistics_setting = json_data.get('statistics', 'off') if json_data else 'off'
-        # Point-attached stats (speed / elevation / HR) counter-rotation and stack step: only when
+        # Point-attached stats (speed / distance / elapsed / elevation / HR) counter-rotation and stack step: only when
         # statistics are on and at least one of those metrics is selected (avoids per-frame work otherwise).
         need_follow_3d_point_stat_layout = (
             video_mode == 'follow_3d_rotate'
             and statistics_setting in ('light', 'dark')
             and json_data is not None
             and (
-                json_data.get('statistics_current_speed', False)
-                or json_data.get('statistics_current_elevation', False)
-                or json_data.get('statistics_current_hr', False)
+                json_data.get('statistics_current_speed_point', False)
+                or json_data.get('statistics_distance_point', False)
+                or json_data.get('statistics_elapsed_time_point', False)
+                or json_data.get('statistics_current_elevation_point', False)
+                or json_data.get('statistics_current_hr_point', False)
             )
         )
         point_stats_text_rotation_degrees = (
@@ -1928,11 +1932,15 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             )
             if statistics_data:
                 # Check which current stats should be displayed at the point
-                current_speed_enabled = json_data.get('statistics_current_speed', False)
+                current_speed_enabled = json_data.get('statistics_current_speed_point', False)
                 current_speed_value = statistics_data.get('current_speed')
-                current_elevation_enabled = json_data.get('statistics_current_elevation', False)
+                current_distance_enabled = json_data.get('statistics_distance_point', False)
+                current_distance_value = statistics_data.get('distance')
+                elapsed_time_enabled = json_data.get('statistics_elapsed_time_point', False)
+                elapsed_time_value = statistics_data.get('elapsed_time')
+                current_elevation_enabled = json_data.get('statistics_current_elevation_point', False)
                 current_elevation_value = statistics_data.get('current_elevation')
-                current_hr_enabled = json_data.get('statistics_current_hr', False)
+                current_hr_enabled = json_data.get('statistics_current_hr_point', False)
                 current_hr_value = statistics_data.get('current_hr')
                 
                 # Determine if we're at the end of the route (suppress current stats display)
@@ -1952,6 +1960,26 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
                 if current_speed_enabled and current_speed_value and not at_end_of_route:
                     _draw_current_speed_at_point(
                         ax, points_for_frame, current_speed_value, effective_line_width, statistics_setting, json_data,
+                        resolution_scale=resolution_scale, vertical_position=vertical_position,
+                        text_rotation_degrees=point_stats_text_rotation_degrees,
+                        stack_step_mercator=stack_step_mercator,
+                    )
+                    vertical_position += 1
+
+                # Only show distance-at-point if enabled, available, and not at end of route
+                if current_distance_enabled and current_distance_value and not at_end_of_route:
+                    _draw_current_distance_at_point(
+                        ax, points_for_frame, current_distance_value, effective_line_width, statistics_setting, json_data,
+                        resolution_scale=resolution_scale, vertical_position=vertical_position,
+                        text_rotation_degrees=point_stats_text_rotation_degrees,
+                        stack_step_mercator=stack_step_mercator,
+                    )
+                    vertical_position += 1
+
+                # Only show elapsed-time-at-point if enabled, available, and not at end of route
+                if elapsed_time_enabled and elapsed_time_value and not at_end_of_route:
+                    _draw_elapsed_time_at_point(
+                        ax, points_for_frame, elapsed_time_value, effective_line_width, statistics_setting, json_data,
                         resolution_scale=resolution_scale, vertical_position=vertical_position,
                         text_rotation_degrees=point_stats_text_rotation_degrees,
                         stack_step_mercator=stack_step_mercator,
@@ -2107,7 +2135,7 @@ def generate_video_frame_in_memory(frame_number, points_for_frame, json_data, sh
             _base = frame_array.astype(np.float32) / 255.0
             frame_array = ((_a * _rgb + (1.0 - _a) * _base) * 255.0).astype(np.uint8)
 
-        # Add clock overlay if enabled (same point as statistics_current_time: most recent point).
+        # Add clock overlay if enabled (same point as statistics_current_time_corner: most recent point).
         # In follow_3d variants this must happen after world-space transforms to keep
         # the clock static in screen space.
         if json_data.get('clock', False):
