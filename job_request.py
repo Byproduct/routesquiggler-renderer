@@ -51,6 +51,26 @@ def set_attribution_from_theme(json_data):
     json_data['attribution'] = 'light'
 
 
+def normalize_video_mode_aliases(json_data, log_callback=None):
+    """
+    Normalize legacy/alias video_mode values in-place.
+
+    Currently maps deprecated "static" mode to "final" for backward compatibility with older job producers. 
+    The deprecated value "static" should no longer be generated anywhere, so this can eventually be removed. 
+    """
+    raw_video_mode = json_data.get('video_mode')
+    if not isinstance(raw_video_mode, str):
+        return json_data
+
+    normalized_mode = raw_video_mode.strip().lower()
+    if normalized_mode == 'static':
+        json_data['video_mode'] = 'final'
+        if log_callback:
+            log_callback("video_mode 'static' detected, using fallback mode 'final'")
+
+    return json_data
+
+
 def apply_vertical_video_swap(json_data, log_callback=None):
     """
     Swap video resolution dimensions if vertical_video is True.

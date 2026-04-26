@@ -1,0 +1,39 @@
+{
+  "clock": true,
+  "created_at": "2026-04-25T17:46:25.664259+00:00",
+  "folder": "TRzpyZgFRQy",
+  "job_id": 2839,
+  "job_type": "video",
+  "legend": "off",
+  "legend_theme": "light",
+  "line_width": 4.0,
+  "map_detail": "normal",
+  "map_style": "osm",
+  "map_transparency": 0,
+  "name_tag_size": "large",
+  "name_tags": "off",
+  "newest_on_top": true,
+  "route_accuracy": "normal",
+  "route_name": "Keinukalliosta kotiin",
+  "squiggle_speed": "relative",
+  "statistics": "off",
+  "tail_color": "light",
+  "tail_length": 1,
+  "tail_width": 3,
+  "timezone": "UTC",
+  "user_id": 1411,
+  "vertical_video": true,
+  "video_fps": 30,
+  "video_length": 30,
+  "video_mode": "static",
+  "video_resolution_x": 1280,
+  "video_resolution_y": 720,
+  "track_objects": [
+    {
+      "filename": "477044865748729958.gpx",
+      "date": "2026-04-25",
+      "color": "#7777FF",
+      "name": ""
+    }
+  ]
+}
