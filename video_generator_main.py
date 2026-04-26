@@ -350,6 +350,288 @@ class VideoGeneratorWorker(QObject):
         except Exception as e:
             self.log_message.emit(f"Warning: Failed to delete temporary job folder '{job_temp_dir}': {str(e)}")
 
+    def _run_steps_2_through_3(self, max_tiles_preflight=None):
+        """Run steps 2 (combined route), 2.5 (per-frame bbox / zoom precompute),
+        and 3 (map tile caching).
+
+        Extracted so the caller can wrap it in a retry loop that auto-downgrades
+        ``map_detail`` for free jobs whose tile requirements would otherwise
+        exceed a budget.
+
+        Args:
+            max_tiles_preflight (int | None): Optional limit on the total number
+                of unique map tiles required. If supplied and the count exceeds
+                the limit, step 3 returns early without downloading anything
+                and the returned dict carries ``preflight_exceeded=True`` plus
+                ``total_required_tiles``. The caller can then lower the
+                ``map_detail`` parameter and retry.
+
+        Returns:
+            dict | None: ``cache_result`` from step 3 (may have
+            ``preflight_exceeded=True``), or raises if any earlier step fails.
+        """
+        # Step 2: Create combined route
+        self.log_message.emit("Step 2: Creating combined route")
+
+        self.combined_route_data = create_combined_route(
+            self.sorted_gpx_files,
+            self.json_data,
+            progress_callback=self.progress_update.emit,
+            log_callback=self.log_message.emit
+        )
+
+        if self.progress_update:
+            self.progress_update.emit("progress_bar_combined_route", 100, "Route creation completed")
+
+        if not self.combined_route_data:
+            raise ValueError("Failed to create combined route")
+
+        total_points = self.combined_route_data.get('total_points', 0)
+        total_distance = self.combined_route_data.get('total_distance', 0)
+
+        imperial_units = self.json_data and self.json_data.get('imperial_units', False) is True
+        if imperial_units:
+            distance_value = total_distance
+            distance_unit = "miles"
+        else:
+            distance_value = total_distance / 1000.0
+            distance_unit = "km"
+
+        self.debug_message.emit(f"Combined route created successfully:")
+        self.debug_message.emit(f"  - Total points: {total_points:,}")
+        self.debug_message.emit(f"  - Total distance: {distance_value:.2f} {distance_unit}")
+        self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
+
+        # Step 2.5: Pre-compute per-frame camera bboxes for every non-'final'
+        # video mode (must happen before step 3 so calculate_unique_bounding_boxes
+        # and the step-4 map image renderer can all key off the same per-frame
+        # bboxes that step 5 will look up at render time).
+        video_mode = self.json_data.get('video_mode')
+        map_style = self.json_data.get('map_style', 'osm')
+        if video_mode == 'dynamic':
+            self.log_message.emit("Step 2.5: Precomputing dynamic-mode per-frame bounding boxes")
+            from video_generator_calculate_bounding_boxes import precompute_dynamic_bboxes
+            from video_generator_zoom_stabilization import compute_stabilized_zooms
+            dynamic_bboxes = precompute_dynamic_bboxes(
+                self.json_data,
+                self.combined_route_data,
+                log_callback=self.log_message.emit,
+                debug_callback=self.debug_message.emit,
+            )
+            if dynamic_bboxes is None:
+                raise ValueError("Failed to precompute dynamic-mode bounding boxes")
+            self.combined_route_data['dynamic_bboxes_per_frame'] = dynamic_bboxes
+            dynamic_zooms = compute_stabilized_zooms(
+                dynamic_bboxes,
+                self.json_data,
+                map_style,
+                canvas_size_override=None,
+                debug_callback=self.debug_message.emit,
+                mode_label='dynamic',
+            )
+            self.combined_route_data['dynamic_zooms_per_frame'] = dynamic_zooms
+            self.debug_message.emit(
+                f"dynamic: {len(dynamic_bboxes)} frame bboxes precomputed"
+            )
+        elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
+            mode_label = video_mode
+            self.log_message.emit(f"Step 2.5: Precomputing {mode_label} camera positions")
+            from video_generator_zoom_stabilization import compute_stabilized_zooms
+            if video_mode == 'follow_2d':
+                from video_generator_follow_2d import precompute_follow_2d_bboxes as _precompute
+            else:
+                from video_generator_follow_3d import precompute_follow_3d_bboxes as _precompute
+            follow_2d_bboxes = _precompute(
+                self.json_data,
+                self.combined_route_data,
+                log_callback=self.log_message.emit,
+                debug_callback=self.debug_message.emit,
+            )
+            if not follow_2d_bboxes:
+                raise ValueError(f"Failed to precompute {mode_label} bounding boxes")
+            self.combined_route_data['follow_2d_bboxes_per_frame'] = follow_2d_bboxes
+
+            # When the final pan-out is active, disable zoom hysteresis for
+            # the pan window (anchor_frame+1 onward, 0-based anchor_frame).
+            # The pan-out bbox grows rapidly each frame and the hysteresis
+            # would otherwise hold zoom at the pre-pan level, rendering a
+            # huge area at zoom-in tiles and blowing the tile budget.
+            from video_generator_utils import (
+                should_apply_final_pan_out,
+                final_pan_out_frame_window,
+            )
+            pan_bypass_idx = None
+            if should_apply_final_pan_out(self.json_data):
+                video_fps = float(self.json_data.get('video_fps', 30))
+                video_length = float(self.json_data.get('video_length', 30))
+                anchor_frame, _, pan_frames = final_pan_out_frame_window(
+                    video_length, video_fps
+                )
+                if pan_frames > 0 and 1 <= anchor_frame < len(follow_2d_bboxes):
+                    pan_bypass_idx = anchor_frame
+
+            # Stabilize follow_2d-equivalent zoom for every follow mode so that
+            # overlay-drawing paths (which always key off the normal follow_2d
+            # bbox) pick a consistent zoom. For follow_3d_rotate the rendered
+            # background uses the expanded bg bbox+zoom instead, but the
+            # follow_2d zoom list is still kept in sync for any legacy lookup.
+            follow_2d_zooms = compute_stabilized_zooms(
+                follow_2d_bboxes,
+                self.json_data,
+                map_style,
+                canvas_size_override=None,
+                debug_callback=self.debug_message.emit,
+                mode_label=f"{mode_label} (follow_2d bbox)",
+                bypass_hysteresis_from_index=pan_bypass_idx,
+            )
+            self.combined_route_data['follow_2d_zooms_per_frame'] = follow_2d_zooms
+            self.debug_message.emit(
+                f"{mode_label}: {len(follow_2d_bboxes)} frame bboxes precomputed"
+            )
+            if video_mode in ('follow_3d', 'follow_3d_rotate'):
+                # Per-frame tilt list. For pre-pan frames this is just the
+                # constant json_data['video_tilt'] value; during the final
+                # pan-out it smoothsteps to 0° so the perspective warp
+                # unwinds alongside the bbox zoom-out.
+                from video_generator_follow_3d import precompute_follow_tilts
+                follow_tilts = precompute_follow_tilts(
+                    self.json_data,
+                    self.combined_route_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=self.debug_message.emit,
+                )
+                if follow_tilts is None:
+                    raise ValueError("Failed to precompute follow tilts")
+                self.combined_route_data['follow_tilts_per_frame'] = follow_tilts
+                self.debug_message.emit(
+                    f"{mode_label}: {len(follow_tilts)} frame tilts precomputed"
+                )
+            if video_mode == 'follow_3d_rotate':
+                from video_generator_follow_3d import precompute_follow_3d_rotate_angles
+                follow_3d_rotate_angles = precompute_follow_3d_rotate_angles(
+                    self.json_data,
+                    self.combined_route_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=self.debug_message.emit,
+                )
+                if not follow_3d_rotate_angles:
+                    raise ValueError("Failed to precompute follow_3d_rotate camera angles")
+                self.combined_route_data['follow_3d_rotate_angles_per_frame'] = follow_3d_rotate_angles
+                self.debug_message.emit(
+                    f"follow_3d_rotate: {len(follow_3d_rotate_angles)} frame angles precomputed"
+                )
+                from video_generator_follow_3d import precompute_follow_3d_rotate_bg_bboxes, compute_bg_canvas_size
+                follow_3d_rotate_bg_bboxes = precompute_follow_3d_rotate_bg_bboxes(
+                    self.json_data,
+                    self.combined_route_data,
+                    log_callback=self.log_message.emit,
+                    debug_callback=self.debug_message.emit,
+                )
+                if not follow_3d_rotate_bg_bboxes:
+                    raise ValueError("Failed to precompute follow_3d_rotate background bboxes")
+                self.combined_route_data['follow_3d_rotate_bg_bboxes_per_frame'] = follow_3d_rotate_bg_bboxes
+                # Stabilized zooms for the oversized bg bboxes. The canvas_size_override
+                # inflates max_tiles by the area ratio, matching what step 3/4 use when
+                # they render the bg map, so stabilization picks the same zoom the
+                # renderer would have picked for the bg bbox.
+                video_w = int(self.json_data.get('video_resolution_x', 1920))
+                video_h = int(self.json_data.get('video_resolution_y', 1080))
+                bg_canvas_size = compute_bg_canvas_size(video_w, video_h)
+                follow_3d_rotate_bg_zooms = compute_stabilized_zooms(
+                    follow_3d_rotate_bg_bboxes,
+                    self.json_data,
+                    map_style,
+                    canvas_size_override=(bg_canvas_size, bg_canvas_size),
+                    debug_callback=self.debug_message.emit,
+                    mode_label='follow_3d_rotate (bg bbox)',
+                    bypass_hysteresis_from_index=pan_bypass_idx,
+                )
+                self.combined_route_data['follow_3d_rotate_bg_zooms_per_frame'] = follow_3d_rotate_bg_zooms
+                self.debug_message.emit(
+                    f"follow_3d_rotate: {len(follow_3d_rotate_bg_bboxes)} bg bboxes precomputed"
+                )
+
+        # Step 3: Calculate unique bounding boxes and cache map tiles
+        self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
+
+        # The provider lock is managed inside cache_required_tiles so that
+        # it can release/re-check the remote cache when queued behind
+        # another renderer.
+        job_id = str(self.json_data.get('job_id', ''))
+        from update_status import update_status
+        _last_provider_status_time = time.time()
+        _last_provider_milestone = 0
+
+        def on_map_downloads_queued():
+            update_status("Map downloads queued", api_key=self.user)
+
+        def on_provider_downloads_starting():
+            update_status(f"downloading maps ({job_id})", api_key=self.user)
+
+        def on_provider_downloads_progress(milestone):
+            nonlocal _last_provider_status_time, _last_provider_milestone
+            if milestone <= _last_provider_milestone:
+                return
+            now = time.time()
+            if now - _last_provider_status_time < 10:
+                return
+            update_status(f"downloading maps ({job_id}) {milestone}%",
+                          api_key=self.user)
+            _last_provider_status_time = now
+            _last_provider_milestone = milestone
+
+        def on_map_tile_retries_exhausted():
+            if self.is_test:
+                self.log_message.emit(
+                    "Test job: map tile caching failed after all retries — "
+                    "skipping API status update"
+                )
+                return
+            update_job_status(
+                self.api_url,
+                self.user,
+                self.hardware_id,
+                self.app_version,
+                self.json_data.get('job_id', ''),
+                'error',
+                self.log_message.emit,
+            )
+
+        def fetch_video_map_tile_cache():
+            return cache_map_tiles(
+                self.json_data,
+                combined_route_data=self.combined_route_data,
+                storage_box_credentials={
+                    'address': self.storage_box_address,
+                    'user': self.storage_box_user,
+                    'password': self.storage_box_password,
+                },
+                progress_callback=self.progress_update.emit,
+                log_callback=self.log_message.emit,
+                max_workers=self.max_workers,
+                provider_queue_callback=on_map_downloads_queued,
+                provider_start_callback=on_provider_downloads_starting,
+                provider_progress_callback=on_provider_downloads_progress,
+                max_tiles_preflight=max_tiles_preflight,
+            )
+
+        cache_result = run_map_tile_caching_with_retries(
+            fetch_video_map_tile_cache,
+            log_callback=self.log_message.emit,
+            on_retries_exhausted=on_map_tile_retries_exhausted,
+        )
+
+        # Capture tile-count stats for job_logging (terminal-only mode). On a
+        # preflight-exceeded result these are all zero; the next loop
+        # iteration (with a lower map_detail) will overwrite them with the
+        # final counts.
+        cache_info = cache_result.get('cache_result', {}) if cache_result else {}
+        self.tiles_local = int(cache_info.get('tiles_local', 0))
+        self.tiles_remote = int(cache_info.get('tiles_remote', 0))
+        self.tiles_service = int(cache_info.get('tiles_service', 0))
+
+        return cache_result
+
     def video_generator_process(self):
         """Main processing method that runs in the worker thread."""
         try:
@@ -376,269 +658,65 @@ class VideoGeneratorWorker(QObject):
             
             self.debug_message.emit(f"Chronological sorting completed with {len(self.sorted_gpx_files)} files")
             
-            # Step 2: Create combined route
-            self.log_message.emit("Step 2: Creating combined route")           
-            
-            self.combined_route_data = create_combined_route(
-                self.sorted_gpx_files,
-                self.json_data,
-                progress_callback=self.progress_update.emit,
-                log_callback=self.log_message.emit
-            )
-            
-            # Update progress
-            if self.progress_update:
-                self.progress_update.emit("progress_bar_combined_route", 100, "Route creation completed")
-            
-            if not self.combined_route_data:
-                raise ValueError("Failed to create combined route")
-            
-            # Log summary
-            total_points = self.combined_route_data.get('total_points', 0)
-            total_distance = self.combined_route_data.get('total_distance', 0)
-            
-            # Check if imperial units should be used
-            imperial_units = self.json_data and self.json_data.get('imperial_units', False) is True
-            if imperial_units:
-                # total_distance is already in miles
-                distance_value = total_distance
-                distance_unit = "miles"
-            else:
-                # total_distance is in meters, convert to km
-                distance_value = total_distance / 1000.0
-                distance_unit = "km"
-            
-            self.debug_message.emit(f"Combined route created successfully:")
-            self.debug_message.emit(f"  - Total points: {total_points:,}")
-            self.debug_message.emit(f"  - Total distance: {distance_value:.2f} {distance_unit}")
-            self.debug_message.emit(f"  - Files processed: {len(self.sorted_gpx_files)}")
-
-            # Step 2.5: Pre-compute per-frame camera bboxes for every non-'final'
-            # video mode (must happen before step 3 so calculate_unique_bounding_boxes
-            # and the step-4 map image renderer can all key off the same per-frame
-            # bboxes that step 5 will look up at render time).
-            video_mode = self.json_data.get('video_mode')
-            map_style = self.json_data.get('map_style', 'osm')
-            if video_mode == 'dynamic':
-                self.log_message.emit("Step 2.5: Precomputing dynamic-mode per-frame bounding boxes")
-                from video_generator_calculate_bounding_boxes import precompute_dynamic_bboxes
-                from video_generator_zoom_stabilization import compute_stabilized_zooms
-                dynamic_bboxes = precompute_dynamic_bboxes(
-                    self.json_data,
-                    self.combined_route_data,
-                    log_callback=self.log_message.emit,
-                    debug_callback=self.debug_message.emit,
-                )
-                if dynamic_bboxes is None:
-                    raise ValueError("Failed to precompute dynamic-mode bounding boxes")
-                self.combined_route_data['dynamic_bboxes_per_frame'] = dynamic_bboxes
-                dynamic_zooms = compute_stabilized_zooms(
-                    dynamic_bboxes,
-                    self.json_data,
-                    map_style,
-                    canvas_size_override=None,
-                    debug_callback=self.debug_message.emit,
-                    mode_label='dynamic',
-                )
-                self.combined_route_data['dynamic_zooms_per_frame'] = dynamic_zooms
+            # Steps 2, 2.5, and 3 with optional map_detail auto-downgrade for
+            # free jobs that would otherwise need an excessive number of map
+            # tiles. The helper runs steps 2/2.5/3 once; if step 3 returns
+            # `preflight_exceeded` we lower map_detail (high -> normal -> low)
+            # and try again, recomputing the combined route, per-frame
+            # bounding boxes, and zoom levels with the reduced detail. Paid
+            # jobs (original_cost > 0) skip the preflight check entirely and
+            # render at whatever map_detail the user requested.
+            try:
+                original_cost = float(self.json_data.get('original_cost', 0) or 0)
+            except (TypeError, ValueError):
+                original_cost = 0.0
+            is_free_job = original_cost <= 0
+            if not is_free_job:
                 self.debug_message.emit(
-                    f"dynamic: {len(dynamic_bboxes)} frame bboxes precomputed"
+                    f"Paid job detected (original_cost={original_cost}); "
+                    "skipping 2000-tile map_detail preflight limit."
                 )
-            elif video_mode in ('follow_2d', 'follow_3d', 'follow_3d_rotate'):
-                mode_label = video_mode
-                self.log_message.emit(f"Step 2.5: Precomputing {mode_label} camera positions")
-                from video_generator_zoom_stabilization import compute_stabilized_zooms
-                if video_mode == 'follow_2d':
-                    from video_generator_follow_2d import precompute_follow_2d_bboxes as _precompute
-                else:
-                    from video_generator_follow_3d import precompute_follow_3d_bboxes as _precompute
-                follow_2d_bboxes = _precompute(
-                    self.json_data,
-                    self.combined_route_data,
-                    log_callback=self.log_message.emit,
-                    debug_callback=self.debug_message.emit,
+
+            DETAIL_DOWNGRADE = {'high': 'normal', 'normal': 'low'}
+            TILES_DOWNGRADE_THRESHOLD = 2000
+            MAX_DOWNGRADE_ATTEMPTS = 4  # safety cap; in practice runs 1-3 times
+
+            cache_result = None
+            for _attempt in range(MAX_DOWNGRADE_ATTEMPTS):
+                current_detail_raw = self.json_data.get('map_detail')
+                current_detail = (
+                    str(current_detail_raw).strip().lower()
+                    if current_detail_raw is not None else 'normal'
                 )
-                if not follow_2d_bboxes:
-                    raise ValueError(f"Failed to precompute {mode_label} bounding boxes")
-                self.combined_route_data['follow_2d_bboxes_per_frame'] = follow_2d_bboxes
-
-                # When the final pan-out is active, disable zoom hysteresis for
-                # the pan window (anchor_frame+1 onward, 0-based anchor_frame).
-                # The pan-out bbox grows rapidly each frame and the hysteresis
-                # would otherwise hold zoom at the pre-pan level, rendering a
-                # huge area at zoom-in tiles and blowing the tile budget.
-                from video_generator_utils import (
-                    should_apply_final_pan_out,
-                    final_pan_out_frame_window,
+                if current_detail not in ('low', 'normal', 'high'):
+                    current_detail = 'normal'
+                next_detail = DETAIL_DOWNGRADE.get(current_detail) if is_free_job else None
+                preflight_limit = (
+                    TILES_DOWNGRADE_THRESHOLD if next_detail is not None else None
                 )
-                pan_bypass_idx = None
-                if should_apply_final_pan_out(self.json_data):
-                    video_fps = float(self.json_data.get('video_fps', 30))
-                    video_length = float(self.json_data.get('video_length', 30))
-                    anchor_frame, _, pan_frames = final_pan_out_frame_window(
-                        video_length, video_fps
-                    )
-                    if pan_frames > 0 and 1 <= anchor_frame < len(follow_2d_bboxes):
-                        # bypass from the first pan frame onward (0-based index)
-                        pan_bypass_idx = anchor_frame
 
-                # Stabilize follow_2d-equivalent zoom for every follow mode so that
-                # overlay-drawing paths (which always key off the normal follow_2d
-                # bbox) pick a consistent zoom. For follow_3d_rotate the rendered
-                # background uses the expanded bg bbox+zoom instead, but the
-                # follow_2d zoom list is still kept in sync for any legacy lookup.
-                follow_2d_zooms = compute_stabilized_zooms(
-                    follow_2d_bboxes,
-                    self.json_data,
-                    map_style,
-                    canvas_size_override=None,
-                    debug_callback=self.debug_message.emit,
-                    mode_label=f"{mode_label} (follow_2d bbox)",
-                    bypass_hysteresis_from_index=pan_bypass_idx,
+                cache_result = self._run_steps_2_through_3(
+                    max_tiles_preflight=preflight_limit
                 )
-                self.combined_route_data['follow_2d_zooms_per_frame'] = follow_2d_zooms
-                self.debug_message.emit(
-                    f"{mode_label}: {len(follow_2d_bboxes)} frame bboxes precomputed"
-                )
-                if video_mode in ('follow_3d', 'follow_3d_rotate'):
-                    # Per-frame tilt list. For pre-pan frames this is just the
-                    # constant json_data['video_tilt'] value; during the final
-                    # pan-out it smoothsteps to 0° so the perspective warp
-                    # unwinds alongside the bbox zoom-out.
-                    from video_generator_follow_3d import precompute_follow_tilts
-                    follow_tilts = precompute_follow_tilts(
-                        self.json_data,
-                        self.combined_route_data,
-                        log_callback=self.log_message.emit,
-                        debug_callback=self.debug_message.emit,
-                    )
-                    if follow_tilts is None:
-                        raise ValueError("Failed to precompute follow tilts")
-                    self.combined_route_data['follow_tilts_per_frame'] = follow_tilts
-                    self.debug_message.emit(
-                        f"{mode_label}: {len(follow_tilts)} frame tilts precomputed"
-                    )
-                if video_mode == 'follow_3d_rotate':
-                    from video_generator_follow_3d import precompute_follow_3d_rotate_angles
-                    follow_3d_rotate_angles = precompute_follow_3d_rotate_angles(
-                        self.json_data,
-                        self.combined_route_data,
-                        log_callback=self.log_message.emit,
-                        debug_callback=self.debug_message.emit,
-                    )
-                    if not follow_3d_rotate_angles:
-                        raise ValueError("Failed to precompute follow_3d_rotate camera angles")
-                    self.combined_route_data['follow_3d_rotate_angles_per_frame'] = follow_3d_rotate_angles
-                    self.debug_message.emit(
-                        f"follow_3d_rotate: {len(follow_3d_rotate_angles)} frame angles precomputed"
-                    )
-                    from video_generator_follow_3d import precompute_follow_3d_rotate_bg_bboxes, compute_bg_canvas_size
-                    follow_3d_rotate_bg_bboxes = precompute_follow_3d_rotate_bg_bboxes(
-                        self.json_data,
-                        self.combined_route_data,
-                        log_callback=self.log_message.emit,
-                        debug_callback=self.debug_message.emit,
-                    )
-                    if not follow_3d_rotate_bg_bboxes:
-                        raise ValueError("Failed to precompute follow_3d_rotate background bboxes")
-                    self.combined_route_data['follow_3d_rotate_bg_bboxes_per_frame'] = follow_3d_rotate_bg_bboxes
-                    # Stabilized zooms for the oversized bg bboxes. The canvas_size_override
-                    # inflates max_tiles by the area ratio, matching what step 3/4 use when
-                    # they render the bg map, so stabilization picks the same zoom the
-                    # renderer would have picked for the bg bbox.
-                    video_w = int(self.json_data.get('video_resolution_x', 1920))
-                    video_h = int(self.json_data.get('video_resolution_y', 1080))
-                    bg_canvas_size = compute_bg_canvas_size(video_w, video_h)
-                    follow_3d_rotate_bg_zooms = compute_stabilized_zooms(
-                        follow_3d_rotate_bg_bboxes,
-                        self.json_data,
-                        map_style,
-                        canvas_size_override=(bg_canvas_size, bg_canvas_size),
-                        debug_callback=self.debug_message.emit,
-                        mode_label='follow_3d_rotate (bg bbox)',
-                        bypass_hysteresis_from_index=pan_bypass_idx,
-                    )
-                    self.combined_route_data['follow_3d_rotate_bg_zooms_per_frame'] = follow_3d_rotate_bg_zooms
-                    self.debug_message.emit(
-                        f"follow_3d_rotate: {len(follow_3d_rotate_bg_bboxes)} bg bboxes precomputed"
-                    )
 
-            # Step 3: Calculate unique bounding boxes and cache map tiles
-            self.log_message.emit("Step 3: Calculating unique bounding boxes and caching map tiles")
-            
-            # The provider lock is managed inside cache_required_tiles so that
-            # it can release/re-check the remote cache when queued behind
-            # another renderer.
-            job_id = str(self.json_data.get('job_id', ''))
-            from update_status import update_status
-            _last_provider_status_time = time.time()
-            _last_provider_milestone = 0
-
-            def on_map_downloads_queued():
-                update_status("Map downloads queued", api_key=self.user)
-
-            def on_provider_downloads_starting():
-                update_status(f"downloading maps ({job_id})", api_key=self.user)
-
-            def on_provider_downloads_progress(milestone):
-                nonlocal _last_provider_status_time, _last_provider_milestone
-                if milestone <= _last_provider_milestone:
-                    return
-                now = time.time()
-                if now - _last_provider_status_time < 10:
-                    return
-                update_status(f"downloading maps ({job_id}) {milestone}%",
-                              api_key=self.user)
-                _last_provider_status_time = now
-                _last_provider_milestone = milestone
-
-            def on_map_tile_retries_exhausted():
-                if self.is_test:
+                if cache_result and cache_result.get('preflight_exceeded'):
+                    total_tiles = cache_result.get('total_required_tiles', '?')
                     self.log_message.emit(
-                        "Test job: map tile caching failed after all retries — "
-                        "skipping API status update"
+                        f"Free job: {total_tiles} map tiles required "
+                        f"(>= {TILES_DOWNGRADE_THRESHOLD}). Reducing map_detail "
+                        f"from '{current_detail}' to '{next_detail}' and "
+                        f"recomputing route, bounding boxes, and zoom levels."
                     )
-                    return
-                update_job_status(
-                    self.api_url,
-                    self.user,
-                    self.hardware_id,
-                    self.app_version,
-                    self.json_data.get('job_id', ''),
-                    'error',
-                    self.log_message.emit,
-                )
+                    self.json_data['map_detail'] = next_detail
+                    continue
 
-            def fetch_video_map_tile_cache():
-                return cache_map_tiles(
-                    self.json_data,
-                    combined_route_data=self.combined_route_data,
-                    storage_box_credentials={
-                        'address': self.storage_box_address,
-                        'user': self.storage_box_user,
-                        'password': self.storage_box_password,
-                    },
-                    progress_callback=self.progress_update.emit,
-                    log_callback=self.log_message.emit,
-                    max_workers=self.max_workers,
-                    provider_queue_callback=on_map_downloads_queued,
-                    provider_start_callback=on_provider_downloads_starting,
-                    provider_progress_callback=on_provider_downloads_progress,
-                )
+                break
 
-            cache_result = run_map_tile_caching_with_retries(
-                fetch_video_map_tile_cache,
-                log_callback=self.log_message.emit,
-                on_retries_exhausted=on_map_tile_retries_exhausted,
-            )
-
-            # Capture tile-count stats for job_logging (terminal-only mode)
-            cache_info = cache_result.get('cache_result', {}) if cache_result else {}
-            self.tiles_local = int(cache_info.get('tiles_local', 0))
-            self.tiles_remote = int(cache_info.get('tiles_remote', 0))
-            self.tiles_service = int(cache_info.get('tiles_service', 0))
-            
-            # Summary already logged in cache_map_tiles function - no need to repeat
+            # The helper imported `update_status` and computed `job_id` for
+            # its own callbacks, but those go out of scope when it returns.
+            # Re-establish them here for the rendering / upload steps below.
+            from update_status import update_status
+            job_id = str(self.json_data.get('job_id', ''))
             
             # START TIMER: Begin timing the rendering process
             render_start_time = time.time()

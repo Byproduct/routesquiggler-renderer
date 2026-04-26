@@ -112,6 +112,7 @@ def pre_cache_map_tiles_for_video(
     provider_start_callback=None,
     provider_progress_callback=None,
     canvas_size_override=None,
+    max_tiles_preflight=None,
 ):
     """
     Identify and cache map tiles for all unique (bbox, zoom) pairs required
@@ -131,6 +132,11 @@ def pre_cache_map_tiles_for_video(
             for forward/backward compatibility of the call site (used by
             follow_3d_rotate) but no longer affects zoom selection here
             because zoom levels arrive already-decided from step 2.5.
+        max_tiles_preflight (int | None): If set and the computed total
+            number of unique required tiles is strictly greater than this
+            limit, return early without downloading anything. The returned
+            dict has ``preflight_exceeded=True`` and ``total_required_tiles``
+            so the caller can decide to retry with reduced map detail.
 
     Returns:
         dict: Cache results, or ``None`` on error.
@@ -187,6 +193,30 @@ def pre_cache_map_tiles_for_video(
         if debug_callback:
             debug_callback(f"Found {total_required} unique tiles required across all bounding boxes")
 
+        # Preflight: if a tile-budget limit was supplied and we exceed it,
+        # bail out before downloading so the caller can lower map_detail and
+        # retry. We mark the call as successful (no error occurred) and let
+        # the caller dispatch on `preflight_exceeded`.
+        if max_tiles_preflight is not None and total_required > max_tiles_preflight:
+            if log_callback:
+                log_callback(
+                    f"Tile preflight: {total_required} tiles required "
+                    f"(limit {max_tiles_preflight}); skipping download to allow retry."
+                )
+            return {
+                'total_tiles_cached': 0,
+                'total_tiles_skipped': 0,
+                'total_tiles_to_cache': total_required,
+                'total_required_tiles': total_required,
+                'total_bboxes': total_pairs,
+                'error_types': {},
+                'success': True,
+                'preflight_exceeded': True,
+                'tiles_local': 0,
+                'tiles_remote': 0,
+                'tiles_service': 0,
+            }
+
         # Hand off to the unified caching system
         tile_cache_info = cache_required_tiles(
             required_tiles=all_required_tiles,
@@ -203,9 +233,11 @@ def pre_cache_map_tiles_for_video(
             'total_tiles_cached': total_required,
             'total_tiles_skipped': 0,
             'total_tiles_to_cache': total_required,
+            'total_required_tiles': total_required,
             'total_bboxes': total_pairs,
             'error_types': {},
             'success': bool(tile_cache_info.get('success')) if tile_cache_info else False,
+            'preflight_exceeded': False,
             'tiles_local': int(tile_cache_info.get('count_local', 0)) if tile_cache_info else 0,
             'tiles_remote': int(tile_cache_info.get('count_remote', 0)) if tile_cache_info else 0,
             'tiles_service': int(tile_cache_info.get('count_provider', 0)) if tile_cache_info else 0,
@@ -228,6 +260,7 @@ def cache_map_tiles(
     provider_queue_callback=None,
     provider_start_callback=None,
     provider_progress_callback=None,
+    max_tiles_preflight=None,
 ):
     """
     Cache map tiles needed for video generation.
@@ -240,6 +273,12 @@ def cache_map_tiles(
         log_callback (callable, optional): Function to call for logging messages
         debug_callback (callable, optional): Function to call for debug logging messages
         max_workers (int, optional): Maximum number of worker processes to use
+        max_tiles_preflight (int, optional): If set and the total number of
+            required tiles exceeds this limit, return early without
+            downloading. The returned dict will have ``preflight_exceeded=True``
+            and ``total_required_tiles``; ``success`` is still True because
+            no error occurred. Used to enable map_detail auto-downgrade for
+            free jobs that would otherwise consume excessive tile bandwidth.
     
     Returns:
         dict: Cache results with timing information, or None if error
@@ -322,6 +361,7 @@ def cache_map_tiles(
             provider_start_callback=provider_start_callback,
             provider_progress_callback=provider_progress_callback,
             canvas_size_override=canvas_override,
+            max_tiles_preflight=max_tiles_preflight,
         )
         
         if cache_result is None:
@@ -330,8 +370,9 @@ def cache_map_tiles(
             return None
 
         inner_ok = bool(cache_result.get('success'))
+        preflight_exceeded = bool(cache_result.get('preflight_exceeded'))
 
-        if progress_callback:
+        if progress_callback and not preflight_exceeded:
             progress_callback("progress_bar_tiles", 100, "Map tile caching complete")
 
         return {
@@ -339,6 +380,8 @@ def cache_map_tiles(
             'unique_bounding_boxes': unique_bounding_boxes,
             'cache_result': cache_result,
             'success': inner_ok,
+            'preflight_exceeded': preflight_exceeded,
+            'total_required_tiles': cache_result.get('total_required_tiles'),
         }
         
     except Exception as e:
